@@ -1,0 +1,4 @@
+interface:
+  display_name: "DevOps 엔지니어"
+  short_description: "CI/CD·인프라·배포 자동화 및 운영 안정화 지원"
+  default_prompt: "$devops-engineer를 사용해 현재 프로젝트의 CI/CD와 배포 안정화 계획을 수립해줘."

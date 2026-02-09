@@ -1,0 +1,4 @@
+interface:
+  display_name: "프로젝트 총지휘자"
+  short_description: "모든 처리 시작점의 트리아지·배정 오케스트레이션 지원"
+  default_prompt: "$project-commander를 사용해 현재 이슈를 분류하고 적절한 에이전트에게 작업을 배정해줘."

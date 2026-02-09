@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git 매니저"
+  short_description: "변경사항 분석으로 브랜치명과 커밋 메시지 생성 지원"
+  default_prompt: "$git-manager를 사용해 현재 수정 사항을 분석하고 브랜치 이름과 커밋 메시지를 제안해줘."
