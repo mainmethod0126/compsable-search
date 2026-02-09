@@ -1,0 +1,4 @@
+interface:
+  display_name: "퍼블리셔"
+  short_description: "npm 패키지와 데모 사이트 배포 워크플로 지원"
+  default_prompt: "$publisher를 사용해 현재 프로젝트의 npm 배포 준비를 점검하고 데모 웹 배포 아티팩트를 정리해줘."

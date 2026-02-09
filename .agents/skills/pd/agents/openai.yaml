@@ -1,0 +1,4 @@
+interface:
+  display_name: "PRD 프로듀서"
+  short_description: "PRD 작성, 리뷰, 번역, 동기화 워크플로 지원"
+  default_prompt: "$pd를 사용해 현재 저장소 기준 PRD를 작성 또는 개선하고 PRD.md와 PRD.en.md를 동기화해줘."
