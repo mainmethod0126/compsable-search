@@ -1,4 +1,0 @@
-interface:
-  display_name: "태스크 매니저"
-  short_description: "PRD를 실행 가능한 구현 태스크로 분해"
-  default_prompt: "$task-manager를 사용해 현재 PRD를 우선순위 기반 구현 백로그와 실행 계획으로 분해해줘."
