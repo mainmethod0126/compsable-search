@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Manager"
-  short_description: "PRD를 에픽·피처·태스크로 분해해 실행 백로그를 만드는 스킬"
-  default_prompt: "$task-manager를 사용해 PRD를 Epic/Feature/Task로 분해하고 우선순위 백로그를 작성해줘."
+  short_description: "PRD를 실행 백로그로 분해하고 GitHub 이슈 계층까지 정리하는 스킬"
+  default_prompt: "$task-manager를 사용해 PRD를 Epic/Feature/Task로 분해하고, GitHub MCP가 가능하면 이슈 등록 매핑까지 작성해줘."

@@ -1,6 +1,6 @@
 ---
 name: task-manager
-description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `prd.md`/`prd.en.md` 또는 동등한 요구사항 문서를 입력으로 받아 Epic, Feature, Task로 계층 분해하고 우선순위, 의존성, 수용 기준, 완료 정의, 리스크 완화 작업까지 명시한다. PRD를 스프린트 계획, 로드맵, 티켓 시스템에 바로 옮길 수준으로 구조화해야 할 때 사용한다.
+description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `prd.md`/`prd.en.md` 또는 동등한 요구사항 문서를 입력으로 받아 Epic, Feature, Task로 계층 분해하고 우선순위, 의존성, 수용 기준, 완료 정의, 리스크 완화 작업까지 명시한다. GitHub MCP를 사용할 수 있으면 Epic/Feature/Task를 GitHub 이슈 계층으로 등록하고 링크/라벨/추적성을 유지해야 할 때 사용한다.
 ---
 
 # Task Manager 스킬
@@ -10,6 +10,7 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
 - PRD의 문제 정의와 사용자 가치를 기준으로 구현 단위를 재구성한다.
 - 각 Feature를 독립적으로 배포 가능한 Task 묶음으로 분해한다.
 - 기능 구현 외에 아키텍처, 데이터, 보안, 운영, 테스트, 롤아웃 작업을 누락 없이 포함한다.
+- GitHub MCP가 사용 가능한 경우 백로그를 GitHub 이슈로 일관되게 등록한다.
 
 ## 배경지식 기준
 
@@ -22,6 +23,7 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
 1. PRD에서 목표 사용자, 핵심 시나리오, 성공 지표(KPI), 범위/제약을 추출한다.
 2. 비기능 요구(성능, 보안, 가용성, 비용)를 식별하고 누락 시 `TBD`로 표기한다.
 3. 외부 연동, 데이터 스키마 변경, 마이그레이션 필요 여부를 식별한다.
+4. GitHub MCP 사용 가능 여부와 대상 저장소(`owner/repo`), 기본 라벨/마일스톤/프로젝트 필드를 확인한다. 미확정 값은 `TBD`로 남긴다.
 
 ## 작업 절차
 
@@ -42,6 +44,14 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
    - 산출물
    - 검증 방법(테스트/지표/리뷰)
    - 완료 정의(Definition of Done)
+8. GitHub MCP가 가능하면 `references/github-mcp-publishing.md` 규칙으로 게시 계획을 수립한다.
+9. Epic -> Feature -> Task 순서로 이슈를 등록한다.
+   - 제목에 안정 ID(`[E-01]`, `[F-03]`, `[T-014]`)를 유지한다.
+   - 라벨은 최소 `type:*`, `priority:*`, `area:*`를 지정한다.
+   - 본문에 상위/하위/선행 이슈 링크를 기록한다.
+10. 등록 결과를 산출물에 반영한다.
+   - 각 Epic/Feature/Task에 GitHub 이슈 번호와 URL을 기록한다.
+   - 등록 실패 항목은 원인과 재시도 계획을 `TBD`로 남긴다.
 
 ## 출력 규격
 
@@ -55,6 +65,7 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
   5. 의존성 그래프(텍스트)
   6. 리스크와 완화 계획
   7. 오픈 이슈(`TBD`)
+  8. GitHub 등록 매핑(선택)
 
 ## 품질 게이트
 
@@ -62,8 +73,11 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
 - Feature마다 최소 1개 이상의 수용 기준을 작성한다.
 - Task마다 담당 역할, 우선순위, 예상 난이도(High/Medium/Low), 검증 방법을 작성한다.
 - 운영 준비 항목(관측, 알람, 롤백, 런북) 중 누락이 있으면 완료로 간주하지 않는다.
+- GitHub MCP 사용 시 Epic/Feature/Task 모두 이슈 URL이 누락 없이 연결되어야 한다.
+- GitHub MCP 사용 시 라벨 체계(`type`, `priority`, `area`)와 문서 우선순위가 불일치하면 실패로 간주한다.
 
 ## 참조 문서
 
 - 템플릿이 필요하면 `references/prd-to-backlog-template.md`를 먼저 읽는다.
 - 누락 점검이 필요하면 `references/de-checklist.md`를 읽는다.
+- GitHub 등록이 필요하면 `references/github-mcp-publishing.md`를 읽는다.
