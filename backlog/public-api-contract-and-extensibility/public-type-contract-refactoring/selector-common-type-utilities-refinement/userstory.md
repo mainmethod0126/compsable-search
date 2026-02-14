@@ -20,4 +20,8 @@
 - [ ] selector 공통 타입 유틸 정리 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-041] 정의한다: selector 공통 타입 유틸 정리 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-042] 구현한다: selector 공통 타입 유틸 정리 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-043] 검증한다: selector 공통 타입 유틸 정리 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-044] 준비한다: selector 공통 타입 유틸 정리 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

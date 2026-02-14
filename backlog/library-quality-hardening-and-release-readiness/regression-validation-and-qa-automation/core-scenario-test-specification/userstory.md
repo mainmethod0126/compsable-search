@@ -20,4 +20,8 @@
 - [ ] 핵심 시나리오 테스트 명세화 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-085] 정의한다: 핵심 시나리오 테스트 명세화 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-086] 작성한다: 핵심 시나리오 테스트 명세화 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-087] 검증한다: 핵심 시나리오 테스트 명세화 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-088] 준비한다: 핵심 시나리오 테스트 명세화 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

@@ -20,4 +20,8 @@
 - [ ] 릴리스 런북과 롤백 절차 정리 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-105] 정의한다: 릴리스 런북과 롤백 절차 정리 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-106] 작성한다: 릴리스 런북과 롤백 절차 정리 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-107] 검증한다: 릴리스 런북과 롤백 절차 정리 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-108] 준비한다: 릴리스 런북과 롤백 절차 정리 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

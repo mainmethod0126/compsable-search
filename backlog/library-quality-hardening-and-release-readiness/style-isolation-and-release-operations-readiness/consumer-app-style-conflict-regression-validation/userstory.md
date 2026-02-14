@@ -20,4 +20,8 @@
 - [ ] 소비자 앱 충돌 회귀 검증 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-101] 정의한다: 소비자 앱 충돌 회귀 검증 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-102] 구현한다: 소비자 앱 충돌 회귀 검증 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-103] 검증한다: 소비자 앱 충돌 회귀 검증 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-104] 준비한다: 소비자 앱 충돌 회귀 검증 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

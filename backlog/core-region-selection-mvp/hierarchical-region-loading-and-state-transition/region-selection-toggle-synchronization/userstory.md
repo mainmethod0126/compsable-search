@@ -20,4 +20,8 @@
 - [ ] 지역 선택 체크 토글 동기화 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-021] 정의한다: 지역 선택 체크 토글 동기화 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-022] 구현한다: 지역 선택 체크 토글 동기화 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-023] 검증한다: 지역 선택 체크 토글 동기화 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-024] 준비한다: 지역 선택 체크 토글 동기화 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

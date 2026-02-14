@@ -20,4 +20,8 @@
 - [ ] 개별/전체 삭제 상호작용 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-029] 정의한다: 개별/전체 삭제 상호작용 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-030] 구현한다: 개별/전체 삭제 상호작용 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-031] 검증한다: 개별/전체 삭제 상호작용 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-032] 준비한다: 개별/전체 삭제 상호작용 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

@@ -20,4 +20,8 @@
 - [ ] 스타일 스코프 격리 전략 적용 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-097] 정의한다: 스타일 스코프 격리 전략 적용 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-098] 구현한다: 스타일 스코프 격리 전략 적용 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-099] 검증한다: 스타일 스코프 격리 전략 적용 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-100] 준비한다: 스타일 스코프 격리 전략 적용 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

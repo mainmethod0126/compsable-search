@@ -20,4 +20,8 @@
 - [ ] `onSelectedEupmyeondong` 호출 보장 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-053] 정의한다: `onSelectedEupmyeondong` 호출 보장 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-054] 구현한다: `onSelectedEupmyeondong` 호출 보장 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-055] 검증한다: `onSelectedEupmyeondong` 호출 보장 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-056] 준비한다: `onSelectedEupmyeondong` 호출 보장 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

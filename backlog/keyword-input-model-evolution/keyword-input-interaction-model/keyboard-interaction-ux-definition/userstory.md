@@ -1,4 +1,4 @@
-# [US-030] 키보드 상호작용 UX 정의
+﻿# [US-030] 키보드 상호작용 UX 정의
 
 ## 메타
 - ID: `US-030`
@@ -20,4 +20,8 @@
 - [ ] 접근성 기본 항목(`label`, 안내 텍스트, 키보드 사용 힌트)이 UX 명세와 구현에 반영된다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-117] 정의한다: 키보드 상호작용 UX 정의 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-118] 구현한다: 키보드 상호작용 UX 정의 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-119] 검증한다: 키보드 상호작용 UX 정의 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-120] 준비한다: 키보드 상호작용 UX 정의 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

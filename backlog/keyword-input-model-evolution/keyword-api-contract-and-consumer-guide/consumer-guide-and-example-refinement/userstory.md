@@ -20,4 +20,8 @@
 - [ ] 소비자 가이드와 예제 정비 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-137] 정의한다: 소비자 가이드와 예제 정비 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-138] 작성한다: 소비자 가이드와 예제 정비 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-139] 검증한다: 소비자 가이드와 예제 정비 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-140] 준비한다: 소비자 가이드와 예제 정비 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

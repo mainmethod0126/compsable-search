@@ -1,4 +1,4 @@
-# [US-028] 키워드 입력 상태 머신 설계
+﻿# [US-028] 키워드 입력 상태 머신 설계
 
 ## 메타
 - ID: `US-028`
@@ -20,4 +20,8 @@
 - [ ] 상태 전이 표와 구현 테스트 케이스가 1:1로 매핑된다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-109] 정의한다: 키워드 입력 상태 머신 설계 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-110] 구현한다: 키워드 입력 상태 머신 설계 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-111] 검증한다: 키워드 입력 상태 머신 설계 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-112] 준비한다: 키워드 입력 상태 머신 설계 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+

@@ -20,4 +20,8 @@
 - [ ] 릴리스 게이트 체크리스트 운영화 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
-- `TBD` (Task 분해 예정)
+- [T-093] 정의한다: 릴리스 게이트 체크리스트 운영화 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
+- [T-094] 구축한다: 릴리스 게이트 체크리스트 운영화 핵심 시나리오 (`./implement-main-scenario/task.md`)
+- [T-095] 검증한다: 릴리스 게이트 체크리스트 운영화 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
+- [T-096] 준비한다: 릴리스 게이트 체크리스트 운영화 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+
