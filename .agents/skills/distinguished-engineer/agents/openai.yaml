@@ -1,4 +1,0 @@
-interface:
-  display_name: "Distinguished Engineer"
-  short_description: "초고난도 구현·디버깅·성능 개선 의사결정 지원"
-  default_prompt: "$distinguished-engineer를 사용해 현재 코드 변경의 기술 난제를 분석하고 최적 해결안을 제시해줘."

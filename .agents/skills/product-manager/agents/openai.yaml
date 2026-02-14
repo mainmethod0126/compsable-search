@@ -1,0 +1,4 @@
+interface:
+  display_name: "프로덕트 매니저"
+  short_description: "사용자 대화 기반 PRD 작성 및 관리."
+  default_prompt: "사용자와 질의응답을 반복해 PRD를 작성, 개선, 리뷰, 번역, 동기화하고 필요 시 실행 백로그로 분해한다."

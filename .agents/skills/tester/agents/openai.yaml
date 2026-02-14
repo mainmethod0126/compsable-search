@@ -1,4 +1,0 @@
-interface:
-  display_name: "테스터"
-  short_description: "요구사항 기반 테스트 설계와 회귀 검증 실행 지원"
-  default_prompt: "$tester를 사용해 현재 변경사항의 테스트 계획을 만들고 회귀 검증을 실행해줘."
