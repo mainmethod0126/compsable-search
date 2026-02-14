@@ -1,0 +1,39 @@
+# [E-01] 코어 지역 선택 경험 MVP 완성
+
+## 메타
+- ID: `E-01`
+- 우선순위: `P0`
+- 상태: `TBD`
+- GitHub Issue: `TBD`
+
+## 문제와 사용자 가치
+- 해결 문제:
+  - 지역 조건 선택의 핵심 플로우(열기/탐색/선택/해제)가 부분 구현 상태라서 소비자 애플리케이션에서 안정적으로 재사용하기 어렵다.
+- 사용자 가치:
+  - 최종 사용자는 시/도 -> 시/군/구 -> 읍/면/동 탐색과 조건 선택/해제를 일관된 UX로 수행할 수 있다.
+  - 프론트엔드 개발자는 단일 `ComposableSearch` 조합으로 기본 검색 조건 UI를 빠르게 통합할 수 있다.
+- KPI/성공지표:
+  - AC-001~AC-010, AC-012~AC-015 수동/자동 검증 통과율 `100%`
+  - 동일 조건 중복 저장 버그 `0건`
+  - 데모 시나리오(QA-001~QA-006) 정상 동작률 `100%`
+
+## 범위
+- 포함:
+  - `ComposableSearch` 3영역 렌더링 및 selector 순서 보존
+  - region 트리거 토글과 상세 영역 콘텐츠 주입
+  - 3단 지역 컬럼 로딩/선택/체크 토글
+  - 선택 조건 칩 렌더링, 개별 삭제, 전체 삭제, 빈 상태 처리
+- 제외:
+  - 키워드 실입력/자동완성/토큰화
+  - 검색 결과 API 호출/submit 표준화
+  - 고급 접근성(화살표 탐색, roving tabindex)
+
+## 하위 Feature
+- [F-01] 검색 컨테이너와 Selector 오케스트레이션 (`./search-container-and-selector-orchestration/feature.md`)
+- [F-02] 계층형 지역 로딩과 선택 상태 전이 (`./hierarchical-region-loading-and-state-transition/feature.md`)
+- [F-03] 선택 조건 칩/삭제/중복 방지 처리 (`./selected-condition-chip-and-dedup-management/feature.md`)
+
+## 관련 정보
+- 기준 PRD: `PRD.md`, `PRD.en.md`
+- 비고/TBD:
+  - FR-011(전체 지역 vs 하위 지역 상호 배타) 정책의 세부 UX 확정 필요
