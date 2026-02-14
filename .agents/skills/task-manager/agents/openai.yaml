@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Manager"
-  short_description: "PRD를 실행 백로그로 분해하고 GitHub 이슈 계층까지 정리하는 스킬"
-  default_prompt: "$task-manager를 사용해 PRD를 Epic/Feature/Task로 분해하고, GitHub MCP가 가능하면 이슈 등록 매핑까지 작성해줘."
+  short_description: "PRD를 Epic/Feature/UserStory/Task 백로그와 계층 문서 구조로 전환하는 스킬"
+  default_prompt: "$task-manager를 사용해 PRD를 Epic/Feature/UserStory/Task로 분해하고 backlog 디렉토리 문서 계층을 생성해줘. GitHub MCP가 가능하면 계층 대칭 라벨(epic/feature/userstory/task)로 이슈 매핑도 포함해줘."
