@@ -4,18 +4,20 @@
 
 ```text
 backlog/
-  {Epic 제목}/
+  {epic-title-en}/
     epic.md
-    {Feature 제목}/
+    {feature-title-en}/
       feature.md
-      {UserStory 제목}/
+      {userstory-title-en}/
         userstory.md
-        {Task 제목}/
+        {task-title-en}/
           task.md
 ```
 
-- 디렉토리명은 제목을 사용한다.
-- 파일 시스템 금지 문자(`\ / : * ? " < > |`)는 `_`로 치환한다.
+- 디렉토리명은 반드시 영문 소문자 슬러그(`kebab-case`)를 사용한다.
+- 허용 문자 집합은 `[a-z0-9-]`만 사용한다.
+- 한국어 제목은 의미를 보존해 영어로 번역한 뒤 슬러그로 변환한다.
+- 파일 시스템 금지 문자(`\ / : * ? " < > |`)와 공백은 `-`로 치환한다.
 - 동일 계층에서 제목이 중복되면 디렉토리명 뒤에 `__{ID}`를 붙인다.
 
 ## 2. `epic.md` 템플릿

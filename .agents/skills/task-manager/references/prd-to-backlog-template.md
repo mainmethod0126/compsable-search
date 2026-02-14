@@ -14,29 +14,29 @@
 
 | Epic ID | Epic 이름 | 해결하려는 문제 | KPI/성공지표 | 우선순위 | 문서 경로 | GitHub Issue |
 |---|---|---|---|---|---|---|
-| E-01 |  |  |  | P0/P1/P2 | `backlog/{Epic 제목}/epic.md` | `#번호` 또는 `TBD` |
-| E-02 |  |  |  | P0/P1/P2 | `backlog/{Epic 제목}/epic.md` | `#번호` 또는 `TBD` |
+| E-01 |  |  |  | P0/P1/P2 | `backlog/{epic-title-en}/epic.md` | `#번호` 또는 `TBD` |
+| E-02 |  |  |  | P0/P1/P2 | `backlog/{epic-title-en}/epic.md` | `#번호` 또는 `TBD` |
 
 ## 3. Feature 목록
 
 | Feature ID | Epic ID | Feature 이름 | 사용자 가치 | 수용 기준(요약) | 우선순위 | 문서 경로 | GitHub Issue |
 |---|---|---|---|---|---|---|---|
-| F-01 | E-01 |  |  |  | P0/P1/P2 | `backlog/{Epic 제목}/{Feature 제목}/feature.md` | `#번호` 또는 `TBD` |
-| F-02 | E-01 |  |  |  | P0/P1/P2 | `backlog/{Epic 제목}/{Feature 제목}/feature.md` | `#번호` 또는 `TBD` |
+| F-01 | E-01 |  |  |  | P0/P1/P2 | `backlog/{epic-title-en}/{feature-title-en}/feature.md` | `#번호` 또는 `TBD` |
+| F-02 | E-01 |  |  |  | P0/P1/P2 | `backlog/{epic-title-en}/{feature-title-en}/feature.md` | `#번호` 또는 `TBD` |
 
 ## 4. UserStory 목록
 
 | UserStory ID | Feature ID | UserStory 이름 | 사용자 시나리오 | 수용 기준(요약) | 우선순위 | 문서 경로 | GitHub Issue |
 |---|---|---|---|---|---|---|---|
-| US-001 | F-01 |  | As a ... I want ... so that ... |  | P0/P1/P2 | `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/userstory.md` | `#번호` 또는 `TBD` |
-| US-002 | F-01 |  | As a ... I want ... so that ... |  | P0/P1/P2 | `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/userstory.md` | `#번호` 또는 `TBD` |
+| US-001 | F-01 |  | As a ... I want ... so that ... |  | P0/P1/P2 | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md` | `#번호` 또는 `TBD` |
+| US-002 | F-01 |  | As a ... I want ... so that ... |  | P0/P1/P2 | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md` | `#번호` 또는 `TBD` |
 
 ## 5. Task 백로그
 
 | Task ID | UserStory ID | 제목(동사 시작) | 유형 | 담당 역할 | 우선순위 | 난이도 | 선행조건 | 검증 방법 | 완료 정의(DoD) | 문서 경로 | GitHub Issue |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| T-001 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/{Task 제목}/task.md` | `#번호` 또는 `TBD` |
-| T-002 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/{Task 제목}/task.md` | `#번호` 또는 `TBD` |
+| T-001 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
+| T-002 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
 
 ## 6. 의존성 그래프(텍스트)
 
@@ -79,17 +79,19 @@ US-002 -> T-006 -> T-010
 
 ```text
 backlog/
-  {Epic 제목}/
+  {epic-title-en}/
     epic.md
-    {Feature 제목}/
+    {feature-title-en}/
       feature.md
-      {UserStory 제목}/
+      {userstory-title-en}/
         userstory.md
-        {Task 제목}/
+        {task-title-en}/
           task.md
 ```
 
-- 디렉토리 이름은 제목을 사용한다.
-- 파일 시스템 금지 문자(`\ / : * ? " < > |`)는 `_`로 치환한다.
+- 디렉토리 이름은 반드시 영문 소문자 슬러그(`kebab-case`)를 사용한다.
+- 허용 문자 집합은 `[a-z0-9-]`만 사용한다.
+- 한국어 제목은 의미를 보존해 영어로 번역한 뒤 슬러그로 변환한다.
+- 파일 시스템 금지 문자(`\ / : * ? " < > |`)와 공백은 `-`로 치환한다.
 - 동일 계층에서 중복 제목이 있으면 디렉토리명 뒤에 `__{ID}`를 붙인다.
 - 각 문서는 상위/하위 문서의 상대 경로를 포함한다.

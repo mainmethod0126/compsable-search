@@ -49,11 +49,14 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
    - 완료 정의(Definition of Done)
 9. `references/backlog-directory-template.md` 규칙으로 디렉토리 산출물을 생성/갱신한다.
    - 루트 디렉토리: `backlog/`
-   - Epic 디렉토리: `backlog/{Epic 제목}/epic.md`
-   - Feature 디렉토리: `backlog/{Epic 제목}/{Feature 제목}/feature.md`
-   - UserStory 디렉토리: `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/userstory.md`
-   - Task 디렉토리: `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/{Task 제목}/task.md`
-   - 경로에 사용할 수 없는 문자(`\ / : * ? " < > |`)는 공백 포함 그대로 추정하지 말고 `_`로 치환한다.
+   - Epic 디렉토리: `backlog/{epic-title-en}/epic.md`
+   - Feature 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/feature.md`
+   - UserStory 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md`
+   - Task 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md`
+   - 디렉토리명은 반드시 영문 소문자 슬러그(`kebab-case`)를 사용한다.
+   - 허용 문자 집합은 `[a-z0-9-]`만 사용한다.
+   - 한국어 제목은 의미를 보존해 영어로 번역한 뒤 슬러그로 변환한다.
+   - 경로에 사용할 수 없는 문자(`\ / : * ? " < > |`) 및 공백은 `-`로 치환한다.
    - 동일 계층에서 제목 충돌 시 디렉토리명 뒤에 `__{ID}`를 붙여 고유성을 보장한다.
 10. GitHub MCP가 가능하면 `references/github-mcp-publishing.md` 규칙으로 게시 계획을 수립한다.
 11. Epic -> Feature -> UserStory -> Task 순서로 이슈를 등록한다.
@@ -68,15 +71,15 @@ description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `p
 ## 출력 규격
 
 - 기본 산출물
-  - `backlog/` 디렉토리 계층(한국어)
+  - `backlog/` 디렉토리 계층(디렉토리명은 영어, 문서 본문은 한국어)
 - 선택 산출물
   - `backlog/index.md`(요약 문서, 요청 시에만 생성)
 - 기존 산출물이 있으면 변경된 Epic/Feature/UserStory/Task 중심으로 갱신한다.
 - 디렉토리 산출물 최소 조건
-  - Epic마다 `backlog/{Epic 제목}/epic.md`가 존재한다.
-  - Feature마다 `backlog/{Epic 제목}/{Feature 제목}/feature.md`가 존재한다.
-  - UserStory마다 `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/userstory.md`가 존재한다.
-  - Task마다 `backlog/{Epic 제목}/{Feature 제목}/{UserStory 제목}/{Task 제목}/task.md`가 존재한다.
+  - Epic마다 `backlog/{epic-title-en}/epic.md`가 존재한다.
+  - Feature마다 `backlog/{epic-title-en}/{feature-title-en}/feature.md`가 존재한다.
+  - UserStory마다 `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md`가 존재한다.
+  - Task마다 `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md`가 존재한다.
 - `backlog/index.md`를 생성하는 경우 섹션 순서를 유지한다.
   1. 문서 메타(버전, 기준 PRD, 작성일)
   2. Epic 개요
