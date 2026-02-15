@@ -1,4 +1,4 @@
 interface:
   display_name: "Iteration Master"
-  short_description: "PRD¿Í ¹é·Î±×¸¦ ¹ÙÅÁÀ¸·Î ÀÌÅÍ·¹ÀÌ¼Ç °èÈ¹°ú ½ÇÇà Ã¼Å©¸®½ºÆ®¸¦ ¸¸µç´Ù"
-  default_prompt: "$iteration-master¸¦ »ç¿ëÇØ PRD, Epic, Feature, UserStory, Task¸¦ ºĞ¼®ÇÏ°í ÀÌÅÍ·¹ÀÌ¼Ç °èÈ¹°ú ¿Ï·á Ã¼Å©¸®½ºÆ®¸¦ »ı¼ºÇØÁà."
+  short_description: "PRDì™€ ë°±ë¡œê·¸ë¥¼ ë°”íƒ•ìœ¼ë¡œ ì´í„°ë ˆì´ì…˜ ê³„íšê³¼ ì‹¤í–‰ ì²´í¬ë¦¬ìŠ¤íŠ¸ë¥¼ ë§Œë“ ë‹¤"
+  default_prompt: "$iteration-masterë¥¼ ì‚¬ìš©í•´ PRD, Epic, Feature, UserStory, Taskë¥¼ ë¶„ì„í•˜ê³  ì´í„°ë ˆì´ì…˜ ê³„íšê³¼ ì™„ë£Œ ì²´í¬ë¦¬ìŠ¤íŠ¸ë¥¼ ìƒì„±í•´ì¤˜."
