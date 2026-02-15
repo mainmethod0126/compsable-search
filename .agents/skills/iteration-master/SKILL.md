@@ -20,8 +20,8 @@ description: PRD와 백로그(Epic/Feature/UserStory/Task)를 분석해 이터�
 - `backlog/**/userstory.md`
 - `backlog/**/task.md`
 2. 기존 이터레이션 문서가 있으면 함께 수집한다.
-- `iterations/**/iteration-plan.md`
-- `iterations/**/checklist.md`
+- `.agents/iterations/**/iteration-plan.md`
+- `.agents/iterations/**/checklist.md`
 3. 누락 문서는 추측하지 말고 `TBD`로 기록한다.
 
 ## 워크플로
@@ -43,7 +43,7 @@ description: PRD와 백로그(Epic/Feature/UserStory/Task)를 분석해 이터�
 ### 3) 계획서 생성/갱신
 
 - 계획서는 `references/iteration-plan-template.md` 형식을 사용한다.
-- 기본 경로는 `iterations/{iteration-name}/iteration-plan.md`를 사용한다.
+- 기본 경로는 `.agents/iterations/{iteration-name}/iteration-plan.md`를 사용한다.
 - `{iteration-name}`은 소문자 `kebab-case`를 사용한다.
 - 계획서에 아래 항목을 포함한다.
 - 이터레이션 목표와 기간
@@ -55,7 +55,7 @@ description: PRD와 백로그(Epic/Feature/UserStory/Task)를 분석해 이터�
 ### 4) 체크리스트 생성/갱신
 
 - 체크리스트는 `references/iteration-checklist-template.md` 형식을 사용한다.
-- 기본 경로는 `iterations/{iteration-name}/checklist.md`를 사용한다.
+- 기본 경로는 `.agents/iterations/{iteration-name}/checklist.md`를 사용한다.
 - 각 체크 항목은 실행 가능한 단위로 작성한다.
 - 원본 Task ID와 문서 경로를 함께 기입한다.
 - 완료 처리 규칙:
@@ -74,7 +74,7 @@ description: PRD와 백로그(Epic/Feature/UserStory/Task)를 분석해 이터�
 ## 출력 규격
 
 1. 이터레이션 계획서
-- 파일: `iterations/{iteration-name}/iteration-plan.md`
+- 파일: `.agents/iterations/{iteration-name}/iteration-plan.md`
 - 필수 섹션:
 - 메타(이름, 기간, 작성일, 기준 문서)
 - 목표
@@ -85,7 +85,7 @@ description: PRD와 백로그(Epic/Feature/UserStory/Task)를 분석해 이터�
 - 완료 기준(Exit Criteria)
 
 2. 이터레이션 체크리스트
-- 파일: `iterations/{iteration-name}/checklist.md`
+- 파일: `.agents/iterations/{iteration-name}/checklist.md`
 - 필수 섹션:
 - 진행률
 - 착수 준비
