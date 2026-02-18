@@ -1,8 +1,10 @@
+import { EMPTY_STATE_MESSAGES } from './emptyStateMessages'
 import type { Region } from './types'
 
 interface CheckableRegionColumnProps {
   title: string
   regions: Region[]
+  emptyMessage?: string
   selectedConditionIdSet: Set<string>
   onToggleRegion: (region: Region) => void
 }
@@ -10,6 +12,7 @@ interface CheckableRegionColumnProps {
 export function CheckableRegionColumn({
   title,
   regions,
+  emptyMessage = EMPTY_STATE_MESSAGES.NO_ITEMS,
   selectedConditionIdSet,
   onToggleRegion,
 }: CheckableRegionColumnProps) {
@@ -17,7 +20,7 @@ export function CheckableRegionColumn({
     <section className="cs-region-column">
       <h3 className="cs-region-column-title">{title}</h3>
       {regions.length === 0 ? (
-        <p className="cs-empty-message">No items to display.</p>
+        <p className="cs-empty-message">{emptyMessage}</p>
       ) : (
         <div className="cs-checkable-list">
           {regions.map((region) => {
@@ -26,7 +29,9 @@ export function CheckableRegionColumn({
             return (
               <label
                 key={region.code}
-                className={`cs-checkable-item ${isSelected ? 'is-selected' : ''}`}
+                className={`cs-checkable-item cs-region-typography ${
+                  isSelected ? 'is-selected' : ''
+                }`}
               >
                 <input
                   checked={isSelected}
@@ -43,4 +48,3 @@ export function CheckableRegionColumn({
     </section>
   )
 }
-

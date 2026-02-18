@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CheckableRegionColumn } from './CheckableRegionColumn'
+import {
+  EMPTY_STATE_MESSAGES,
+  resolveChildColumnEmptyMessage,
+} from './emptyStateMessages'
+import { resolveDescendantSelectedAncestorCodeSet } from './selectionPolicy'
 import { SelectableRegionColumn } from './SelectableRegionColumn'
 import type {
   Region,
@@ -60,11 +65,11 @@ export function RegionDetailPanel({
   const handleSelectedSido = useCallback(
     (nextSido: Region) => {
       setSelectedSido(nextSido)
+      setSelectedSigungu(null)
+      setEupmyeondongs([])
 
-      const wholeSido = createWholeRegion(nextSido)
       const nextSigungus = selector.findAllSigungus(nextSido.code)
-
-      setSigungus([wholeSido, ...nextSigungus])
+      setSigungus(nextSigungus)
     },
     [selector],
   )
@@ -84,6 +89,17 @@ export function RegionDetailPanel({
   const selectedConditionIdSet = useMemo(
     () => new Set(selectedConditions.map((condition) => condition.id)),
     [selectedConditions],
+  )
+  const descendantSelectedAncestorCodeSet = useMemo(
+    () => resolveDescendantSelectedAncestorCodeSet(selectedConditions),
+    [selectedConditions],
+  )
+  const isSelectedSidoWhole = selectedSidoWholeRegion
+    ? selectedConditionIdSet.has(selectedSidoWholeRegion.code)
+    : false
+  const sigunguEmptyMessage = resolveChildColumnEmptyMessage(selectedSido !== null)
+  const eupmyeondongEmptyMessage = resolveChildColumnEmptyMessage(
+    selectedSigungu !== null,
   )
 
   const handleToggleEupmyeondong = (eupmyeondong: Region) => {
@@ -106,22 +122,65 @@ export function RegionDetailPanel({
     onToggleRegionCondition(nextCondition, eupmyeondong, selector.options)
   }
 
+  const handleToggleSidoWhole = useCallback(
+    (wholeSido: Region) => {
+      if (!selectedSido) {
+        return
+      }
+
+      const isTogglingOnWholeSido = !selectedConditionIdSet.has(wholeSido.code)
+      if (isTogglingOnWholeSido) {
+        setSelectedSigungu(null)
+        setEupmyeondongs([])
+      }
+
+      const nextCondition: SelectedRegionCondition = {
+        id: wholeSido.code,
+        displayName: formatRegionConditionLabel(selectedSido, wholeSido, wholeSido),
+        sido: selectedSido,
+        sigungu: wholeSido,
+        eupmyeondong: wholeSido,
+      }
+
+      onToggleRegionCondition(nextCondition, wholeSido, selector.options)
+    },
+    [onToggleRegionCondition, selectedConditionIdSet, selectedSido, selector.options],
+  )
+
   return (
     <div className="cs-region-detail-panel">
       <div className="cs-region-columns">
         <SelectableRegionColumn
           regions={sidos}
+          descendantSelectedRegionCodeSet={
+            descendantSelectedAncestorCodeSet.sidoCodeSet
+          }
+          emptyMessage={EMPTY_STATE_MESSAGES.NO_ITEMS}
           onSelectedRegion={handleSelectedSido}
           title="시/도"
         />
         <SelectableRegionColumn
-          parentRegion={selectedSidoWholeRegion}
+          key={`sigungu-${selectedSido?.code ?? 'none'}-${isSelectedSidoWhole ? 'whole' : 'detail'}`}
           regions={sigungus}
+          descendantSelectedRegionCodeSet={
+            descendantSelectedAncestorCodeSet.sigunguCodeSet
+          }
+          emptyMessage={sigunguEmptyMessage}
           onSelectedRegion={handleSelectedSigungu}
           title="시/군/구"
+          wholeRegionToggle={
+            selectedSidoWholeRegion
+              ? {
+                  region: selectedSidoWholeRegion,
+                  checked: isSelectedSidoWhole,
+                  onToggle: handleToggleSidoWhole,
+                }
+              : undefined
+          }
         />
         <CheckableRegionColumn
           regions={eupmyeondongs}
+          emptyMessage={eupmyeondongEmptyMessage}
           selectedConditionIdSet={selectedConditionIdSet}
           onToggleRegion={handleToggleEupmyeondong}
           title="읍/면/동"

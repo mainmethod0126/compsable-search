@@ -3,15 +3,16 @@
 ## 메타
 - 이터레이션명: iteration-02-p0-flow-and-regression
 - 기간: 2026-03-02 ~ 2026-03-13
-- 마지막 갱신: 2026-02-15
+- 마지막 갱신: 2026-02-18
 
 ## 진행률
-- 완료율: 0/45 (0%)
+- 완료율: 1/46 (2%)
 
 ## 1. 착수 준비
 - [ ] 계획서와 범위가 확정되었다.
 - [ ] 선행 의존성/차단 이슈를 확인했다.
 - [ ] 담당자와 우선순위를 합의했다.
+- [x] FR-011/FR-020 정책 변경(시/군/구 `시/도 전체` 직접 체크, 읍/면/동 중복 제거) 문서 동기화를 완료했다. (완료: 2026-02-18, 근거: `PRD.md`, `PRD.en.md`, `backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/**`)
 
 ## 2. 구현
 - [ ] [T-013] 정의한다: 1단계 지역 로딩과 전이 처리 범위와 수용 기준 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-loading-and-transition/define-scope-and-acceptance/task.md)
