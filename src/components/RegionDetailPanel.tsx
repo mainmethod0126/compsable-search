@@ -4,23 +4,18 @@ import {
   EMPTY_STATE_MESSAGES,
   resolveChildColumnEmptyMessage,
 } from './emptyStateMessages'
+import type {
+  InternalRegionSelector,
+  RegionConditionToggleHandler,
+} from './internalTypes'
 import { resolveDescendantSelectedAncestorCodeSet } from './selectionPolicy'
 import { SelectableRegionColumn } from './SelectableRegionColumn'
-import type {
-  Region,
-  RegionSelectOptions,
-  RegionSelectProps,
-  SelectedRegionCondition,
-} from './types'
+import type { Region, SelectedRegionCondition } from './types'
 
 interface RegionDetailPanelProps {
-  selector: RegionSelectProps
+  selector: InternalRegionSelector
   selectedConditions: SelectedRegionCondition[]
-  onToggleRegionCondition: (
-    nextCondition: SelectedRegionCondition,
-    selectedRegion: Region,
-    options?: RegionSelectOptions,
-  ) => void
+  onToggleRegionCondition: RegionConditionToggleHandler
 }
 
 function createWholeRegion(region: Region): Region {
