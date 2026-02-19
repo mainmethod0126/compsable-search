@@ -1,9 +1,9 @@
 ---
-name: task-manager
+name: backlog-manager
 description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `prd.md`/`prd.en.md` 또는 동등한 요구사항 문서를 입력으로 받아 Epic, Feature, UserStory, Task로 계층 분해하고 우선순위, 의존성, 수용 기준, 완료 정의, 리스크 완화 작업까지 명시한다. 결과물을 Epic/Feature/UserStory/Task 디렉토리+`.md` 계층으로 생성해야 할 때 사용한다. GitHub MCP를 사용할 수 있으면 Epic/Feature/UserStory/Task를 GitHub 이슈 계층으로 등록하고 링크/라벨/추적성을 유지해야 할 때 사용한다.
 ---
 
-# Task Manager 스킬
+# Backlog Manager 스킬
 
 ## 목적
 
