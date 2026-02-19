@@ -1,7 +1,7 @@
-import type { SelectedRegionCondition } from './types'
+import type { SearchSelectionItem } from './types'
 
 interface SelectedConditionBasketProps {
-  selectedConditions: SelectedRegionCondition[]
+  selectedConditions: SearchSelectionItem[]
   onRemoveCondition: (conditionId: string) => void
   onClearAllConditions: () => void
 }

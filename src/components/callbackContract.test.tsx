@@ -89,6 +89,48 @@ describe('callback contract', () => {
     expect(onChange).toHaveBeenLastCalledWith([])
   })
 
+  it('region + keyword 조합 상태를 onChange payload에 함께 전달한다', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange,
+            },
+          }),
+          {
+            type: 'keyword',
+            options: {
+              placeHolder: '키워드 선택',
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    await user.type(screen.getByRole('textbox', { name: '키워드 입력' }), 'React{Enter}')
+
+    expect(onChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({
+        id: '1168010100',
+        displayName: '서울특별시>강남구>역삼동',
+      }),
+      expect.objectContaining({
+        id: 'keyword:react',
+        displayName: '키워드: react',
+        keyword: 'react',
+      }),
+    ])
+  })
+
   it('onSelectedEupmyeondong은 선택 확정 시점에만 호출되고 해제 시에는 재호출되지 않는다', async () => {
     const user = userEvent.setup()
     const onSelectedEupmyeondong = vi.fn()

@@ -189,6 +189,115 @@ describe('ComposableSearch', () => {
     expect(onKeywordClick).toHaveBeenCalledTimes(1)
   })
 
+  it('keyword 트리거 클릭 시 키워드 입력 패널이 열리고 접근성 라벨/힌트가 노출된다', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector(),
+          {
+            ...keywordSelector,
+            options: {
+              ...keywordSelector.options,
+              label: '검색 키워드 입력',
+              guideText: 'Enter로 키워드 확정, Backspace로 마지막 키워드 삭제',
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+
+    expect(
+      screen.getByRole('textbox', { name: '검색 키워드 입력' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Enter로 키워드 확정, Backspace로 마지막 키워드 삭제'),
+    ).toBeInTheDocument()
+  })
+
+  it('키워드는 Enter로 정규화 토큰을 추가하고 중복 입력은 에러로 차단된다', async () => {
+    const user = userEvent.setup()
+
+    render(<ComposableSearch selectorsProps={[createRegionSelector(), keywordSelector]} />)
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    const input = screen.getByRole('textbox', { name: '키워드 입력' })
+
+    await user.type(input, '  React   Query  ')
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('키워드: react query')).toBeInTheDocument()
+
+    await user.type(input, 'react query')
+    await user.keyboard('{Enter}')
+    expect(screen.getAllByText('키워드: react query')).toHaveLength(1)
+    expect(screen.getByRole('alert')).toHaveTextContent('이미 추가된 키워드입니다.')
+  })
+
+  it('입력창이 비어 있으면 Backspace로 마지막 키워드가 삭제된다', async () => {
+    const user = userEvent.setup()
+
+    render(<ComposableSearch selectorsProps={[createRegionSelector(), keywordSelector]} />)
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    const input = screen.getByRole('textbox', { name: '키워드 입력' })
+
+    await user.type(input, 'alpha{Enter}')
+    await user.type(input, 'beta{Enter}')
+    expect(screen.getByText('키워드: alpha')).toBeInTheDocument()
+    expect(screen.getByText('키워드: beta')).toBeInTheDocument()
+
+    await user.click(input)
+    await user.keyboard('{Backspace}')
+
+    expect(screen.getByText('키워드: alpha')).toBeInTheDocument()
+    expect(screen.queryByText('키워드: beta')).not.toBeInTheDocument()
+  })
+
+  it('키워드 최대 토큰 수/길이 제한 정책을 적용한다', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector(),
+          {
+            ...keywordSelector,
+            options: {
+              ...keywordSelector.options,
+              maxTokens: 2,
+              maxTokenLength: 5,
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    const input = screen.getByRole('textbox', { name: '키워드 입력' })
+
+    await user.type(input, 'alphabet')
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '키워드는 최대 5자까지 입력할 수 있습니다.',
+    )
+    expect(screen.queryByText('키워드: alphabet')).not.toBeInTheDocument()
+
+    await user.clear(input)
+    await user.type(input, 'alpha{Enter}')
+    await user.type(input, 'beta{Enter}')
+    await user.type(input, 'gamma{Enter}')
+
+    expect(screen.getByText('키워드: alpha')).toBeInTheDocument()
+    expect(screen.getByText('키워드: beta')).toBeInTheDocument()
+    expect(screen.queryByText('키워드: gamma')).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '키워드는 최대 2개까지 추가할 수 있습니다.',
+    )
+  })
+
   it('읍/면/동 체크 토글은 조건 칩을 추가/삭제하고 중복을 남기지 않는다', async () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)

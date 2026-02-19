@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ComposableSearch } from './components'
-import type { Region, RegionSelectionItem } from './components'
+import type { Region, SearchSelectionItem } from './components'
 import {
   findAllEupmyeondongs,
   findAllSidos,
@@ -10,7 +10,7 @@ import './App.css'
 
 const MAX_EVENT_LOG_LENGTH = 8
 
-function formatOnChangeMessage(selectedItems: RegionSelectionItem[]): string {
+function formatOnChangeMessage(selectedItems: SearchSelectionItem[]): string {
   const selectedCodes = selectedItems.map((item) => item.id).join(', ')
   const suffix = selectedCodes ? ` [${selectedCodes}]` : ''
   return `region.onChange(count=${selectedItems.length})${suffix}`
@@ -36,7 +36,7 @@ function App() {
       <header>
         <h1 className="demo-title">Composable Search Demo</h1>
         <p className="demo-description">
-          iteration-04 기준 콜백 파이프라인/소비자 통합 샘플 반영 데모
+          iteration-05 기준 키워드 입력 모델/조합 상태 샘플 반영 데모
         </p>
       </header>
       <div className="demo-panel">
