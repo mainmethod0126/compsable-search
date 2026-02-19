@@ -6,22 +6,22 @@
 - 마지막 갱신: 2026-02-19
 
 ## 진행률
-- 완료율: 0/17 (0%)
+- 완료율: 17/17 (100%)
 
 ## 1. 착수 준비
-- [ ] 계획서와 범위가 확정되었다.
-- [ ] 선행 의존성/차단 이슈를 확인했다.
-- [ ] 담당자와 우선순위를 합의했다.
+- [x] 계획서와 범위가 확정되었다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] 선행 의존성/차단 이슈를 확인했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] 담당자와 우선순위를 합의했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
 
 ## 2. 구현
-- [ ] [T-145] 정의한다: 시/도 전체-하위 시/군/구 상호 배타 범위와 수용 기준 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/define-scope-and-acceptance/task.md)
-- [ ] [T-146] 구현한다: 시/도 전체-하위 시/군/구 상호 배타 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/implement-main-scenario/task.md)
-- [ ] [T-147] 검증한다: 시/도 전체-하위 시/군/구 상호 배타 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/validate-regression-and-failure-flow/task.md)
-- [ ] [T-148] 준비한다: 시/도 전체-하위 시/군/구 상호 배타 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/prepare-observability-and-rollout/task.md)
-- [ ] [T-149] 정의한다: 지역 항목 타이포그래피 일관성 범위와 수용 기준 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/define-scope-and-acceptance/task.md)
-- [ ] [T-150] 구현한다: 지역 항목 타이포그래피 일관성 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/implement-main-scenario/task.md)
-- [ ] [T-151] 검증한다: 지역 항목 타이포그래피 일관성 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/validate-regression-and-failure-flow/task.md)
-- [ ] [T-152] 준비한다: 지역 항목 타이포그래피 일관성 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/prepare-observability-and-rollout/task.md)
+- [x] [T-145] 정의한다: 시/도 전체-하위 시/군/구 상호 배타 범위와 수용 기준 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-146] 구현한다: 시/도 전체-하위 시/군/구 상호 배타 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-147] 검증한다: 시/도 전체-하위 시/군/구 상호 배타 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-148] 준비한다: 시/도 전체-하위 시/군/구 상호 배타 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/province-whole-and-district-mutual-exclusion/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/release-runbook.md)
+- [x] [T-149] 정의한다: 지역 항목 타이포그래피 일관성 범위와 수용 기준 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-150] 구현한다: 지역 항목 타이포그래피 일관성 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-151] 검증한다: 지역 항목 타이포그래피 일관성 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] [T-152] 준비한다: 지역 항목 타이포그래피 일관성 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-item-typography-consistency/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/release-runbook.md)
 
 ## 2.1 일자별/담당역할별 착수 큐
 | 일자 | 담당 역할 | 당일 우선 착수 Task | 비고 |
@@ -43,14 +43,14 @@
 | 릴리스 엔지니어 | T-148, T-152 |
 
 ## 3. 검증
-- [ ] 기능 검증 시나리오를 실행했다.
-- [ ] 회귀 테스트를 수행했다.
-- [ ] 수용 기준(AC/DoD) 충족을 확인했다.
+- [x] 기능 검증 시나리오를 실행했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] 회귀 테스트를 수행했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
+- [x] 수용 기준(AC/DoD) 충족을 확인했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/execution-log.md)
 
 ## 4. 배포/운영
-- [ ] 배포 체크리스트를 점검했다.
-- [ ] 모니터링/알람 기준을 확인했다.
-- [ ] 롤백 절차를 점검했다.
+- [x] 배포 체크리스트를 점검했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/release-runbook.md)
+- [x] 모니터링/알람 기준을 확인했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/release-runbook.md)
+- [x] 롤백 절차를 점검했다. (완료: 2026-02-19, 근거: .agents/iterations/iteration-06-p0-region-mutual-exclusion-and-typography/release-runbook.md)
 
 ## 5. 완료 로그
 - 형식:
