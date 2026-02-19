@@ -1,0 +1,4 @@
+interface:
+  display_name: "Planner"
+  short_description: "이슈를 분석해 해결 전략과 plan.md 실행안을 생성하는 스킬"
+  default_prompt: "$planner를 사용해 주어진 이슈를 검토하고 .agents/issues/<이슈 제목 디렉토리>/plan.md에 실행 계획을 작성해줘."
