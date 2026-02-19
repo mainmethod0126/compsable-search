@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type {
   ComposableSearchProps,
   Region,
-  RegionSelectionItem,
+  SearchSelectionItem,
 } from './types'
 
 const SIDOS: Region[] = [{ displayName: '서울특별시', name: '서울특별시', code: '11' }]
@@ -26,7 +26,7 @@ function createGuideExampleProps(): ComposableSearchProps {
         options: {
           placeHolder: '지역 선택',
           onClick: () => undefined,
-          onChange: (selectedItems: RegionSelectionItem[]) => selectedItems,
+          onChange: (selectedItems: SearchSelectionItem[]) => selectedItems,
           onSelectedEupmyeondong: (selected: Region) => selected,
         },
       },
@@ -34,6 +34,15 @@ function createGuideExampleProps(): ComposableSearchProps {
         type: 'keyword',
         options: {
           placeHolder: '키워드 선택',
+          label: '키워드 입력',
+          inputPlaceholder: '키워드를 입력하세요',
+          guideText: 'Enter로 키워드 확정',
+          maxTokens: 5,
+          maxTokenLength: 20,
+          normalization: {
+            casePolicy: 'lower',
+          },
+          onInvalidToken: () => undefined,
           onClick: () => undefined,
         },
       },
@@ -54,5 +63,16 @@ describe('API usage guide contract', () => {
     )
     expect(regionSelector?.options?.onChange).toBeDefined()
     expect(regionSelector?.options?.onSelectedEupmyeondong).toBeDefined()
+  })
+
+  it('가이드 예제의 keyword 입력 옵션 계약은 최신 입력 모델과 일치한다', () => {
+    const props = createGuideExampleProps()
+    const keywordSelector = props.selectorsProps?.find(
+      (selector) => selector.type === 'keyword',
+    )
+
+    expect(keywordSelector?.options?.label).toBe('키워드 입력')
+    expect(keywordSelector?.options?.maxTokens).toBe(5)
+    expect(keywordSelector?.options?.onInvalidToken).toBeDefined()
   })
 })

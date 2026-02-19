@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type {
   ComposableSearchProps,
   ComposableSelectItem,
+  KeywordSelectOptions,
   RegionDataSource,
   RegionSelectOptions,
   RegionSelectProps,
+  SearchSelectionItem,
   RegionSelectionItem,
+  SelectedKeywordCondition,
 } from './types'
 
 const regionDataSource: RegionDataSource = {
@@ -26,11 +29,11 @@ describe('public type contract', () => {
     expect(selector.findAllSidos()).toHaveLength(1)
   })
 
-  it('RegionSelectOptions.onChange는 RegionSelectionItem 배열 계약을 유지한다', () => {
+  it('RegionSelectOptions.onChange는 region + keyword 조합 payload 계약을 수용한다', () => {
     const onChange: NonNullable<RegionSelectOptions['onChange']> = (
-      selectedItems: RegionSelectionItem[],
+      selectedItems: SearchSelectionItem[],
     ) => {
-      expect(selectedItems[0]?.id).toBeDefined()
+      expect(selectedItems).toHaveLength(2)
     }
 
     onChange([
@@ -40,6 +43,12 @@ describe('public type contract', () => {
         sido: { displayName: '서울특별시', name: '서울특별시', code: '11' },
         sigungu: { displayName: '강남구', name: '강남구', code: '11680' },
         eupmyeondong: { displayName: '역삼동', name: '역삼동', code: '1168010100' },
+      },
+      {
+        id: 'keyword:react',
+        displayName: '키워드: react',
+        keyword: 'react',
+        normalizedKeyword: 'react',
       },
     ])
   })
@@ -53,14 +62,48 @@ describe('public type contract', () => {
     expect(legacyItem.id).toBe('legacy')
   })
 
-  it('레거시 onChange 시그니처(ComposableSelectItem[])도 호환된다', () => {
+  it('레거시 onChange 시그니처(RegionSelectionItem[])도 호환된다', () => {
     const legacyOnChange: NonNullable<RegionSelectOptions['onChange']> = (
-      selectedItems: ComposableSelectItem[],
+      selectedItems: RegionSelectionItem[],
     ) => {
       expect(selectedItems).toBeDefined()
     }
 
     legacyOnChange([])
+  })
+
+  it('KeywordSelectOptions는 입력 모델 설정과 유효성 콜백 계약을 제공한다', () => {
+    const onInvalidToken: NonNullable<KeywordSelectOptions['onInvalidToken']> = (
+      error,
+      context,
+    ) => {
+      expect(error).toBeDefined()
+      expect(context.maxTokens).toBeGreaterThan(0)
+    }
+    const options: KeywordSelectOptions = {
+      placeHolder: '키워드 선택',
+      label: '키워드 입력',
+      guideText: 'Enter로 확정',
+      maxTokens: 5,
+      maxTokenLength: 20,
+      normalization: {
+        casePolicy: 'lower',
+      },
+      onInvalidToken,
+    }
+
+    expect(options.maxTokens).toBe(5)
+  })
+
+  it('SelectedKeywordCondition은 SelectedCondition 기반 식별 계약을 유지한다', () => {
+    const condition: SelectedKeywordCondition = {
+      id: 'keyword:vite',
+      displayName: '키워드: vite',
+      keyword: 'vite',
+      normalizedKeyword: 'vite',
+    }
+
+    expect(condition.id).toBe('keyword:vite')
   })
 
   it('ComposableSearchProps는 region/keyword selector 조합을 허용한다', () => {

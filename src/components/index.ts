@@ -8,12 +8,18 @@ export type {
   ComposableSearchProps,
   ComposableSelectItem,
   ComposableSelectProps,
+  KeywordInputErrorCode,
+  KeywordInvalidTokenContext,
+  KeywordNormalizationCasePolicy,
+  KeywordNormalizationPolicy,
   KeywordSelectProps,
   Region,
   RegionDataSource,
   RegionSelectProps,
   RegionSelectionItem,
+  SearchSelectionItem,
   SelectedCondition,
+  SelectedKeywordCondition,
   SelectedRegionCondition,
 } from './publicTypes'
 export type { SelectorOfType, SelectorType } from './selectorTypeUtils'

@@ -1,14 +1,27 @@
-import { useMemo, useState } from 'react'
+import type { KeyboardEventHandler } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   dispatchKeywordOnClick,
+  dispatchKeywordOnInvalidToken,
   dispatchRegionOnChange,
   dispatchRegionOnClick,
   dispatchRegionOnSelectedEupmyeondong,
 } from './callbackPipeline'
 import type {
+  InternalKeywordSelectOptions,
   InternalRegionSelectOptions,
   InternalRegionSelector,
 } from './internalTypes'
+import { KeywordDetailPanel } from './KeywordDetailPanel'
+import {
+  createInitialKeywordInputState,
+  hasSameKeywordTokenSequence,
+  normalizeKeywordInput,
+  resolveKeywordInputErrorMessage,
+  resolveKeywordPolicy,
+  transitionKeywordInputState,
+  type KeywordInputEvent,
+} from './keywordInputModel'
 import { RegionDetailPanel } from './RegionDetailPanel'
 import { resolveSelectorByType } from './selectorTypeUtils'
 import { SelectedConditionBasket } from './SelectedConditionBasket'
@@ -16,7 +29,9 @@ import { toggleRegionCondition } from './selectionPolicy'
 import type {
   ComposableSearchProps,
   ComposableSelectProps,
+  KeywordSelectProps,
   Region,
+  SearchSelectionItem,
   SelectedRegionCondition,
 } from './types'
 import './ComposableSearch.css'
@@ -24,6 +39,12 @@ import './ComposableSearch.css'
 const DETAILED_CONDITION_PLACEHOLDER = '상세 조건을 선택해 주세요.'
 const REGION_PLACEHOLDER = '지역 선택'
 const KEYWORD_PLACEHOLDER = '키워드 선택'
+const KEYWORD_INPUT_LABEL = '키워드 입력'
+const KEYWORD_INPUT_GUIDE_TEXT =
+  'Enter로 키워드 확정, 입력이 비었을 때 Backspace로 마지막 키워드 삭제'
+const KEYWORD_INPUT_PLACEHOLDER = '키워드를 입력해 주세요.'
+
+type DetailPanelMode = 'none' | 'region' | 'keyword'
 
 function resolveRegionSelector(
   selectorsProps: ComposableSelectProps[],
@@ -31,8 +52,21 @@ function resolveRegionSelector(
   return resolveSelectorByType(selectorsProps, 'region')
 }
 
+function resolveKeywordSelector(
+  selectorsProps: ComposableSelectProps[],
+): KeywordSelectProps | undefined {
+  return resolveSelectorByType(selectorsProps, 'keyword')
+}
+
 function resolveClassName(className?: string): string {
   return ['cs-composable-search', className].filter(Boolean).join(' ')
+}
+
+function buildCombinedSelectionPayload(
+  selectedRegionConditions: SelectedRegionCondition[],
+  selectedKeywordConditions: SearchSelectionItem[],
+): SearchSelectionItem[] {
+  return [...selectedRegionConditions, ...selectedKeywordConditions]
 }
 
 export function ComposableSearch({
@@ -40,20 +74,82 @@ export function ComposableSearch({
   className,
   style,
 }: ComposableSearchProps) {
-  const [isOpenDetailedConditionArea, setIsOpenDetailedConditionArea] =
-    useState(false)
-  const [selectedConditions, setSelectedConditions] = useState<
+  const [activePanelMode, setActivePanelMode] = useState<DetailPanelMode>('none')
+  const [selectedRegionConditions, setSelectedRegionConditions] = useState<
     SelectedRegionCondition[]
   >([])
+  const [keywordInputState, setKeywordInputState] = useState(
+    createInitialKeywordInputState,
+  )
 
   const regionSelector = useMemo(
     () => resolveRegionSelector(selectorsProps),
     [selectorsProps],
   )
+  const keywordSelector = useMemo(
+    () => resolveKeywordSelector(selectorsProps),
+    [selectorsProps],
+  )
+  const keywordPolicy = useMemo(
+    () => resolveKeywordPolicy(keywordSelector?.options),
+    [keywordSelector?.options],
+  )
+
+  const selectedRegionConditionsRef = useRef(selectedRegionConditions)
+  const keywordConditionRef = useRef<SearchSelectionItem[]>(keywordInputState.tokens)
+
+  useEffect(() => {
+    selectedRegionConditionsRef.current = selectedRegionConditions
+  }, [selectedRegionConditions])
+
+  useEffect(() => {
+    keywordConditionRef.current = keywordInputState.tokens
+  }, [keywordInputState.tokens])
 
   const handleToggleRegionTrigger = (selector: InternalRegionSelector) => {
-    setIsOpenDetailedConditionArea((previous) => !previous)
+    setActivePanelMode((previous) => (previous === 'region' ? 'none' : 'region'))
     dispatchRegionOnClick(selector.options)
+  }
+
+  const handleToggleKeywordTrigger = (options?: InternalKeywordSelectOptions) => {
+    setActivePanelMode((previous) => (previous === 'keyword' ? 'none' : 'keyword'))
+    dispatchKeywordOnClick(options)
+  }
+
+  const dispatchCombinedOnChange = (
+    options: InternalRegionSelectOptions | undefined,
+    nextRegionConditions: SelectedRegionCondition[],
+    nextKeywordConditions: SearchSelectionItem[],
+  ) => {
+    dispatchRegionOnChange(
+      options,
+      buildCombinedSelectionPayload(nextRegionConditions, nextKeywordConditions),
+    )
+  }
+
+  const applyKeywordInputEvent = (event: KeywordInputEvent) => {
+    setKeywordInputState((previous) => {
+      const next = transitionKeywordInputState(previous, event, keywordPolicy)
+
+      if (next.errorCode && next.errorCode !== previous.errorCode) {
+        dispatchKeywordOnInvalidToken(keywordSelector?.options, next.errorCode, {
+          inputValue: previous.inputValue,
+          normalizedValue: normalizeKeywordInput(previous.inputValue, keywordPolicy),
+          maxTokens: keywordPolicy.maxTokens,
+          maxTokenLength: keywordPolicy.maxTokenLength,
+        })
+      }
+
+      if (!hasSameKeywordTokenSequence(previous.tokens, next.tokens)) {
+        dispatchCombinedOnChange(
+          regionSelector?.options,
+          selectedRegionConditionsRef.current,
+          next.tokens,
+        )
+      }
+
+      return next
+    })
   }
 
   const handleToggleRegionCondition = (
@@ -61,12 +157,12 @@ export function ComposableSearch({
     selectedRegion: Region,
     options?: InternalRegionSelectOptions,
   ) => {
-    setSelectedConditions((previous) => {
+    setSelectedRegionConditions((previous) => {
       const wasSelected = previous.some(
         (condition) => condition.id === nextCondition.id,
       )
       const next = toggleRegionCondition(previous, nextCondition)
-      dispatchRegionOnChange(options, next)
+      dispatchCombinedOnChange(options, next, keywordConditionRef.current)
       if (!wasSelected) {
         dispatchRegionOnSelectedEupmyeondong(options, selectedRegion)
       }
@@ -78,25 +174,78 @@ export function ComposableSearch({
     conditionId: string,
     options?: InternalRegionSelectOptions,
   ) => {
-    setSelectedConditions((previous) => {
+    if (conditionId.startsWith('keyword:')) {
+      applyKeywordInputEvent({ type: 'REMOVE_TOKEN', tokenId: conditionId })
+      return
+    }
+
+    setSelectedRegionConditions((previous) => {
       const next = previous.filter((condition) => condition.id !== conditionId)
-      dispatchRegionOnChange(options, next)
+      dispatchCombinedOnChange(options, next, keywordConditionRef.current)
       return next
     })
   }
 
   const handleClearAllConditions = (options?: InternalRegionSelectOptions) => {
-    setSelectedConditions(() => {
-      const next: SelectedRegionCondition[] = []
-      dispatchRegionOnChange(options, next)
-      return next
-    })
+    setSelectedRegionConditions([])
+    setKeywordInputState((previous) =>
+      transitionKeywordInputState(previous, { type: 'CLEAR_ALL' }, keywordPolicy),
+    )
+    dispatchCombinedOnChange(options, [], [])
   }
 
-  const detailedContent = regionSelector ? (
+  const keywordErrorMessage = resolveKeywordInputErrorMessage(
+    keywordInputState.errorCode,
+    keywordPolicy,
+  )
+
+  const handleKeywordInputKeyDown: KeyboardEventHandler<HTMLInputElement> = (
+    event,
+  ) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      applyKeywordInputEvent({ type: 'COMMIT_INPUT' })
+      return
+    }
+
+    if (event.key === 'Backspace' && keywordInputState.inputValue.length === 0) {
+      event.preventDefault()
+      applyKeywordInputEvent({ type: 'BACKSPACE' })
+    }
+  }
+
+  const selectedConditions = useMemo(
+    () =>
+      buildCombinedSelectionPayload(
+        selectedRegionConditions,
+        keywordInputState.tokens,
+      ),
+    [keywordInputState.tokens, selectedRegionConditions],
+  )
+
+  const detailedContent =
+    activePanelMode === 'keyword' && keywordSelector ? (
+      <KeywordDetailPanel
+        errorMessage={keywordErrorMessage}
+        guideText={keywordSelector.options?.guideText ?? KEYWORD_INPUT_GUIDE_TEXT}
+        inputPlaceholder={
+          keywordSelector.options?.inputPlaceholder ?? KEYWORD_INPUT_PLACEHOLDER
+        }
+        inputValue={keywordInputState.inputValue}
+        label={keywordSelector.options?.label ?? KEYWORD_INPUT_LABEL}
+        maxTokens={keywordPolicy.maxTokens}
+        tokenCount={keywordInputState.tokens.length}
+        onInputBlur={() => applyKeywordInputEvent({ type: 'BLUR' })}
+        onInputChange={(value) =>
+          applyKeywordInputEvent({ type: 'INPUT_CHANGED', value })
+        }
+        onInputFocus={() => applyKeywordInputEvent({ type: 'FOCUS' })}
+        onInputKeyDown={handleKeywordInputKeyDown}
+      />
+    ) : regionSelector ? (
     <RegionDetailPanel
       selector={regionSelector}
-      selectedConditions={selectedConditions}
+      selectedConditions={selectedRegionConditions}
       onToggleRegionCondition={handleToggleRegionCondition}
     />
   ) : (
@@ -132,7 +281,7 @@ export function ComposableSearch({
               key={`selector-keyword-${index}`}
               className="cs-selector-trigger"
               type="button"
-              onClick={() => dispatchKeywordOnClick(selector.options)}
+              onClick={() => handleToggleKeywordTrigger(selector.options)}
             >
               <span aria-hidden="true" className="cs-selector-icon">
                 K
@@ -144,7 +293,7 @@ export function ComposableSearch({
       </div>
       <div
         className="cs-detailed-area"
-        data-state={isOpenDetailedConditionArea ? 'open' : 'closed'}
+        data-state={activePanelMode === 'none' ? 'closed' : 'open'}
         data-testid="cs-detailed-area"
       >
         {detailedContent}

@@ -17,7 +17,13 @@ export interface SelectedRegionCondition extends SelectedCondition {
   eupmyeondong: Region
 }
 
+export interface SelectedKeywordCondition extends SelectedCondition {
+  keyword: string
+  normalizedKeyword: string
+}
+
 export type RegionSelectionItem = SelectedRegionCondition
+export type SearchSelectionItem = SelectedRegionCondition | SelectedKeywordCondition
 
 /**
  * @deprecated `RegionSelectionItem`을 사용하세요.
@@ -31,9 +37,13 @@ export interface RegionDataSource {
   findAllEupmyeondongs: (sigunguCode: string) => Region[]
 }
 
+type BivariantCallback<TArgs extends unknown[]> = {
+  bivarianceHack(...args: TArgs): void
+}['bivarianceHack']
+
 export interface RegionSelectOptions {
   placeHolder?: string
-  onChange?: (selectedItems: RegionSelectionItem[]) => void
+  onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   onSelectedEupmyeondong?: (selected: Region) => void
   onClick?: () => void
 }
@@ -43,8 +53,39 @@ export interface RegionSelectProps extends RegionDataSource {
   options?: RegionSelectOptions
 }
 
+export type KeywordNormalizationCasePolicy = 'preserve' | 'lower'
+
+export interface KeywordNormalizationPolicy {
+  trim?: boolean
+  collapseWhitespace?: boolean
+  casePolicy?: KeywordNormalizationCasePolicy
+}
+
+export type KeywordInputErrorCode =
+  | 'empty-token'
+  | 'duplicate-token'
+  | 'token-too-long'
+  | 'max-token-reached'
+
+export interface KeywordInvalidTokenContext {
+  inputValue: string
+  normalizedValue: string
+  maxTokens: number
+  maxTokenLength: number
+}
+
 export interface KeywordSelectOptions {
   placeHolder?: string
+  inputPlaceholder?: string
+  label?: string
+  guideText?: string
+  maxTokens?: number
+  maxTokenLength?: number
+  normalization?: KeywordNormalizationPolicy
+  onInvalidToken?: (
+    error: KeywordInputErrorCode,
+    context: KeywordInvalidTokenContext,
+  ) => void
   onClick?: () => void
 }
 
