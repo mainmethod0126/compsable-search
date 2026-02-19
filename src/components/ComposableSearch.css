@@ -107,6 +107,12 @@
   cursor: pointer;
 }
 
+.cs-region-item:hover {
+  border-color: #b8c8d9;
+  background-color: #f7fbff;
+  color: #1f2d3d;
+}
+
 .cs-region-item.is-current {
   background-color: #3a78c3;
   border-color: #2b66af;
@@ -140,6 +146,12 @@
   padding: 6px 8px;
   border: 1px solid #d7dfe6;
   border-radius: 6px;
+}
+
+.cs-checkable-item:hover {
+  border-color: #b8c8d9;
+  background-color: #f7fbff;
+  color: #1f2d3d;
 }
 
 .cs-checkable-item.is-selected {

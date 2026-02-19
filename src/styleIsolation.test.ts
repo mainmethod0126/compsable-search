@@ -2,6 +2,19 @@ import { describe, expect, it } from 'vitest'
 import composableSearchCss from './components/ComposableSearch.css?raw'
 import indexCss from './index.css?raw'
 
+const TYPOGRAPHY_PROPERTIES = [
+  'font-family',
+  'font-size',
+  'font-weight',
+  'line-height',
+] as const
+
+function extractRuleBody(css: string, selector: string): string {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = css.match(new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`))
+  return match?.[1] ?? ''
+}
+
 describe('style scope isolation', () => {
   it('앱 엔트리 스타일은 html/body/:root 전역 selector를 사용하지 않는다', () => {
     const css = indexCss
@@ -18,5 +31,25 @@ describe('style scope isolation', () => {
     expect(css).toContain('.cs-composable-search')
     expect(css).toContain('.cs-selector-area')
     expect(css).toContain('.cs-region-item')
+  })
+
+  it('선택/hover 상태 스타일은 타이포그래피 속성을 재정의하지 않는다', () => {
+    const css = composableSearchCss
+    const stateSelectors = [
+      '.cs-region-item.is-current',
+      '.cs-region-item.has-descendant-selected',
+      '.cs-region-item.is-current.has-descendant-selected',
+      '.cs-region-item:hover',
+      '.cs-checkable-item.is-selected',
+      '.cs-checkable-item:hover',
+    ]
+
+    stateSelectors.forEach((selector) => {
+      const ruleBody = extractRuleBody(css, selector)
+      expect(ruleBody, `${selector} rule should exist`).not.toBe('')
+      TYPOGRAPHY_PROPERTIES.forEach((property) => {
+        expect(ruleBody).not.toContain(property)
+      })
+    })
   })
 })
