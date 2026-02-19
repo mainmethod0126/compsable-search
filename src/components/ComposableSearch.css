@@ -45,6 +45,7 @@
   border: 1px solid #d2dae2;
   border-radius: 10px;
   padding: 12px;
+  overflow-x: hidden;
 }
 
 .cs-detailed-area[data-state='closed'] {
@@ -71,15 +72,19 @@
   border-radius: 8px;
   padding: 8px;
   min-height: 180px;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 8px;
+  overflow: hidden;
 }
 
 .cs-region-column-title {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 14px;
 }
 
 .cs-region-column-whole-toggle {
-  margin-bottom: 8px;
+  margin: 0;
 }
 
 .cs-region-column-list {
@@ -88,6 +93,10 @@
   list-style: none;
   display: grid;
   gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 .cs-region-typography {
@@ -137,6 +146,10 @@
 .cs-checkable-list {
   display: grid;
   gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 .cs-checkable-item {
