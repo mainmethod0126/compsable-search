@@ -1,62 +1,112 @@
 ---
 name: task-manager
-description: 이 저장소에서 PRD를 구현 가능한 실행 태스크로 분해하고 우선순위, 의존성, 검증 계획을 수립한다. 사용자가 구현 계획, 태스크 분해, 스프린트 백로그, 작업 순서, 체크리스트, 일정 추정, PRD 기반 TODO 정리를 요청할 때 사용한다.
+description: PRD 문서를 실행 가능한 개발 백로그로 전환한다. `prd.md`/`prd.en.md` 또는 동등한 요구사항 문서를 입력으로 받아 Epic, Feature, UserStory, Task로 계층 분해하고 우선순위, 의존성, 수용 기준, 완료 정의, 리스크 완화 작업까지 명시한다. 결과물을 Epic/Feature/UserStory/Task 디렉토리+`.md` 계층으로 생성해야 할 때 사용한다. GitHub MCP를 사용할 수 있으면 Epic/Feature/UserStory/Task를 GitHub 이슈 계층으로 등록하고 링크/라벨/추적성을 유지해야 할 때 사용한다.
 ---
 
-# 태스크 매니저 스킬
+# Task Manager 스킬
 
-## 다음 워크플로를 수행한다
+## 목적
 
-1. 요청의 목표, 마감, 산출물 형식(신규 계획/기존 계획 업데이트)을 식별한다.
-2. 계획 작성 전에 PRD와 저장소 제약사항을 확인한다.
-3. PRD 요구사항을 구현 가능한 태스크로 분해한다.
-4. 우선순위, 의존성, 검증 방법, 완료 조건을 포함해 실행 계획으로 정리한다.
-5. 결과를 `.agents/plans/`에 저장하고 변경 요약을 제공한다.
+- PRD의 문제 정의와 사용자 가치를 기준으로 구현 단위를 재구성한다.
+- 각 Feature를 독립적으로 배포 가능한 Task 묶음으로 분해한다.
+- 각 Feature를 사용자 가치 단위 UserStory로 분해하고 Task는 UserStory 하위로 배치한다.
+- 기능 구현 외에 아키텍처, 데이터, 보안, 운영, 테스트, 롤아웃 작업을 누락 없이 포함한다.
+- Epic/Feature/UserStory/Task를 디렉토리 계층과 문서(`epic.md`, `feature.md`, `userstory.md`, `task.md`)로 생성한다.
+- GitHub MCP가 사용 가능한 경우 백로그를 GitHub 이슈로 일관되게 등록한다.
 
-다음 파일을 먼저 읽는다:
-- `AGENTS.md`
-- `PRD.md`
-- `PRD.en.md`
-- 기존 계획 파일(요청에서 지정한 파일 또는 `.agents/plans/` 하위 관련 파일)
-- 구현 영향이 있는 경우 `src/` 하위 관련 소스 파일
+## 배경지식 기준
 
-## PRD 기반 분해 규칙을 적용한다
+- Distinguished Engineer 수준의 실무 맥락을 기본값으로 적용한다.
+- 분해 시 다음 관점을 항상 적용한다: 시스템 경계, 장애 모드, 성능 병목, 데이터 정합성, 보안/규제, 운영 자동화, 관측 가능성, 배포/롤백 전략.
+- 모호한 요구사항은 추측하지 말고 `TBD`와 확인 질문으로 남긴다.
 
-- 모든 태스크는 PRD 요구사항 ID(`FR-*`, `NFR-*`, `AC-*`)에 추적 가능하게 연결한다.
-- 우선순위는 PRD의 `Must/Should/Could`를 각각 `P0/P1/P2`로 매핑한다.
-- 태스크는 구현 가능한 최소 단위로 분해한다.
-- 각 태스크에는 목적, 변경 대상 파일, 구현 단계, 검증 방법, 완료 조건을 포함한다.
-- 태스크 간 선행 관계를 명시한다. 차단 관계가 있으면 `Blocked by:`로 표기한다.
-- 병렬 가능한 태스크는 명시적으로 구분한다.
+## 입력 확인
 
-## 저장소 제약사항을 강제한다
+1. PRD에서 목표 사용자, 핵심 시나리오, 성공 지표(KPI), 범위/제약을 추출한다.
+2. 비기능 요구(성능, 보안, 가용성, 비용)를 식별하고 누락 시 `TBD`로 표기한다.
+3. 외부 연동, 데이터 스키마 변경, 마이그레이션 필요 여부를 식별한다.
+4. GitHub MCP 사용 가능 여부와 대상 저장소(`owner/repo`), 기본 라벨/마일스톤/프로젝트 필드를 확인한다. 미확정 값은 `TBD`로 남긴다.
 
-- 결과 계획은 공개 React 컴포넌트 라이브러리 배포 관점(npm 기준)으로 작성한다.
-- 외부 의존성 추가 태스크는 필요성, 대안, 충돌 위험을 함께 기록한다.
-- 전역 부작용(CSS 오염, 런타임 글로벌 수정, 강제 폴리필) 발생 가능 태스크는 위험과 완화안을 명시한다.
-- 구현 태스크에는 영어 JSDoc 작성/보강 항목을 포함한다.
+## 작업 절차
 
-## 계획 산출물 형식을 고정한다
+1. `references/prd-to-backlog-template.md` 형식으로 Epic/Feature/UserStory/Task 초안을 작성한다.
+2. 각 Epic을 사용자 가치 단위 Feature로 분해한다.
+3. 각 Feature를 사용자 관점 UserStory로 분해한다.
+4. 각 UserStory를 Task로 분해한다.
+   - Task는 1명의 담당자가 소유 가능한 크기로 작성한다.
+   - Task는 동사로 시작하고 결과물이 검증 가능해야 한다.
+   - Task마다 `유형`(제품/백엔드/프론트엔드/데이터/인프라/보안/테스트/운영)과 `선행조건`을 기록한다.
+5. `references/de-checklist.md`를 사용해 누락 작업을 보완한다.
+6. 우선순위를 지정한다.
+   - `P0`: 출시 차단 항목
+   - `P1`: MVP 필수
+   - `P2`: 출시 후 가능
+7. 실행 순서를 정리한다.
+   - 선행 Task -> 병렬 가능 Task -> 통합/검증 -> 출시/모니터링 순으로 배치한다.
+8. 각 Task에 완료 조건을 작성한다.
+   - 산출물
+   - 검증 방법(테스트/지표/리뷰)
+   - 완료 정의(Definition of Done)
+9. `references/backlog-directory-template.md` 규칙으로 디렉토리 산출물을 생성/갱신한다.
+   - 루트 디렉토리: `backlog/`
+   - Epic 디렉토리: `backlog/{epic-title-en}/epic.md`
+   - Feature 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/feature.md`
+   - UserStory 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md`
+   - Task 디렉토리: `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md`
+   - 디렉토리명은 반드시 영문 소문자 슬러그(`kebab-case`)를 사용한다.
+   - 허용 문자 집합은 `[a-z0-9-]`만 사용한다.
+   - 한국어 제목은 의미를 보존해 영어로 번역한 뒤 슬러그로 변환한다.
+   - 경로에 사용할 수 없는 문자(`\ / : * ? " < > |`) 및 공백은 `-`로 치환한다.
+   - 동일 계층에서 제목 충돌 시 디렉토리명 뒤에 `__{ID}`를 붙여 고유성을 보장한다.
+10. GitHub MCP가 가능하면 `references/github-mcp-publishing.md` 규칙으로 게시 계획을 수립한다.
+11. Epic -> Feature -> UserStory -> Task 순서로 이슈를 등록한다.
+   - 제목에 안정 ID(`[E-01]`, `[F-03]`, `[US-010]`, `[T-014]`)를 유지한다.
+   - 백로그 계층과 대칭되는 라벨(`epic`, `feature`, `userstory`, `task`)을 이슈 유형에 맞게 정확히 1개 지정한다.
+   - 라벨은 최소 `epic|feature|userstory|task` + `priority:*` + `area:*`를 지정한다.
+   - 본문에 상위/하위/선행 이슈 링크를 기록한다.
+12. 등록 결과를 산출물에 반영한다.
+   - 각 Epic/Feature/UserStory/Task 문서에 GitHub 이슈 번호와 URL을 기록한다.
+   - 등록 실패 항목은 원인과 재시도 계획을 `TBD`로 남긴다.
 
-- 계획 문서는 `references/task-plan-template.md`를 기본 템플릿으로 사용한다.
-- 신규 계획 파일은 `.agents/plans/<kebab-case-name>.md`에 생성한다.
-- 기존 계획 업데이트 시 섹션 구조를 유지하고 변경 항목만 최소 수정한다.
-- 문서 기본 언어는 한국어로 작성한다. 파일명에 `.en`이 포함될 때만 영어로 작성한다.
+## 출력 규격
 
-다음 형식의 태스크 ID를 사용한다:
-- `TM-001`, `TM-002`, ...
+- 기본 산출물
+  - `backlog/` 디렉토리 계층(디렉토리명은 영어, 문서 본문은 한국어)
+- 선택 산출물
+  - `backlog/index.md`(요약 문서, 요청 시에만 생성)
+- 기존 산출물이 있으면 변경된 Epic/Feature/UserStory/Task 중심으로 갱신한다.
+- 디렉토리 산출물 최소 조건
+  - Epic마다 `backlog/{epic-title-en}/epic.md`가 존재한다.
+  - Feature마다 `backlog/{epic-title-en}/{feature-title-en}/feature.md`가 존재한다.
+  - UserStory마다 `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/userstory.md`가 존재한다.
+  - Task마다 `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md`가 존재한다.
+- `backlog/index.md`를 생성하는 경우 섹션 순서를 유지한다.
+  1. 문서 메타(버전, 기준 PRD, 작성일)
+  2. Epic 개요
+  3. Feature 목록
+  4. UserStory 목록
+  5. Task 백로그
+  6. 의존성 그래프(텍스트)
+  7. 리스크와 완화 계획
+  8. 오픈 이슈(`TBD`)
+  9. GitHub 등록 매핑(선택)
+  10. 디렉토리 산출물 매핑
 
-## 일정 및 검증 계획을 작성한다
+## 품질 게이트
 
-- 각 태스크에 예상 난이도(`S/M/L`)를 부여한다.
-- 각 태스크에 검증 명령 또는 수동 검증 절차를 포함한다.
-- 릴리스 차단 이슈는 `Release Blocker`로 분리한다.
-- 테스트/빌드가 실패 중이면 계획에 현재 실패 원인과 선행 복구 태스크를 포함한다.
+- Epic마다 KPI 또는 사용자 결과와의 연결을 명시한다.
+- Feature마다 최소 1개 이상의 수용 기준을 작성한다.
+- UserStory마다 최소 1개 이상의 사용자 관점 수용 기준을 작성한다.
+- Task마다 담당 역할, 우선순위, 예상 난이도(High/Medium/Low), 검증 방법을 작성한다.
+- 운영 준비 항목(관측, 알람, 롤백, 런북) 중 누락이 있으면 완료로 간주하지 않는다.
+- Epic/Feature/UserStory/Task 모든 항목이 디렉토리+`.md` 문서로 1:1 매핑되어야 한다.
+- 각 `epic.md`/`feature.md`/`userstory.md`/`task.md`는 상위/하위 문서 상대 경로를 포함해야 한다.
+- GitHub MCP 사용 시 Epic/Feature/UserStory/Task 모두 이슈 URL이 누락 없이 연결되어야 한다.
+- GitHub MCP 사용 시 이슈 계층 라벨(`epic`,`feature`,`userstory`,`task`)과 문서 계층이 불일치하면 실패로 간주한다.
 
-## 결과 체크리스트
+## 참조 문서
 
-- PRD 요구사항 ID와 태스크 매핑 표
-- 우선순위 및 선행 관계
-- 태스크별 검증 방법과 완료 조건
-- 릴리스 차단 항목
-- 즉시 시작 가능한 첫 작업(Top 3)
+- 템플릿이 필요하면 `references/prd-to-backlog-template.md`를 먼저 읽는다.
+- 누락 점검이 필요하면 `references/de-checklist.md`를 읽는다.
+- 디렉토리 문서 템플릿이 필요하면 `references/backlog-directory-template.md`를 읽는다.
+- GitHub 등록이 필요하면 `references/github-mcp-publishing.md`를 읽는다.

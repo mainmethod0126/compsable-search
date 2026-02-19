@@ -1,0 +1,4 @@
+interface:
+  display_name: "프로덕트 매니저"
+  short_description: "소프트웨어 PM 소양으로 PRD 2종을 지속 보강/작성."
+  default_prompt: "문제를 사용자 가치, 우선순위, KPI, 리스크 기준으로 구조화해 기존 prd.md(한국어), prd.en.md(영어)를 지속 보강하고 없으면 생성한다."

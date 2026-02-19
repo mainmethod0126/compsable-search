@@ -1,0 +1,4 @@
+interface:
+  display_name: "Distinguished Engineer"
+  short_description: "정해진 태스크를 실제 코딩으로 해결하고 TDD와 SOLID를 강제하는 구현 중심 엔지니어링 스킬"
+  default_prompt: "$distinguished-engineer를 사용해 정해진 태스크를 TDD(Red-Green-Refactor)로 실제 구현하고 SOLID 점검까지 완료해줘."

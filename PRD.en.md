@@ -33,9 +33,11 @@ Problems to solve:
 
 - US-001: A developer passes `selectorsProps` (`region`, `keyword`) and renders the full condition UI.
 - US-002: An end user opens the region detail area and selects in sequence: Sido -> Sigungu -> Eup/Myeon/Dong.
-- US-003: An end user toggles Eup/Myeon/Dong checkboxes to add/remove conditions.
+- US-003: An end user toggles either the Sido-whole checkbox in the Sigungu column or Eup/Myeon/Dong checkboxes to add/remove conditions.
 - US-004: An end user removes a single condition via a chip delete button.
 - US-005: An end user removes all conditions via the clear-all button.
+- US-006: An end user gets a visually natural selection experience because checkbox-based region labels and normal region-item labels use consistent typography.
+- US-007: When either a child region like `Gangnam-gu > Yeoksam-dong` or a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected, an end user can immediately recognize in upper columns that a descendant is selected through a distinct color cue.
 
 ## 4. Goals
 
@@ -80,19 +82,24 @@ Problems to solve:
 | FR-003 | Must | Region trigger toggle | Clicking `region` trigger must toggle detailed area open/close state. | AC-003 |
 | FR-004 | Must | Detailed content injection | Detailed area must render ReactNode provided by `setDetailedConditionsContent`. Initial value is a placeholder node. | AC-004 |
 | FR-005 | Must | Initial Sido loading | On Region selector mount, call `findAllSidos()` and populate Sido column children. | AC-005 |
-| FR-006 | Must | Column initial current rule | `SelectableRegionColumn` sets current to `parent` if present; otherwise first child. It immediately invokes `onSelectedRegion`. | AC-006 |
-| FR-007 | Must | Load Sigungu after Sido | On Sido selection, call `findAllSigungus(sidoCode)` and update Sigungu column. Parent label is `displayName + " 전체"`. | AC-007 |
-| FR-008 | Must | Load Eup/Myeon/Dong after Sigungu | On Sigungu selection, call `findAllEupmyeondongs(sigunguCode)` and update checkbox column. Parent label is `displayName + " 전체"`. | AC-008 |
+| FR-006 | Must | No automatic current selection in selectable columns | `SelectableRegionColumn` must not auto-assign `current` or auto-invoke `onSelectedRegion` on initial render, parent change, or list refresh. `current` assignment and `onSelectedRegion` invocation must happen only after explicit user click. | AC-006 |
+| FR-007 | Must | Load Sigungu after Sido and provide Sido-whole checkbox | On Sido selection, call `findAllSigungus(sidoCode)` and update Sigungu column. The Sigungu column must also allow direct checkbox toggle for `displayName + " 전체"`. | AC-007, AC-020 |
+| FR-008 | Must | Load Eup/Myeon/Dong after Sigungu | On Sigungu selection, call `findAllEupmyeondongs(sigunguCode)` and update checkbox column. The Sido-whole option already exposed in the Sigungu column must not be duplicated in Eup/Myeon/Dong. | AC-008 |
 | FR-009 | Must | Eup/Myeon/Dong toggle | Checkbox change must toggle by condition ID (`eupmyeondong.code`). Added condition label format is `sido>sigungu>eupmyeondong`. | AC-009 |
 | FR-010 | Must | Duplicate prevention | Same ID must not be duplicated. Re-select removes existing item. | AC-010 |
 | FR-011 | Should | Parent/child conflict rule | A "whole region" condition (`sigungu.code === eupmyeondong.code`) is mutually exclusive with detail conditions in the same Sigungu. | AC-011 |
 | FR-012 | Must | Selected chip rendering | Selected condition array must render as chips with delete buttons. | AC-012 |
 | FR-013 | Must | Single delete | Clicking chip delete removes only matching `conditionId`. | AC-013 |
 | FR-014 | Must | Clear all | Clicking clear-all removes all conditions. Button is disabled when condition count is zero. | AC-014 |
-| FR-015 | Must | Empty-list rendering | Region columns must render `No items to display.` when data is empty. | AC-015 |
+| FR-015 | Must | Empty-state guidance by context | Region-column empty states must use Korean guidance by cause: show `상위 지역을 먼저 선택해 주세요.` when parent region is not selected yet, and show `표시할 지역이 없습니다.` when data is genuinely empty after parent selection. | AC-015 |
 | FR-016 | Should | Visual state markers | `current` item uses highlighted background; `selected` item uses highlighted text style. | AC-016 |
 | FR-017 | Could | Region options callbacks | Keep extension points: `options.onChange`, `options.onSelectedEupmyeondong`, `options.onClick`. | AC-017 |
 | FR-018 | Must | Keyword trigger | `keyword` selector renders icon + placeholder button and invokes `options.onClick` when provided. | AC-018 |
+| FR-019 | Must | Mutual exclusivity between Sido whole and child Sigungu | Selecting a Sido "whole" condition must clear child Sigungu conditions in the same Sido, and selecting a child Sigungu must clear the Sido "whole" condition in that same scope. In particular, if a child Sigungu is already selected and the user checks Sido "whole", the existing child Sigungu condition must be removed immediately. Example: `Seoul whole` and `Seoul Gangnam-gu` cannot coexist; after selecting `Busan Haeundae-gu`, checking `Busan whole` must leave only `Busan whole`. | AC-019 |
+| FR-020 | Must | Direct Sido-whole selection from Sigungu column | Users must be able to add/remove Sido-whole condition directly from Sigungu column checkbox without repeating the same "whole" selection step in Eup/Myeon/Dong. | AC-020 |
+| FR-021 | Must | No auto-selection of Sigungu before explicit user action | In the Sigungu column, right after list refresh triggers (Sido change or Sido-whole check/uncheck), the first item (e.g., `Gangnam-gu`) must not be auto-assigned as `current`/selected. Until a user explicitly clicks a Sigungu item, both Sigungu `current` and Eup/Myeon/Dong list must remain unselected. | AC-021 |
+| FR-022 | Should | Typography consistency across region items | Checkbox label text (`Sido whole`, Eup/Myeon/Dong) and normal region-item text (Sido/Sigungu/Eup/Myeon/Dong) must use the same typography baseline (`font-family`, `font-size`, `font-weight`, `line-height`). Selection emphasis must rely on color/background changes, while typography values stay consistent. | AC-022 |
+| FR-023 | Must | Ancestor color indicator for descendant selection | When a Eup/Myeon/Dong item (e.g., `Yeoksam-dong`) is selected, and also when a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected as a descendant condition, ancestor items in that path (Sido `Seoul`, Sigungu `Gangnam-gu`) must be rendered with a separate visual color state (`has-descendant-selected`) that is distinct from `current`/direct `selected`. The visual system may stay in a blue family, but `current` and `has-descendant-selected` must be clearly separated by tone/saturation and auxiliary cues (e.g., border style). This state persists while at least one descendant is selected and returns to default immediately after the last descendant is removed. | AC-023 |
 
 ## 8. Component and API Requirements
 
@@ -167,7 +174,7 @@ Problems to solve:
 | AC-003 | Click region trigger twice | detailed area toggles open then closed. | FR-003 |
 | AC-004 | After RegionSelect mount | detailed area is replaced by 3-column region UI. | FR-004 |
 | AC-005 | Initial mount | Sido column shows `findAllSidos()` results. | FR-005 |
-| AC-006 | Column node changes | current becomes parent if available, else first child. | FR-006 |
+| AC-006 | Column node changes (including initial render) | Sido/Sigungu `SelectableRegionColumn` must keep `current` unselected and must not auto-call `onSelectedRegion` until explicit user click. | FR-006 |
 | AC-007 | Select Sido item | `findAllSigungus(selectedSido.code)` is called and Sigungu list refreshes. | FR-007 |
 | AC-008 | Select Sigungu item | `findAllEupmyeondongs(selectedSigungu.code)` is called and Eup/Myeon/Dong list refreshes. | FR-008 |
 | AC-009 | Check Eup/Myeon/Dong item | one chip is added with `>`-joined full path label. | FR-009 |
@@ -176,10 +183,15 @@ Problems to solve:
 | AC-012 | Select 3 conditions | 3 chips are rendered in selected area. | FR-012 |
 | AC-013 | Click chip delete | only that chip is removed. | FR-013 |
 | AC-014 | Click clear-all | all chips removed; button becomes disabled. | FR-014 |
-| AC-015 | Column gets empty list | `No items to display.` is shown. | FR-015 |
+| AC-015 | Sigungu or Eup/Myeon/Dong column is empty | Show `상위 지역을 먼저 선택해 주세요.` when parent region is not selected; show `표시할 지역이 없습니다.` when result data is empty after parent selection. | FR-015 |
 | AC-016 | Compare current vs selected states | current has highlighted background; selected has highlighted text. | FR-016 |
 | AC-017 | Provide `options.onChange` | callback extension point exists and can be wired to selection updates. | FR-017 |
 | AC-018 | Click keyword trigger | `options.onClick` fires when provided. | FR-018 |
+| AC-019 | Switch between `Seoul whole` ↔ `Seoul Gangnam-gu`, and `Busan Haeundae-gu` -> `Busan whole` | Only the last-selected condition remains, and conflicting conditions in the same Sido scope are automatically cleared. Right after selecting `Busan whole`, the previously selected `Haeundae-gu` condition must be removed. | FR-019 |
+| AC-020 | Check `Seoul whole` in Sigungu column | Condition is added/removed immediately, and the same `Seoul whole` checkbox option is not duplicated in Eup/Myeon/Dong column. | FR-007, FR-020 |
+| AC-021 | Immediately after selecting `Seoul` or after checking then unchecking `Seoul whole` in Sigungu (without explicitly clicking `Gangnam-gu`) | `Gangnam-gu` must not become `current`/selected automatically; Sigungu `current` remains empty. `Gangnam-gu` `current` and Eup/Myeon/Dong refresh happen only after explicit user click on `Gangnam-gu`. | FR-021 |
+| AC-022 | Compare checkbox items (e.g., `Seoul whole`, `Yeoksam-dong`) with normal region items (e.g., `Seoul`, `Gangnam-gu`) in the same region-selection context | Compared texts have identical `font-family`, `font-size`, `font-weight`, and `line-height`. Under `selected/current/hover`, typography remains unchanged and only color/background changes. | FR-022 |
+| AC-023 | With `Seoul > Gangnam-gu > Yeoksam-dong` or `Seoul > Gangnam-gu whole` selected, inspect Sido and Sigungu columns | `Seoul` in the Sido column and `Gangnam-gu` in the Sigungu column are shown with a distinct descendant-selection color. Even if both states use blue tones, `current` and `has-descendant-selected` must be immediately distinguishable via tone/saturation or border-style differences, and the state must revert immediately when the last descendant (`Yeoksam-dong` or `Gangnam-gu whole`) is deselected. | FR-023 |
 
 ## 11. QA and Validation Plan
 
@@ -196,7 +208,12 @@ Problems to solve:
 - QA-003: Changing Sigungu updates Eup/Myeon/Dong list
 - QA-004: Multi-select/unselect Eup/Myeon/Dong
 - QA-005: Single chip delete and clear-all
-- QA-006: Empty data functions still render safe empty UI
+- QA-006: Differentiate no-parent-selected vs empty-data states and render the correct Korean empty-state guidance
+- QA-007: Validate mutual exclusivity between Sido whole and child Sigungu (examples: `Seoul whole` <-> `Seoul Gangnam-gu`, and selecting `Busan whole` after `Busan Haeundae-gu` removes `Haeundae-gu` immediately)
+- QA-008: Checking `Seoul whole` directly in Sigungu is applied immediately, and the same whole option is not duplicated in Eup/Myeon/Dong
+- QA-009: On Sigungu list refresh (Sido change, and checking then unchecking `Seoul whole`), `Gangnam-gu` must not be auto-selected/current; the state remains unselected until explicit Sigungu click
+- QA-010: Typography (`font-family/font-size/font-weight/line-height`) is identical across Sigungu Sido-whole checkbox text, Eup/Myeon/Dong checkbox text, and normal region-item text
+- QA-011: With `Seoul > Gangnam-gu > Yeoksam-dong` and `Seoul > Gangnam-gu whole` selected, Sido `Seoul` and Sigungu `Gangnam-gu` show a dedicated descendant-selection color (`has-descendant-selected`) and are distinguishable from `current` through blue-tone/border-style differences, and both revert when the last descendant selection is removed
 
 ### 11.3 Current Validation Status as of February 9, 2026
 
@@ -225,4 +242,8 @@ Problems to solve:
 - OI-007 (`Should`): Global selectors in `index.css` (`button`, `body`, `:root`) may conflict with host application styles.
 - OI-008 (`Could`): Demo legal-dong sample codes include abnormal values (`44182031000`, `55011033000`, `5Terms013010800`), introducing data-quality risk.
 - OI-009 (`Could`): `ComposableSearchProps.placeHolder` is currently unused.
+- OI-010 (`Must`): After selecting Sido-whole in Sigungu, the same Sido-whole checkbox is redundantly exposed again in Eup/Myeon/Dong, causing unnecessary duplicate selection steps.
+- OI-011 (`Must`): On Sigungu list refreshes (Sido change, checking then unchecking `Seoul whole`, etc.), the first Sigungu (`Gangnam-gu`) is auto-selected/current, changing child state before explicit user intent.
+- OI-012 (`Should`): Typography differs between checkbox label text and normal region-item text in region selection, making the UI feel visually inconsistent.
+- OI-013 (`Must`): Even when a child region like `Gangnam-gu > Yeoksam-dong` or a descendant "whole" option like `Seoul whole`/`Gangnam-gu whole` is selected, upper-column items (Sido `Seoul`, Sigungu `Gangnam-gu`) do not show a dedicated descendant-selection color, making current selection context hard to scan.
 

@@ -1,73 +1,37 @@
-# React + TypeScript + Vite
+# composable-search
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+`ComposableSearch`는 selector/detailed/selected 3영역을 조합해 검색 조건 UI를 구성하는 React 컴포넌트입니다.
 
-Currently, two official plugins are available:
+## 주요 동작
+- `selectorsProps` 순서대로 selector 트리거 렌더링
+- `region` 트리거 클릭 시 상세 패널 open/closed 토글
+- 시/도 -> 시/군/구 -> 읍/면/동 3단계 선택
+- 선택 조건 칩 렌더링, 개별 삭제, 전체 삭제
+- 동일 시/군/구에서 `전체` 조건과 상세 조건 상호 배타 처리
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 사용 예시
+```tsx
+import { ComposableSearch } from './src/components'
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
+<ComposableSearch
+  selectorsProps={[
+    {
+      type: 'region',
+      findAllSidos,
+      findAllSigungus,
+      findAllEupmyeondongs,
+      options: { placeHolder: '지역 선택' },
     },
-  },
-])
+    {
+      type: 'keyword',
+      options: { placeHolder: '키워드 선택', onClick: () => {} },
+    },
+  ]}
+/>
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 개발 명령
+- `npm run dev`
+- `npm test`
+- `npm run lint`
+- `npm run build`

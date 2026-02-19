@@ -1,4 +1,4 @@
 interface:
-  display_name: "태스크 매니저"
-  short_description: "PRD를 실행 가능한 구현 태스크로 분해"
-  default_prompt: "$task-manager를 사용해 현재 PRD를 우선순위 기반 구현 백로그와 실행 계획으로 분해해줘."
+  display_name: "Task Manager"
+  short_description: "PRD를 Epic/Feature/UserStory/Task 백로그로 전환하고 영문 슬러그 디렉토리 계층을 생성하는 스킬"
+  default_prompt: "$task-manager를 사용해 PRD를 Epic/Feature/UserStory/Task로 분해하고, 디렉토리명은 영문 소문자 슬러그(kebab-case)로 backlog 문서 계층을 생성해줘. GitHub MCP가 가능하면 계층 대칭 라벨(epic/feature/userstory/task)로 이슈 매핑도 포함해줘."
