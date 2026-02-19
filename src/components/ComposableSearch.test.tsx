@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { createDemoRegionDataSource } from '../DemoService'
 import { ComposableSearch } from './ComposableSearch'
 import type { RegionSelectProps } from './types'
 
@@ -788,5 +789,78 @@ describe('ComposableSearch', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalledWith(
       expect.stringContaining('Each child in a list should have a unique "key" prop'),
     )
+  })
+
+  it('large 프로파일에서도 열기/선택/해제/전체선택/초기화와 콜백 계약을 유지한다', async () => {
+    const user = userEvent.setup()
+    const dataSource = createDemoRegionDataSource('large')
+    const onClick = vi.fn()
+    const onChange = vi.fn()
+    const onSelectedEupmyeondong = vi.fn()
+    const [firstSido] = dataSource.findAllSidos()
+    const [firstSigungu] = dataSource.findAllSigungus(firstSido.code)
+    const [firstEupmyeondong] = dataSource.findAllEupmyeondongs(firstSigungu.code)
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          {
+            type: 'region',
+            findAllSidos: dataSource.findAllSidos,
+            findAllSigungus: dataSource.findAllSigungus,
+            findAllEupmyeondongs: dataSource.findAllEupmyeondongs,
+            options: {
+              placeHolder: '지역 선택',
+              onClick,
+              onChange,
+              onSelectedEupmyeondong,
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: firstSido.displayName }))
+    await user.click(screen.getByRole('button', { name: firstSigungu.displayName }))
+    await user.click(
+      screen.getByRole('checkbox', { name: firstEupmyeondong.displayName }),
+    )
+
+    expect(onClick).toHaveBeenCalledTimes(1)
+    expect(onSelectedEupmyeondong).toHaveBeenCalledTimes(1)
+    expect(onSelectedEupmyeondong).toHaveBeenLastCalledWith(
+      expect.objectContaining({ code: firstEupmyeondong.code }),
+    )
+    expect(
+      screen.getByText(
+        `${firstSido.displayName}>${firstSigungu.displayName}>${firstEupmyeondong.displayName}`,
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('checkbox', { name: firstEupmyeondong.displayName }),
+    )
+    expect(
+      screen.queryByText(
+        `${firstSido.displayName}>${firstSigungu.displayName}>${firstEupmyeondong.displayName}`,
+      ),
+    ).not.toBeInTheDocument()
+
+    const wholeSigunguName = `${firstSigungu.displayName} 전체`
+    await user.click(screen.getByRole('checkbox', { name: wholeSigunguName }))
+    expect(
+      screen.getByText(
+        `${firstSido.displayName}>${firstSigungu.displayName}>${wholeSigunguName}`,
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '전체 삭제' }))
+    expect(
+      screen.queryByText(
+        `${firstSido.displayName}>${firstSigungu.displayName}>${wholeSigunguName}`,
+      ),
+    ).not.toBeInTheDocument()
+    expect(onChange).toHaveBeenLastCalledWith([])
   })
 })

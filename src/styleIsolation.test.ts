@@ -52,4 +52,20 @@ describe('style scope isolation', () => {
       })
     })
   })
+
+  it('대량 리스트 보호를 위해 컬럼/리스트 스크롤 및 overflow 제어 규칙을 제공한다', () => {
+    const css = composableSearchCss
+    const detailRule = extractRuleBody(css, '.cs-detailed-area')
+    const columnRule = extractRuleBody(css, '.cs-region-column')
+    const listRule = extractRuleBody(css, '.cs-region-column-list')
+    const checkableListRule = extractRuleBody(css, '.cs-checkable-list')
+
+    expect(detailRule).toContain('overflow-x: hidden')
+    expect(columnRule).toContain('min-height')
+    expect(columnRule).toContain('overflow: hidden')
+    expect(listRule).toContain('max-height')
+    expect(listRule).toContain('overflow-y: auto')
+    expect(checkableListRule).toContain('max-height')
+    expect(checkableListRule).toContain('overflow-y: auto')
+  })
 })
