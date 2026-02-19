@@ -107,13 +107,13 @@ describe('resolveDescendantSelectedAncestorCodeSet', () => {
     expect(result.sigunguCodeSet).toEqual(new Set(['11680']))
   })
 
-  it('전체 조건(시도 전체/시군구 전체)은 하위 선택 인디케이터 대상에서 제외한다', () => {
+  it('시군구/읍면동 전체 선택은 상위 하위선택 인디케이터 대상으로 포함한다', () => {
     const result = resolveDescendantSelectedAncestorCodeSet([
       seoulWholeCondition,
       busanHaeundaeWholeCondition,
     ])
 
-    expect(result.sidoCodeSet).toEqual(new Set())
-    expect(result.sigunguCodeSet).toEqual(new Set())
+    expect(result.sidoCodeSet).toEqual(new Set(['11', '26']))
+    expect(result.sigunguCodeSet).toEqual(new Set(['26350']))
   })
 })

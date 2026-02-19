@@ -6,7 +6,7 @@
 - 마지막 갱신: 2026-02-19
 
 ## 진행률
-- 완료율: 2/51 (4%)
+- 완료율: 6/51 (12%)
 
 ## 1. 착수 준비
 - [ ] 계획서와 범위가 확정되었다.
@@ -28,10 +28,10 @@
 - [ ] [T-022] 구현한다: 지역 선택 체크 토글 동기화 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-selection-toggle-synchronization/implement-main-scenario/task.md)
 - [ ] [T-023] 검증한다: 지역 선택 체크 토글 동기화 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-selection-toggle-synchronization/validate-regression-and-failure-flow/task.md)
 - [ ] [T-024] 준비한다: 지역 선택 체크 토글 동기화 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/region-selection-toggle-synchronization/prepare-observability-and-rollout/task.md)
-- [ ] [T-153] 정의한다: 하위 선택 상위 색상 인디케이터 범위와 상태 우선순위 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/define-scope-and-acceptance/task.md)
-- [ ] [T-154] 구현한다: 하위 선택 상위 색상 인디케이터 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/implement-main-scenario/task.md)
-- [ ] [T-155] 검증한다: 하위 선택 상위 색상 인디케이터 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/validate-regression-and-failure-flow/task.md)
-- [ ] [T-156] 준비한다: 하위 선택 상위 색상 인디케이터 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/prepare-observability-and-rollout/task.md)
+- [x] [T-153] 정의한다: 하위 선택 상위 색상 인디케이터 범위와 상태 우선순위 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: 상태 모델/우선순위/시나리오 매핑 문서화)
+- [x] [T-154] 구현한다: 하위 선택 상위 색상 인디케이터 핵심 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/components/selectionPolicy.ts` 파생 규칙 확장)
+- [x] [T-155] 검증한다: 하위 선택 상위 색상 인디케이터 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/components/ComposableSearch.test.tsx`, `src/components/selectionPolicy.test.ts`, `npm test` 통과)
+- [x] [T-156] 준비한다: 하위 선택 상위 색상 인디케이터 관측과 릴리스 운영 (backlog/core-region-selection-mvp/hierarchical-region-loading-and-state-transition/parent-region-descendant-selection-indicator/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `.agents/iterations/iteration-02-p0-flow-and-regression/release-runbook.md`)
 - [ ] [T-025] 정의한다: 선택 조건 칩 렌더링 범위와 수용 기준 (backlog/core-region-selection-mvp/selected-condition-chip-and-dedup-management/selected-condition-chip-rendering/define-scope-and-acceptance/task.md)
 - [ ] [T-026] 구현한다: 선택 조건 칩 렌더링 핵심 시나리오 (backlog/core-region-selection-mvp/selected-condition-chip-and-dedup-management/selected-condition-chip-rendering/implement-main-scenario/task.md)
 - [ ] [T-027] 검증한다: 선택 조건 칩 렌더링 회귀와 실패 시나리오 (backlog/core-region-selection-mvp/selected-condition-chip-and-dedup-management/selected-condition-chip-rendering/validate-regression-and-failure-flow/task.md)
@@ -97,6 +97,10 @@
 - `- [x] [T-xxx] {task-title} (완료: YYYY-MM-DD, 근거: {테스트/PR/리뷰 링크})`
 - 예시:
 - [x] [T-018] 구현한다: 2~3단계 지역 로딩 예외 처리 핵심 시나리오 (완료: 2026-02-14, 근거: npm run build 통과)
+- [x] [T-153] 정의한다: 하위 선택 상위 색상 인디케이터 범위와 상태 우선순위 (완료: 2026-02-19, 근거: 상태 모델/우선순위/시나리오 매핑 문서화)
+- [x] [T-154] 구현한다: 하위 선택 상위 색상 인디케이터 핵심 시나리오 (완료: 2026-02-19, 근거: `src/components/selectionPolicy.ts` 파생 규칙 확장)
+- [x] [T-155] 검증한다: 하위 선택 상위 색상 인디케이터 회귀와 실패 시나리오 (완료: 2026-02-19, 근거: `src/components/ComposableSearch.test.tsx`, `src/components/selectionPolicy.test.ts`, `npm test` 통과)
+- [x] [T-156] 준비한다: 하위 선택 상위 색상 인디케이터 관측과 릴리스 운영 (완료: 2026-02-19, 근거: `.agents/iterations/iteration-02-p0-flow-and-regression/release-runbook.md`)
 
 ## 상태 갱신 규칙
 - 완료 처리: `- [ ]`를 `- [x]`로 변경한다.

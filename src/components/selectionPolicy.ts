@@ -24,12 +24,6 @@ function isSameSigungu(
   return left.sigungu.code === right.sigungu.code
 }
 
-function isDescendantDetailCondition(
-  condition: SelectedRegionCondition,
-): boolean {
-  return condition.eupmyeondong.code !== condition.sigungu.code
-}
-
 export interface DescendantSelectedAncestorCodeSet {
   sidoCodeSet: Set<string>
   sigunguCodeSet: Set<string>
@@ -42,12 +36,11 @@ export function resolveDescendantSelectedAncestorCodeSet(
   const sigunguCodeSet = new Set<string>()
 
   selectedConditions.forEach((condition) => {
-    if (!isDescendantDetailCondition(condition)) {
-      return
-    }
-
     sidoCodeSet.add(condition.sido.code)
-    sigunguCodeSet.add(condition.sigungu.code)
+
+    if (!isSidoWholeCondition(condition)) {
+      sigunguCodeSet.add(condition.sigungu.code)
+    }
   })
 
   return {

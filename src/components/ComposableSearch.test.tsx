@@ -469,6 +469,99 @@ describe('ComposableSearch', () => {
     ).not.toHaveClass('has-descendant-selected')
   })
 
+  it('하위 전체(강남구 전체) 선택 시 상위 시/도/시/군/구 하위 선택 인디케이터를 표시하고 해제 시 원복한다', async () => {
+    const user = userEvent.setup()
+    render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
+
+    const getSidoColumn = () =>
+      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
+    const getSigunguColumn = () =>
+      screen
+        .getByRole('heading', { name: '시/군/구' })
+        .closest('section') as HTMLElement
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '강남구 전체' }))
+
+    expect(
+      within(getSidoColumn()).getByRole('button', { name: '서울특별시' }),
+    ).toHaveClass('has-descendant-selected')
+    expect(
+      within(getSigunguColumn()).getByRole('button', { name: '강남구' }),
+    ).toHaveClass('has-descendant-selected')
+
+    await user.click(screen.getByRole('checkbox', { name: '강남구 전체' }))
+
+    expect(
+      within(getSidoColumn()).getByRole('button', { name: '서울특별시' }),
+    ).not.toHaveClass('has-descendant-selected')
+    expect(
+      within(getSigunguColumn()).getByRole('button', { name: '강남구' }),
+    ).not.toHaveClass('has-descendant-selected')
+  })
+
+  it('시/군/구 전체(서울특별시 전체) 선택 시 시/도에 하위 선택 인디케이터를 표시하고 해제 시 원복한다', async () => {
+    const user = userEvent.setup()
+    render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
+
+    const getSidoColumn = () =>
+      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
+    const getSigunguColumn = () =>
+      screen
+        .getByRole('heading', { name: '시/군/구' })
+        .closest('section') as HTMLElement
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(
+      within(getSigunguColumn()).getByRole('checkbox', {
+        name: '서울특별시 전체',
+      }),
+    )
+
+    expect(
+      within(getSidoColumn()).getByRole('button', { name: '서울특별시' }),
+    ).toHaveClass('has-descendant-selected')
+
+    await user.click(
+      within(getSigunguColumn()).getByRole('checkbox', {
+        name: '서울특별시 전체',
+      }),
+    )
+
+    expect(
+      within(getSidoColumn()).getByRole('button', { name: '서울특별시' }),
+    ).not.toHaveClass('has-descendant-selected')
+  })
+
+  it('current와 has-descendant-selected는 서로 다른 클래스로 동시에 구분 가능하다', async () => {
+    const user = userEvent.setup()
+    render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
+
+    const getSidoColumn = () =>
+      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '강남구 전체' }))
+    await user.click(screen.getByRole('button', { name: '부산광역시' }))
+
+    const seoulButton = within(getSidoColumn()).getByRole('button', {
+      name: '서울특별시',
+    })
+    const busanButton = within(getSidoColumn()).getByRole('button', {
+      name: '부산광역시',
+    })
+
+    expect(seoulButton).toHaveClass('has-descendant-selected')
+    expect(seoulButton).not.toHaveClass('is-current')
+    expect(busanButton).toHaveClass('is-current')
+    expect(busanButton).not.toHaveClass('has-descendant-selected')
+  })
+
   it('region 옵션 콜백(onChange/onSelectedEupmyeondong/onClick)을 호출한다', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
