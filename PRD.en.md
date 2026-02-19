@@ -37,7 +37,7 @@ Problems to solve:
 - US-004: An end user removes a single condition via a chip delete button.
 - US-005: An end user removes all conditions via the clear-all button.
 - US-006: An end user gets a visually natural selection experience because checkbox-based region labels and normal region-item labels use consistent typography.
-- US-007: When a child region like `Gangnam-gu > Yeoksam-dong` is selected, an end user can immediately recognize in upper columns (Sido `Seoul`, Sigungu `Gangnam-gu`) that a descendant is selected through a distinct color cue.
+- US-007: When either a child region like `Gangnam-gu > Yeoksam-dong` or a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected, an end user can immediately recognize in upper columns that a descendant is selected through a distinct color cue.
 
 ## 4. Goals
 
@@ -99,7 +99,7 @@ Problems to solve:
 | FR-020 | Must | Direct Sido-whole selection from Sigungu column | Users must be able to add/remove Sido-whole condition directly from Sigungu column checkbox without repeating the same "whole" selection step in Eup/Myeon/Dong. | AC-020 |
 | FR-021 | Must | No auto-selection of Sigungu before explicit user action | In the Sigungu column, right after list refresh triggers (Sido change or Sido-whole check/uncheck), the first item (e.g., `Gangnam-gu`) must not be auto-assigned as `current`/selected. Until a user explicitly clicks a Sigungu item, both Sigungu `current` and Eup/Myeon/Dong list must remain unselected. | AC-021 |
 | FR-022 | Should | Typography consistency across region items | Checkbox label text (`Sido whole`, Eup/Myeon/Dong) and normal region-item text (Sido/Sigungu/Eup/Myeon/Dong) must use the same typography baseline (`font-family`, `font-size`, `font-weight`, `line-height`). Selection emphasis must rely on color/background changes, while typography values stay consistent. | AC-022 |
-| FR-023 | Must | Ancestor color indicator for descendant selection | When a Eup/Myeon/Dong item (e.g., `Yeoksam-dong`) is selected, its ancestor items in that path (Sido `Seoul`, Sigungu `Gangnam-gu`) must be rendered with a separate visual color state (`has-descendant-selected`) that is distinct from `current`/direct `selected`. The visual system may stay in a blue family, but `current` and `has-descendant-selected` must be clearly separated by tone/saturation and auxiliary cues (e.g., border style). This state persists while at least one descendant is selected and returns to default immediately after the last descendant is removed. | AC-023 |
+| FR-023 | Must | Ancestor color indicator for descendant selection | When a Eup/Myeon/Dong item (e.g., `Yeoksam-dong`) is selected, and also when a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected as a descendant condition, ancestor items in that path (Sido `Seoul`, Sigungu `Gangnam-gu`) must be rendered with a separate visual color state (`has-descendant-selected`) that is distinct from `current`/direct `selected`. The visual system may stay in a blue family, but `current` and `has-descendant-selected` must be clearly separated by tone/saturation and auxiliary cues (e.g., border style). This state persists while at least one descendant is selected and returns to default immediately after the last descendant is removed. | AC-023 |
 
 ## 8. Component and API Requirements
 
@@ -191,7 +191,7 @@ Problems to solve:
 | AC-020 | Check `Seoul whole` in Sigungu column | Condition is added/removed immediately, and the same `Seoul whole` checkbox option is not duplicated in Eup/Myeon/Dong column. | FR-007, FR-020 |
 | AC-021 | Immediately after selecting `Seoul` or after checking then unchecking `Seoul whole` in Sigungu (without explicitly clicking `Gangnam-gu`) | `Gangnam-gu` must not become `current`/selected automatically; Sigungu `current` remains empty. `Gangnam-gu` `current` and Eup/Myeon/Dong refresh happen only after explicit user click on `Gangnam-gu`. | FR-021 |
 | AC-022 | Compare checkbox items (e.g., `Seoul whole`, `Yeoksam-dong`) with normal region items (e.g., `Seoul`, `Gangnam-gu`) in the same region-selection context | Compared texts have identical `font-family`, `font-size`, `font-weight`, and `line-height`. Under `selected/current/hover`, typography remains unchanged and only color/background changes. | FR-022 |
-| AC-023 | With `Seoul > Gangnam-gu > Yeoksam-dong` selected, inspect Sido and Sigungu columns | `Seoul` in the Sido column and `Gangnam-gu` in the Sigungu column are shown with a distinct descendant-selection color. Even if both states use blue tones, `current` and `has-descendant-selected` must be immediately distinguishable via tone/saturation or border-style differences, and the state must revert immediately when `Yeoksam-dong` is deselected. | FR-023 |
+| AC-023 | With `Seoul > Gangnam-gu > Yeoksam-dong` or `Seoul > Gangnam-gu whole` selected, inspect Sido and Sigungu columns | `Seoul` in the Sido column and `Gangnam-gu` in the Sigungu column are shown with a distinct descendant-selection color. Even if both states use blue tones, `current` and `has-descendant-selected` must be immediately distinguishable via tone/saturation or border-style differences, and the state must revert immediately when the last descendant (`Yeoksam-dong` or `Gangnam-gu whole`) is deselected. | FR-023 |
 
 ## 11. QA and Validation Plan
 
@@ -213,7 +213,7 @@ Problems to solve:
 - QA-008: Checking `Seoul whole` directly in Sigungu is applied immediately, and the same whole option is not duplicated in Eup/Myeon/Dong
 - QA-009: On Sigungu list refresh (Sido change, and checking then unchecking `Seoul whole`), `Gangnam-gu` must not be auto-selected/current; the state remains unselected until explicit Sigungu click
 - QA-010: Typography (`font-family/font-size/font-weight/line-height`) is identical across Sigungu Sido-whole checkbox text, Eup/Myeon/Dong checkbox text, and normal region-item text
-- QA-011: With `Seoul > Gangnam-gu > Yeoksam-dong` selected, Sido `Seoul` and Sigungu `Gangnam-gu` show a dedicated descendant-selection color (`has-descendant-selected`) and are distinguishable from `current` through blue-tone/border-style differences, and both revert when `Yeoksam-dong` is removed
+- QA-011: With `Seoul > Gangnam-gu > Yeoksam-dong` and `Seoul > Gangnam-gu whole` selected, Sido `Seoul` and Sigungu `Gangnam-gu` show a dedicated descendant-selection color (`has-descendant-selected`) and are distinguishable from `current` through blue-tone/border-style differences, and both revert when the last descendant selection is removed
 
 ### 11.3 Current Validation Status as of February 9, 2026
 
@@ -245,5 +245,5 @@ Problems to solve:
 - OI-010 (`Must`): After selecting Sido-whole in Sigungu, the same Sido-whole checkbox is redundantly exposed again in Eup/Myeon/Dong, causing unnecessary duplicate selection steps.
 - OI-011 (`Must`): On Sigungu list refreshes (Sido change, checking then unchecking `Seoul whole`, etc.), the first Sigungu (`Gangnam-gu`) is auto-selected/current, changing child state before explicit user intent.
 - OI-012 (`Should`): Typography differs between checkbox label text and normal region-item text in region selection, making the UI feel visually inconsistent.
-- OI-013 (`Must`): Even when a child region like `Gangnam-gu > Yeoksam-dong` is selected, upper-column items (Sido `Seoul`, Sigungu `Gangnam-gu`) do not show a dedicated descendant-selection color, making current selection context hard to scan.
+- OI-013 (`Must`): Even when a child region like `Gangnam-gu > Yeoksam-dong` or a descendant "whole" option like `Seoul whole`/`Gangnam-gu whole` is selected, upper-column items (Sido `Seoul`, Sigungu `Gangnam-gu`) do not show a dedicated descendant-selection color, making current selection context hard to scan.
 
