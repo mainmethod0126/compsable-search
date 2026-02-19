@@ -1,0 +1,71 @@
+import type {
+  KeywordSelectOptions,
+  Region,
+  RegionSelectOptions,
+  RegionSelectionItem,
+} from './types'
+
+type CallbackScope = 'region' | 'keyword'
+type CallbackName = 'onChange' | 'onSelectedEupmyeondong' | 'onClick'
+
+export const CALLBACK_ERROR_PREFIX = '[ComposableSearch] callback error'
+
+function reportCallbackError(
+  scope: CallbackScope,
+  callbackName: CallbackName,
+  error: unknown,
+): void {
+  console.error(
+    CALLBACK_ERROR_PREFIX,
+    `${scope}.${callbackName}`,
+    error instanceof Error ? error : new Error(String(error)),
+  )
+}
+
+function executeCallbackSafely<TArgs extends unknown[]>(
+  scope: CallbackScope,
+  callbackName: CallbackName,
+  callback: ((...args: TArgs) => void) | undefined,
+  ...args: TArgs
+): void {
+  if (!callback) {
+    return
+  }
+
+  try {
+    callback(...args)
+  } catch (error) {
+    reportCallbackError(scope, callbackName, error)
+  }
+}
+
+export function dispatchRegionOnChange(
+  options: RegionSelectOptions | undefined,
+  payload: RegionSelectionItem[],
+): void {
+  executeCallbackSafely('region', 'onChange', options?.onChange, payload)
+}
+
+export function dispatchRegionOnSelectedEupmyeondong(
+  options: RegionSelectOptions | undefined,
+  selected: Region,
+): void {
+  executeCallbackSafely(
+    'region',
+    'onSelectedEupmyeondong',
+    options?.onSelectedEupmyeondong,
+    selected,
+  )
+}
+
+export function dispatchRegionOnClick(
+  options: RegionSelectOptions | undefined,
+): void {
+  executeCallbackSafely('region', 'onClick', options?.onClick)
+}
+
+export function dispatchKeywordOnClick(
+  options: KeywordSelectOptions | undefined,
+): void {
+  executeCallbackSafely('keyword', 'onClick', options?.onClick)
+}

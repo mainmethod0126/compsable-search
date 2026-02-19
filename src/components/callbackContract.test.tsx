@@ -1,0 +1,219 @@
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { ComposableSearch } from './ComposableSearch'
+import { CALLBACK_ERROR_PREFIX } from './callbackPipeline'
+import type { RegionSelectProps } from './types'
+
+const regionData = {
+  sidos: [
+    { displayName: '서울특별시', name: '서울특별시', code: '11' },
+    { displayName: '부산광역시', name: '부산광역시', code: '26' },
+  ],
+  sigungus: {
+    '11': [
+      { displayName: '강남구', name: '강남구', code: '11680' },
+      { displayName: '송파구', name: '송파구', code: '11710' },
+    ],
+    '26': [{ displayName: '해운대구', name: '해운대구', code: '26350' }],
+  },
+  eupmyeondongs: {
+    '11680': [{ displayName: '역삼동', name: '역삼동', code: '1168010100' }],
+    '11710': [{ displayName: '잠실동', name: '잠실동', code: '1171010100' }],
+    '26350': [{ displayName: '우동', name: '우동', code: '2635010100' }],
+  },
+} as const
+
+function createRegionSelector(
+  overrides: Partial<RegionSelectProps> = {},
+): RegionSelectProps {
+  return {
+    type: 'region',
+    findAllSidos: () => [...regionData.sidos],
+    findAllSigungus: (sidoCode: string) => [
+      ...(regionData.sigungus[sidoCode as keyof typeof regionData.sigungus] ?? []),
+    ],
+    findAllEupmyeondongs: (sigunguCode: string) => [
+      ...(
+        regionData.eupmyeondongs[
+          sigunguCode as keyof typeof regionData.eupmyeondongs
+        ] ?? []
+      ),
+    ],
+    options: {
+      placeHolder: '지역 선택',
+    },
+    ...overrides,
+  }
+}
+
+describe('callback contract', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('onChange는 선택/해제/전체삭제 흐름에서 표준 payload(SelectedRegionCondition[])를 전달한다', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange,
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: '1168010100',
+          displayName: '서울특별시>강남구>역삼동',
+        }),
+      ]),
+    )
+
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+    expect(onChange).toHaveBeenLastCalledWith([])
+
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+    await user.click(screen.getByRole('button', { name: '전체 삭제' }))
+    expect(onChange).toHaveBeenLastCalledWith([])
+  })
+
+  it('onSelectedEupmyeondong은 선택 확정 시점에만 호출되고 해제 시에는 재호출되지 않는다', async () => {
+    const user = userEvent.setup()
+    const onSelectedEupmyeondong = vi.fn()
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onSelectedEupmyeondong,
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(onSelectedEupmyeondong).toHaveBeenCalledTimes(1)
+    expect(onSelectedEupmyeondong).toHaveBeenLastCalledWith(
+      expect.objectContaining({ code: '1168010100' }),
+    )
+
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+    expect(onSelectedEupmyeondong).toHaveBeenCalledTimes(1)
+  })
+
+  it('region/keyword onClick은 누락 없이 실행되고 예외가 발생해도 UI 흐름은 유지된다', async () => {
+    const user = userEvent.setup()
+    const regionOnClick = vi.fn(() => {
+      throw new Error('region click failed')
+    })
+    const keywordOnClick = vi.fn(() => {
+      throw new Error('keyword click failed')
+    })
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onClick: regionOnClick,
+            },
+          }),
+          {
+            type: 'keyword',
+            options: {
+              placeHolder: '키워드 선택',
+              onClick: keywordOnClick,
+            },
+          },
+        ]}
+      />,
+    )
+
+    const detailArea = screen.getByTestId('cs-detailed-area')
+    expect(detailArea).toHaveAttribute('data-state', 'closed')
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+
+    expect(detailArea).toHaveAttribute('data-state', 'open')
+    expect(regionOnClick).toHaveBeenCalledTimes(1)
+    expect(keywordOnClick).toHaveBeenCalledTimes(1)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('region.onClick'),
+      expect.any(Error),
+    )
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('keyword.onClick'),
+      expect.any(Error),
+    )
+  })
+
+  it('onChange/onSelectedEupmyeondong 콜백 오류가 발생해도 조건 선택/칩 렌더링은 중단되지 않는다', async () => {
+    const user = userEvent.setup()
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange: () => {
+                throw new Error('onChange failed')
+              },
+              onSelectedEupmyeondong: () => {
+                throw new Error('onSelectedEupmyeondong failed')
+              },
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    const selectedArea = screen.getByTestId('cs-selected-area')
+    expect(
+      within(selectedArea).getByText('서울특별시>강남구>역삼동'),
+    ).toBeInTheDocument()
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('region.onChange'),
+      expect.any(Error),
+    )
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('region.onSelectedEupmyeondong'),
+      expect.any(Error),
+    )
+  })
+})

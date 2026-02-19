@@ -1,13 +1,22 @@
 import { useMemo, useState } from 'react'
+import {
+  dispatchKeywordOnClick,
+  dispatchRegionOnChange,
+  dispatchRegionOnClick,
+  dispatchRegionOnSelectedEupmyeondong,
+} from './callbackPipeline'
+import type {
+  InternalRegionSelectOptions,
+  InternalRegionSelector,
+} from './internalTypes'
 import { RegionDetailPanel } from './RegionDetailPanel'
+import { resolveSelectorByType } from './selectorTypeUtils'
 import { SelectedConditionBasket } from './SelectedConditionBasket'
 import { toggleRegionCondition } from './selectionPolicy'
 import type {
   ComposableSearchProps,
   ComposableSelectProps,
   Region,
-  RegionSelectOptions,
-  RegionSelectProps,
   SelectedRegionCondition,
 } from './types'
 import './ComposableSearch.css'
@@ -18,10 +27,8 @@ const KEYWORD_PLACEHOLDER = '키워드 선택'
 
 function resolveRegionSelector(
   selectorsProps: ComposableSelectProps[],
-): RegionSelectProps | undefined {
-  return selectorsProps.find(
-    (selector): selector is RegionSelectProps => selector.type === 'region',
-  )
+): InternalRegionSelector | undefined {
+  return resolveSelectorByType(selectorsProps, 'region')
 }
 
 function resolveClassName(className?: string): string {
@@ -44,39 +51,44 @@ export function ComposableSearch({
     [selectorsProps],
   )
 
-  const handleToggleRegionTrigger = (selector: RegionSelectProps) => {
+  const handleToggleRegionTrigger = (selector: InternalRegionSelector) => {
     setIsOpenDetailedConditionArea((previous) => !previous)
-    selector.options?.onClick?.()
+    dispatchRegionOnClick(selector.options)
   }
 
   const handleToggleRegionCondition = (
     nextCondition: SelectedRegionCondition,
     selectedRegion: Region,
-    options?: RegionSelectOptions,
+    options?: InternalRegionSelectOptions,
   ) => {
     setSelectedConditions((previous) => {
+      const wasSelected = previous.some(
+        (condition) => condition.id === nextCondition.id,
+      )
       const next = toggleRegionCondition(previous, nextCondition)
-      options?.onChange?.(next)
+      dispatchRegionOnChange(options, next)
+      if (!wasSelected) {
+        dispatchRegionOnSelectedEupmyeondong(options, selectedRegion)
+      }
       return next
     })
-    options?.onSelectedEupmyeondong?.(selectedRegion)
   }
 
   const handleRemoveCondition = (
     conditionId: string,
-    options?: RegionSelectOptions,
+    options?: InternalRegionSelectOptions,
   ) => {
     setSelectedConditions((previous) => {
       const next = previous.filter((condition) => condition.id !== conditionId)
-      options?.onChange?.(next)
+      dispatchRegionOnChange(options, next)
       return next
     })
   }
 
-  const handleClearAllConditions = (options?: RegionSelectOptions) => {
+  const handleClearAllConditions = (options?: InternalRegionSelectOptions) => {
     setSelectedConditions(() => {
       const next: SelectedRegionCondition[] = []
-      options?.onChange?.(next)
+      dispatchRegionOnChange(options, next)
       return next
     })
   }
@@ -120,7 +132,7 @@ export function ComposableSearch({
               key={`selector-keyword-${index}`}
               className="cs-selector-trigger"
               type="button"
-              onClick={() => selector.options?.onClick?.()}
+              onClick={() => dispatchKeywordOnClick(selector.options)}
             >
               <span aria-hidden="true" className="cs-selector-icon">
                 K

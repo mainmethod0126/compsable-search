@@ -3,41 +3,41 @@
 ## 메타
 - 이터레이션명: iteration-04-p1-callback-and-consumer-validation
 - 기간: 2026-03-30 ~ 2026-04-10
-- 마지막 갱신: 2026-02-15
+- 마지막 갱신: 2026-02-19
 
 ## 진행률
-- 완료율: 0/33 (0%)
+- 완료율: 33/33 (100%)
 
 ## 1. 착수 준비
-- [ ] 계획서와 범위가 확정되었다.
-- [ ] 선행 의존성/차단 이슈를 확인했다.
-- [ ] 담당자와 우선순위를 합의했다.
+- [x] 계획서와 범위가 확정되었다. (완료: 2026-02-19, 근거: `iteration-plan.md`, `execution-log.md`)
+- [x] 선행 의존성/차단 이슈를 확인했다. (완료: 2026-02-19, 근거: `iteration-plan.md` 5장 의존성/리스크 재검토)
+- [x] 담당자와 우선순위를 합의했다. (완료: 2026-02-19, 근거: `iteration-plan.md` 4.1/2.2 착수 큐 반영)
 
 ## 2. 구현
-- [ ] [T-049] 정의한다: `onChange` 이벤트 파이프라인 연결 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/define-scope-and-acceptance/task.md)
-- [ ] [T-050] 구축한다: `onChange` 이벤트 파이프라인 연결 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/implement-main-scenario/task.md)
-- [ ] [T-051] 검증한다: `onChange` 이벤트 파이프라인 연결 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/validate-regression-and-failure-flow/task.md)
-- [ ] [T-052] 준비한다: `onChange` 이벤트 파이프라인 연결 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/prepare-observability-and-rollout/task.md)
-- [ ] [T-053] 정의한다: `onSelectedEupmyeondong` 호출 보장 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/define-scope-and-acceptance/task.md)
-- [ ] [T-054] 구현한다: `onSelectedEupmyeondong` 호출 보장 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/implement-main-scenario/task.md)
-- [ ] [T-055] 검증한다: `onSelectedEupmyeondong` 호출 보장 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/validate-regression-and-failure-flow/task.md)
-- [ ] [T-056] 준비한다: `onSelectedEupmyeondong` 호출 보장 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/prepare-observability-and-rollout/task.md)
-- [ ] [T-057] 정의한다: `onClick` 실행 지점 표준화 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/define-scope-and-acceptance/task.md)
-- [ ] [T-058] 구현한다: `onClick` 실행 지점 표준화 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/implement-main-scenario/task.md)
-- [ ] [T-059] 검증한다: `onClick` 실행 지점 표준화 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/validate-regression-and-failure-flow/task.md)
-- [ ] [T-060] 준비한다: `onClick` 실행 지점 표준화 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/prepare-observability-and-rollout/task.md)
-- [ ] [T-061] 정의한다: 소비자 통합 샘플 갱신 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/define-scope-and-acceptance/task.md)
-- [ ] [T-062] 구현한다: 소비자 통합 샘플 갱신 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/implement-main-scenario/task.md)
-- [ ] [T-063] 검증한다: 소비자 통합 샘플 갱신 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/validate-regression-and-failure-flow/task.md)
-- [ ] [T-064] 준비한다: 소비자 통합 샘플 갱신 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/prepare-observability-and-rollout/task.md)
-- [ ] [T-065] 정의한다: 계약 기반 검증 테스트 추가 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/define-scope-and-acceptance/task.md)
-- [ ] [T-066] 구현한다: 계약 기반 검증 테스트 추가 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/implement-main-scenario/task.md)
-- [ ] [T-067] 검증한다: 계약 기반 검증 테스트 추가 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/validate-regression-and-failure-flow/task.md)
-- [ ] [T-068] 준비한다: 계약 기반 검증 테스트 추가 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/prepare-observability-and-rollout/task.md)
-- [ ] [T-069] 정의한다: API 사용 가이드 동기화 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/define-scope-and-acceptance/task.md)
-- [ ] [T-070] 작성한다: API 사용 가이드 동기화 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/implement-main-scenario/task.md)
-- [ ] [T-071] 검증한다: API 사용 가이드 동기화 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/validate-regression-and-failure-flow/task.md)
-- [ ] [T-072] 준비한다: API 사용 가이드 동기화 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/prepare-observability-and-rollout/task.md)
+- [x] [T-049] 정의한다: `onChange` 이벤트 파이프라인 연결 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `.agents/iterations/iteration-04-p1-callback-and-consumer-validation/execution-log.md` 정의 섹션)
+- [x] [T-050] 구축한다: `onChange` 이벤트 파이프라인 연결 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/components/callbackPipeline.ts`)
+- [x] [T-051] 검증한다: `onChange` 이벤트 파이프라인 연결 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/components/callbackContract.test.tsx`, `npm test` 통과)
+- [x] [T-052] 준비한다: `onChange` 이벤트 파이프라인 연결 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onchange-event-pipeline-wiring/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `.agents/iterations/iteration-04-p1-callback-and-consumer-validation/release-runbook.md`)
+- [x] [T-053] 정의한다: `onSelectedEupmyeondong` 호출 보장 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `execution-log.md` 정의 섹션(onSelected 호출 정책 명시))
+- [x] [T-054] 구현한다: `onSelectedEupmyeondong` 호출 보장 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/components/ComposableSearch.tsx` onSelected 호출 조건 반영)
+- [x] [T-055] 검증한다: `onSelectedEupmyeondong` 호출 보장 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/components/callbackContract.test.tsx`, `npm test` 통과)
+- [x] [T-056] 준비한다: `onSelectedEupmyeondong` 호출 보장 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onselectedeupmyeondong-invocation-guarantee/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `release-runbook.md`)
+- [x] [T-057] 정의한다: `onClick` 실행 지점 표준화 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `execution-log.md` 정의 섹션(onClick 표준 경로 명시))
+- [x] [T-058] 구현한다: `onClick` 실행 지점 표준화 핵심 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/components/callbackPipeline.ts`, `src/components/ComposableSearch.tsx`)
+- [x] [T-059] 검증한다: `onClick` 실행 지점 표준화 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/components/callbackContract.test.tsx`, `npm test` 통과)
+- [x] [T-060] 준비한다: `onClick` 실행 지점 표준화 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/option-callback-wiring/onclick-hook-point-standardization/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `release-runbook.md`)
+- [x] [T-061] 정의한다: 소비자 통합 샘플 갱신 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `execution-log.md` 정의 섹션(소비자 샘플 범위 확정))
+- [x] [T-062] 구현한다: 소비자 통합 샘플 갱신 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/App.tsx`, `src/App.css`)
+- [x] [T-063] 검증한다: 소비자 통합 샘플 갱신 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/App.test.tsx`, `npm test` 통과)
+- [x] [T-064] 준비한다: 소비자 통합 샘플 갱신 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/consumer-integration-sample-refresh/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `release-runbook.md`)
+- [x] [T-065] 정의한다: 계약 기반 검증 테스트 추가 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `execution-log.md` 정의 섹션(계약 테스트 범위 확정))
+- [x] [T-066] 구현한다: 계약 기반 검증 테스트 추가 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `src/components/callbackContract.test.tsx`, `src/components/apiUsageGuideContract.test.ts`)
+- [x] [T-067] 검증한다: 계약 기반 검증 테스트 추가 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `npm test` 통과(43 tests))
+- [x] [T-068] 준비한다: 계약 기반 검증 테스트 추가 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/contract-based-validation-test-suite/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `release-runbook.md`)
+- [x] [T-069] 정의한다: API 사용 가이드 동기화 범위와 수용 기준 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/define-scope-and-acceptance/task.md) (완료: 2026-02-19, 근거: `execution-log.md` 정의 섹션(API 가이드 동기화 기준 확정))
+- [x] [T-070] 작성한다: API 사용 가이드 동기화 핵심 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/implement-main-scenario/task.md) (완료: 2026-02-19, 근거: `docs/api-usage-guide.md`, `README.md`)
+- [x] [T-071] 검증한다: API 사용 가이드 동기화 회귀와 실패 시나리오 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/validate-regression-and-failure-flow/task.md) (완료: 2026-02-19, 근거: `src/components/apiUsageGuideContract.test.ts`, `npm test` 통과)
+- [x] [T-072] 준비한다: API 사용 가이드 동기화 관측과 릴리스 운영 (backlog/public-api-contract-and-extensibility/consumer-integration-example-and-contract-validation/api-usage-guide-synchronization/prepare-observability-and-rollout/task.md) (완료: 2026-02-19, 근거: `release-runbook.md`)
 
 ## 2.1 일자별/담당역할별 착수 큐
 | 일자 | 담당 역할 | 당일 우선 착수 Task | 비고 |
@@ -62,14 +62,14 @@
 | 릴리스 엔지니어 | T-052, T-056, T-060, T-064, T-068, T-072 |
 
 ## 3. 검증
-- [ ] 기능 검증 시나리오를 실행했다.
-- [ ] 회귀 테스트를 수행했다.
-- [ ] 수용 기준(AC/DoD) 충족을 확인했다.
+- [x] 기능 검증 시나리오를 실행했다. (완료: 2026-02-19, 근거: `callbackContract`, `App.test` 시나리오 통과)
+- [x] 회귀 테스트를 수행했다. (완료: 2026-02-19, 근거: `npm test` 43 tests 통과)
+- [x] 수용 기준(AC/DoD) 충족을 확인했다. (완료: 2026-02-19, 근거: `execution-log.md`, `docs/api-usage-guide.md`)
 
 ## 4. 배포/운영
-- [ ] 배포 체크리스트를 점검했다.
-- [ ] 모니터링/알람 기준을 확인했다.
-- [ ] 롤백 절차를 점검했다.
+- [x] 배포 체크리스트를 점검했다. (완료: 2026-02-19, 근거: `release-runbook.md` 1장)
+- [x] 모니터링/알람 기준을 확인했다. (완료: 2026-02-19, 근거: `release-runbook.md` 2장)
+- [x] 롤백 절차를 점검했다. (완료: 2026-02-19, 근거: `release-runbook.md` 4장)
 
 ## 5. 완료 로그
 - 형식:
@@ -82,3 +82,4 @@
 - 근거 필수: 완료일과 검증 근거를 항목 끝에 기록한다.
 - 차단 상태: 체크 해제 상태 유지 + `(차단: 사유)`를 추가한다.
 - 범위 변경: 계획서(`iteration-plan.md`)와 체크리스트(`checklist.md`)를 함께 갱신한다.
+
