@@ -2,11 +2,11 @@
 
 ## 문서 메타
 - 이슈 제목: `선택 조건 영역 스크롤 기능 추가`
-- 이슈 소스: `.agents/issues/add-scroll-feature-to-selection-condition-area/issue.md` (내용 없음)
+- 이슈 소스: `.agents/issues/completed/add-scroll-feature-to-selection-condition-area/issue.md`
 - 작성일: `2026-02-20`
 - 작성자: `planner`
-- 상태: `Final`
-- 출력 경로: `.agents/issues/add-scroll-feature-to-selection-condition-area/plan.md`
+- 상태: `Completed`
+- 출력 경로: `.agents/issues/completed/add-scroll-feature-to-selection-condition-area/plan.md`
 
 ## 문제 정의
 ### 현재 동작
@@ -29,10 +29,10 @@
 
 ## 성공 기준 / 비목표
 ### 성공 기준
-- [ ] 칩 개수가 임계치(TBD)를 넘으면 선택 조건 영역에 내부 세로 스크롤이 활성화된다.
-- [ ] 스크롤 적용 후에도 칩 개별 삭제/전체 삭제/조건 동기화가 기존과 동일하게 동작한다.
-- [ ] 데스크톱/모바일 모두에서 선택 조건 영역이 레이아웃을 과도하게 밀어내지 않는다.
-- [ ] 스타일 계약 테스트와 기능 회귀 테스트가 CI 기준으로 통과한다.
+- [x] 칩 개수가 임계치를 넘으면 선택 조건 영역에 내부 세로 스크롤이 활성화된다. (근거: `src/components/ComposableSearch.css`)
+- [x] 스크롤 적용 후에도 칩 개별 삭제/전체 삭제/조건 동기화가 기존과 동일하게 동작한다. (근거: `src/components/ComposableSearch.test.tsx`)
+- [x] 데스크톱/모바일 모두에서 선택 조건 영역이 레이아웃을 과도하게 밀어내지 않는다. (근거: `.agents/iterations/completed/iteration-08-p0-selected-condition-scroll-containment/manual-qa-checklist.md`)
+- [x] 스타일 계약 테스트와 기능 회귀 테스트가 CI 기준으로 통과한다. (근거: `npm test`, `src/styleIsolation.test.ts`)
 
 ### 비목표
 - 선택 조건 데이터 모델/토글 정책 변경
@@ -108,8 +108,4 @@
 | 기존 테스트가 레이아웃 변화에 취약해 불필요한 실패가 발생할 수 있음 | L | M | 동작 계약 중심 테스트로 보강하고 스타일 계약은 최소 핵심 속성만 검증 | FE |
 
 ## 오픈 이슈(TBD)
-- `issue.md` 원문이 비어 있어 상세 수용 기준이 부재함: 아래 항목 확인 필요
-- 선택 조건 영역 스크롤 방향: 세로만 허용 vs 가로/세로 동시 허용
-- 높이 정책: 고정 px, viewport 비율, 브레이크포인트별 상한 중 어떤 정책을 사용할지
-- 헤더(제목/전체 삭제) 고정(sticky) 필요 여부
-- 수용 기준 임계치: 몇 개 칩부터 스크롤이 필수인지(예: 20/50/200)
+- 없음 (모든 TBD 항목을 이터레이션 08에서 확정 처리)

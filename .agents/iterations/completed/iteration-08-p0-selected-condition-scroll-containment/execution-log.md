@@ -7,7 +7,7 @@
 
 ## 1. 정의 단계 완료 (`T-169`)
 - 스크롤 UX 정책과 수용 기준을 확정했다.
-  - `.agents/iterations/iteration-08-p0-selected-condition-scroll-containment/scroll-ux-policy.md`
+  - `.agents/iterations/completed/iteration-08-p0-selected-condition-scroll-containment/scroll-ux-policy.md`
 - 확정값:
   - 데스크톱 상한 `144px`, 모바일 상한 `112px`
   - 세로 스크롤 전용
@@ -37,9 +37,10 @@
 
 ## 4. 운영 준비 완료 (`T-172`)
 - 수동 QA 체크리스트 작성:
-  - `.agents/iterations/iteration-08-p0-selected-condition-scroll-containment/manual-qa-checklist.md`
+  - `.agents/iterations/completed/iteration-08-p0-selected-condition-scroll-containment/manual-qa-checklist.md`
 - 관측/롤백 런북 작성:
-  - `.agents/iterations/iteration-08-p0-selected-condition-scroll-containment/release-runbook.md`
+  - `.agents/iterations/completed/iteration-08-p0-selected-condition-scroll-containment/release-runbook.md`
 
 ## 5. 잔여 리스크
 - JSDOM 환경에서는 실제 픽셀 레이아웃 계산을 검증할 수 없으므로, 모바일/데스크톱 실기기 수동 점검이 추가로 필요하다.
+
