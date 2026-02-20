@@ -35,8 +35,15 @@
 
 | Task ID | UserStory ID | 제목(동사 시작) | 유형 | 담당 역할 | 우선순위 | 난이도 | 선행조건 | 검증 방법 | 완료 정의(DoD) | 문서 경로 | GitHub Issue |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| T-001 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
-| T-002 | US-001 |  | 백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
+| T-001 | US-001 |  | 제품/디자인/UIUX/백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
+| T-002 | US-001 |  | 제품/디자인/UIUX/백엔드/프론트엔드/데이터/인프라/보안/테스트/운영 |  | P0/P1/P2 | H/M/L |  |  |  | `backlog/{epic-title-en}/{feature-title-en}/{userstory-title-en}/{task-title-en}/task.md` | `#번호` 또는 `TBD` |
+
+- UI/UX 관련 Feature는 기능 구현 전에 다음 선행 Task를 반드시 포함한다.
+  - 와이어프레임 또는 시안 작성
+  - 클릭 가능한 프로토타입 제작
+  - 사용성 검증과 개선 반영
+  - 디자인 확정/핸드오프 문서화
+- UI/UX 관련 기능 구현 Task의 `선행조건`에는 `디자인 확정/핸드오프` Task ID를 명시한다.
 
 ## 6. 의존성 그래프(텍스트)
 
@@ -69,6 +76,8 @@ US-002 -> T-006 -> T-010
 - Epic -> KPI 연결이 모두 명시되어 있는가
 - Feature 수용 기준이 테스트 가능한 문장인가
 - UserStory 수용 기준이 사용자 관점에서 테스트 가능한 문장인가
+- UI/UX 관련 Feature에 UI/UX 선행 UserStory/Task(시안, 프로토타입, 사용성 검증, 디자인 핸드오프)가 포함되어 있는가
+- UI/UX 관련 기능 구현 Task가 디자인 핸드오프 Task를 선행조건으로 참조하는가
 - 운영/배포/롤백/관측 작업이 Task에 포함되어 있는가
 - 보안/개인정보/권한 관련 검토 Task가 포함되어 있는가
 - GitHub MCP 사용 시 모든 항목의 이슈 번호/URL 매핑이 누락 없이 기록되어 있는가
