@@ -729,6 +729,64 @@ describe('ComposableSearch', () => {
     expect(clearAllButton).toBeDisabled()
   })
 
+  it('다수 칩 상태에서도 스크롤 viewport 내부에서 개별 삭제/전체 삭제와 onChange 계약을 유지한다', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange,
+            },
+          }),
+          {
+            ...keywordSelector,
+            options: {
+              ...keywordSelector.options,
+              maxTokens: 12,
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    const input = screen.getByRole('textbox', { name: '키워드 입력' })
+    const keywordValues = Array.from({ length: 8 }, (_, index) => `token${index + 1}`)
+
+    for (const keywordValue of keywordValues) {
+      await user.type(input, `${keywordValue}{Enter}`)
+    }
+
+    const basketSection = screen
+      .getByRole('heading', { name: '선택된 조건' })
+      .closest('section') as HTMLElement
+    const scrollViewport = within(basketSection).getByTestId(
+      'cs-selected-condition-scroll',
+    )
+
+    expect(scrollViewport).toBeInTheDocument()
+    expect(
+      within(scrollViewport).getAllByRole('button', { name: /키워드: token\d+ 삭제/ }),
+    ).toHaveLength(8)
+
+    await user.click(
+      within(scrollViewport).getByRole('button', { name: '키워드: token4 삭제' }),
+    )
+    expect(screen.queryByText('키워드: token4')).not.toBeInTheDocument()
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.not.arrayContaining([expect.objectContaining({ id: 'keyword:token4' })]),
+    )
+
+    await user.click(screen.getByRole('button', { name: '전체 삭제' }))
+    expect(
+      within(scrollViewport).queryByRole('button', { name: '키워드: token1 삭제' }),
+    ).not.toBeInTheDocument()
+    expect(onChange).toHaveBeenLastCalledWith([])
+  })
+
   it('상위 선택 유무와 데이터 존재 여부에 따라 빈 상태 문구를 구분해 렌더링한다', () => {
     render(
       <ComposableSearch

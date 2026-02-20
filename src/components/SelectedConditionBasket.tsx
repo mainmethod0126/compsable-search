@@ -24,23 +24,28 @@ export function SelectedConditionBasket({
           전체 삭제
         </button>
       </header>
-      <ul className="cs-selected-condition-list">
-        {selectedConditions.map((condition) => (
-          <li key={condition.id}>
-            <div className="cs-selected-condition-chip">
-              <span>{condition.displayName}</span>
-              <button
-                aria-label={`${condition.displayName} 삭제`}
-                className="cs-chip-remove-button"
-                type="button"
-                onClick={() => onRemoveCondition(condition.id)}
-              >
-                삭제
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div
+        className="cs-selected-condition-scroll"
+        data-testid="cs-selected-condition-scroll"
+      >
+        <ul className="cs-selected-condition-list">
+          {selectedConditions.map((condition) => (
+            <li key={condition.id}>
+              <div className="cs-selected-condition-chip">
+                <span>{condition.displayName}</span>
+                <button
+                  aria-label={`${condition.displayName} 삭제`}
+                  className="cs-chip-remove-button"
+                  type="button"
+                  onClick={() => onRemoveCondition(condition.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   )
 }

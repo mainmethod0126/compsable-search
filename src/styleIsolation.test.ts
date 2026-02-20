@@ -59,6 +59,10 @@ describe('style scope isolation', () => {
     const columnRule = extractRuleBody(css, '.cs-region-column')
     const listRule = extractRuleBody(css, '.cs-region-column-list')
     const checkableListRule = extractRuleBody(css, '.cs-checkable-list')
+    const selectedConditionScrollRule = extractRuleBody(
+      css,
+      '.cs-selected-condition-scroll',
+    )
 
     expect(detailRule).toContain('overflow-x: hidden')
     expect(columnRule).toContain('min-height')
@@ -67,5 +71,10 @@ describe('style scope isolation', () => {
     expect(listRule).toContain('overflow-y: auto')
     expect(checkableListRule).toContain('max-height')
     expect(checkableListRule).toContain('overflow-y: auto')
+    expect(selectedConditionScrollRule).toContain('max-height')
+    expect(selectedConditionScrollRule).toContain('overflow-y: auto')
+    expect(css).toMatch(
+      /@media\s*\(max-width:\s*768px\)[\s\S]*\.cs-selected-condition-scroll\s*\{[\s\S]*max-height/m,
+    )
   })
 })

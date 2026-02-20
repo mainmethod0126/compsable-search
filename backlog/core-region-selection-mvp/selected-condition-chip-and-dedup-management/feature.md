@@ -16,11 +16,13 @@
   - [ ] 동일 지역/동일 키 조건 중복 추가가 차단된다.
   - [ ] 전체 삭제 동작 시 UI 상태와 내부 조건 상태가 함께 초기화된다.
   - [ ] 선택 조건이 없는 경우 빈 상태 메시지와 후속 행동 유도가 표시된다.
+  - [ ] 칩이 대량으로 누적되어도 선택 조건 영역은 내부 스크롤로 높이 상한을 유지하고 삭제/동기화 흐름이 회귀 없이 동작한다.
 
 ## 하위 UserStory
 - [US-007] 선택 조건 칩 렌더링 (`./selected-condition-chip-rendering/userstory.md`)
 - [US-008] 개별/전체 삭제 상호작용 (`./single-and-bulk-removal-interaction/userstory.md`)
 - [US-009] 중복 방지와 빈 상태 처리 (`./deduplication-and-empty-state-handling/userstory.md`)
+- [US-043] 선택 조건 영역 스크롤과 레이아웃 보호 (`./selected-condition-scroll-containment/userstory.md`)
 
 ## 의존성
 - 선행:

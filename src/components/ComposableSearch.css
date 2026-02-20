@@ -235,6 +235,8 @@
   border: 1px solid #d2dae2;
   border-radius: 10px;
   padding: 10px;
+  display: grid;
+  gap: 8px;
 }
 
 .cs-selected-condition-header {
@@ -242,7 +244,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 .cs-selected-condition-title {
@@ -263,6 +264,13 @@
   opacity: 0.5;
 }
 
+.cs-selected-condition-scroll {
+  max-height: 144px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
 .cs-selected-condition-list {
   margin: 0;
   padding: 0;
@@ -270,6 +278,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-content: flex-start;
 }
 
 .cs-selected-condition-chip {
@@ -292,5 +301,9 @@
 @media (max-width: 768px) {
   .cs-region-columns {
     grid-template-columns: 1fr;
+  }
+
+  .cs-selected-condition-scroll {
+    max-height: 112px;
   }
 }
