@@ -107,7 +107,8 @@ backlog/
 - 소속 UserStory: `[US-xxx] {UserStory 제목}` (`../userstory.md`)
 - 소속 Feature: `[F-xx] {Feature 제목}` (`../../feature.md`)
 - 소속 Epic: `[E-xx] {Epic 제목}` (`../../../epic.md`)
-- 유형: `제품/백엔드/프론트엔드/데이터/인프라/보안/테스트/운영`
+- 유형: `제품/디자인/UIUX/백엔드/프론트엔드/데이터/인프라/보안/테스트/운영`
+- 단계: `UI/UX-선행/기능-구현/검증/출시`
 - 담당 역할:
 - 우선순위: `P0/P1/P2`
 - 난이도: `High/Medium/Low`
@@ -128,4 +129,6 @@ backlog/
 
 - `backlog/index.md`를 사용하는 경우 요약 표와 디렉토리 문서 ID/제목/우선순위를 일치시킨다.
 - 각 문서에서 상위/하위 문서 상대 경로가 실제 경로와 일치해야 한다.
+- UI/UX 관련 Feature는 기능 구현 UserStory보다 먼저 UI/UX 선행 UserStory를 배치한다.
+- UI/UX 관련 기능 구현 Task의 `선행조건`에는 `디자인 확정/핸드오프` Task ID를 기록한다.
 - 내용이 미확정이면 추측하지 말고 `TBD`로 남긴다.
