@@ -14,7 +14,7 @@
 ## 작업 내용
 - 목표: 프로파일별 규모 목표와 생성 규칙을 팀 합의 가능한 수용 기준으로 정의한다.
 - 구현 항목: `small/medium/large` 프로파일 목적과 기본 수량 범위를 명세한다. / `region.code` 명명 규칙과 유일성 제약을 정의한다. / `large` 목표 수량, 성능 기준선 방식 등 미확정 항목을 `TBD`로 분리한다.
-- 선행조건: `.agents/issues/add-more-region-samples/plan.md` 합의 초안 확인
+- 선행조건: `.agents/issues/completed/add-more-region-samples/plan.md` 합의 초안 확인
 
 ## 검증과 완료 조건
 - 검증 방법(테스트/리뷰/지표): 설계 리뷰에서 수용 기준과 `TBD` 분리가 승인된다.
