@@ -34,7 +34,7 @@
 - [F-13] 결정적 지역 샘플 프로파일과 대량 검증 워크플로우 (`./deterministic-region-sample-profiles-and-validation/feature.md`)
 
 ## 관련 정보
-- 기준 문서: `.agents/issues/add-more-region-samples/issue.md`, `.agents/issues/add-more-region-samples/plan.md`
+- 기준 문서: `.agents/issues/completed/add-more-region-samples/issue.md`, `.agents/issues/completed/add-more-region-samples/plan.md`
 - 비고/TBD:
   - `large` 프로파일 목표 항목 수(예: 1천/5천/1만)는 `TBD`
   - 성능 기준선 고정값(ms) vs 상대 개선율(%) 기준 선택은 `TBD`

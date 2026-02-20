@@ -2,11 +2,11 @@
 
 ## 문서 메타
 - 이슈 제목: `더 많은 지역 샘플 추가`
-- 이슈 소스: `.agents/issues/add-more-region-samples/issue.md`
+- 이슈 소스: `.agents/issues/completed/add-more-region-samples/issue.md`
 - 작성일: `2026-02-19`
 - 작성자: `planner`
 - 상태: `Final`
-- 출력 경로: `.agents/issues/add-more-region-samples/plan.md`
+- 출력 경로: `.agents/issues/completed/add-more-region-samples/plan.md`
 
 ## 문제 정의
 ### 현재 동작
