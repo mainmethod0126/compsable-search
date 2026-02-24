@@ -13,12 +13,12 @@
 - GitHub Issue: `TBD`
 
 ## 작업 내용
-- 목표: 검색 입력 컴포넌트 분리와 시/도 컬럼 상단 배치, 미리보기 리스트 렌더링 UI를 구현한다.
-- 구현 항목: `RegionSearchInput.tsx`를 생성하고 SVG 아이콘 슬롯 계약을 구현한다. / `RegionDetailPanel.tsx`, `SelectableRegionColumn.tsx`, `ComposableSearch.css`를 수정해 상단 배치를 연결한다. / 빈 결과/기본 상태 표시를 구현한다.
+- 목표: 검색 입력 컴포넌트 분리와 `cs-selector-area` 하위 좌상단 배치(`cs-detailed-area` 바깥), 미리보기 리스트 렌더링 UI를 구현한다.
+- 구현 항목: `RegionSearchInput.tsx`를 생성하고 SVG 아이콘 슬롯 계약을 구현한다. / `ComposableSearch.tsx`, `ComposableSearch.css`를 수정해 `selector-area` 하위 배치를 연결한다. / 빈 결과/기본 상태 표시를 구현한다.
 - 선행조건: `[T-176] 확정한다: 지역 검색 컴포넌트 디자인 핸드오프`, `[T-178] 구현한다: 지역 검색 인덱스와 필터 모델`이 완료되어야 한다.
 
 ## 검증과 완료 조건
 - 검증 방법(테스트/리뷰/지표): UI 스냅샷/접근성 리뷰와 수동 시나리오 점검으로 렌더링 규칙을 확인한다.
 - 산출물: 검색 입력 컴포넌트 코드, 레이아웃/CSS 변경 코드
-- 완료 정의(DoD): 검색 입력과 미리보기 UI가 디자인 핸드오프 기준대로 렌더되고 기존 컬럼 레이아웃이 깨지지 않는다.
+- 완료 정의(DoD): 검색 입력과 미리보기 UI가 디자인 핸드오프 기준대로 렌더되고 `selector-area`/`detailed-area` 배치 계약 및 기존 컬럼 레이아웃이 유지된다.
 

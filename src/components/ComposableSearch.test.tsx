@@ -23,6 +23,24 @@ const regionData = {
   },
 } as const
 
+const searchableRegionData = {
+  sidos: [
+    { displayName: '서울특별시', name: '서울특별시', code: '11' },
+    { displayName: '경기도', name: '경기도', code: '41' },
+    { displayName: '충청남도', name: '충청남도', code: '44' },
+  ],
+  sigungus: {
+    '11': [{ displayName: '광진구', name: '광진구', code: '11215' }],
+    '41': [{ displayName: '수원시 장안구', name: '수원시 장안구', code: '41111' }],
+    '44': [{ displayName: '서산시', name: '서산시', code: '44210' }],
+  },
+  eupmyeondongs: {
+    '11215': [{ displayName: '자양동', name: '자양동', code: '1121510500' }],
+    '41111': [{ displayName: '조원동', name: '조원동', code: '4111113300' }],
+    '44210': [{ displayName: '동문동', name: '동문동', code: '4421010100' }],
+  },
+} as const
+
 function createRegionSelector(
   overrides: Partial<RegionSelectProps> = {},
 ): RegionSelectProps {
@@ -36,6 +54,33 @@ function createRegionSelector(
       ...(
         regionData.eupmyeondongs[
           sigunguCode as keyof typeof regionData.eupmyeondongs
+        ] ?? []
+      ),
+    ],
+    options: {
+      placeHolder: '지역 선택',
+    },
+    ...overrides,
+  }
+}
+
+function createSearchableRegionSelector(
+  overrides: Partial<RegionSelectProps> = {},
+): RegionSelectProps {
+  return {
+    type: 'region',
+    findAllSidos: () => [...searchableRegionData.sidos],
+    findAllSigungus: (sidoCode: string) => [
+      ...(
+        searchableRegionData.sigungus[
+          sidoCode as keyof typeof searchableRegionData.sigungus
+        ] ?? []
+      ),
+    ],
+    findAllEupmyeondongs: (sigunguCode: string) => [
+      ...(
+        searchableRegionData.eupmyeondongs[
+          sigunguCode as keyof typeof searchableRegionData.eupmyeondongs
         ] ?? []
       ),
     ],
@@ -81,6 +126,44 @@ describe('ComposableSearch', () => {
     const selectorButtons = within(selectorArea).getAllByRole('button')
     expect(selectorButtons[0]).toHaveTextContent('지역 선택')
     expect(selectorButtons[1]).toHaveTextContent('키워드 선택')
+  })
+
+  it('지역 검색 입력은 cs-selector-area 바깥 아래에 배치되고 cs-detailed-area 바깥에 유지된다', () => {
+    render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
+
+    const selectorArea = screen.getByTestId('cs-selector-area')
+    const searchArea = screen.getByTestId('cs-region-search-area')
+    const detailedArea = screen.getByTestId('cs-detailed-area')
+    const searchInput = within(searchArea).getByRole('textbox', {
+      name: '지역 검색',
+    })
+
+    expect(selectorArea.contains(searchInput)).toBe(false)
+    expect(
+      selectorArea.compareDocumentPosition(searchArea) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      searchArea.compareDocumentPosition(detailedArea) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('검색 미리보기 항목을 클릭하면 조건 칩에 반영되고 입력이 초기화된다', async () => {
+    const user = userEvent.setup()
+    render(<ComposableSearch selectorsProps={[createSearchableRegionSelector()]} />)
+
+    const searchInput = screen.getByRole('textbox', { name: '지역 검색' })
+    await user.type(searchInput, '수')
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '경기도 > 수원시 장안구 > 조원동',
+      }),
+    )
+
+    expect(screen.getByText('경기도>수원시 장안구>조원동')).toBeInTheDocument()
+    expect(searchInput).toHaveValue('')
   })
 
   it('region 트리거 클릭 시 상세 패널이 open/closed 토글된다', async () => {

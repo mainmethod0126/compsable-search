@@ -1,11 +1,11 @@
-﻿# [US-015] `onClick` 실행 지점 표준화
+# [US-015] `onClick` 실행 지점 표준화
 
 ## 메타
 - ID: `US-015`
 - 소속 Feature: `[F-05] 옵션 콜백 실행 경로 연결` (`../feature.md`)
 - 소속 Epic: `[E-02] 소비자 API 계약 안정화와 확장 포인트 연결` (`../../epic.md`)
 - 우선순위: `P1`
-- 상태: `TBD`
+- 상태: `Done`
 - GitHub Issue: `TBD`
 
 ## 사용자 스토리
@@ -14,14 +14,16 @@
 - So that: 상위 Feature인 `옵션 콜백 실행 경로 연결`의 사용자 가치를 일관되게 달성할 수 있다.
 
 ## 수용 기준
-- [ ] `onClick` 실행 지점 표준화 관련 핵심 동작과 정책이 문서로 정의된다.
-- [ ] `onClick` 실행 지점 표준화 정상 흐름이 구현되고 테스트 또는 리뷰 절차로 검증된다.
-- [ ] `onClick` 실행 지점 표준화 예외/실패 시나리오의 처리 기준이 정의되고 동작이 일관된다.
-- [ ] `onClick` 실행 지점 표준화 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
+- [x] `onClick` 실행 지점 표준화 관련 핵심 동작과 정책이 문서로 정의된다.
+- [x] `onClick` 실행 지점 표준화 정상 흐름이 구현되고 테스트 또는 리뷰 절차로 검증된다.
+- [x] `onClick` 실행 지점 표준화 예외/실패 시나리오의 처리 기준이 정의되고 동작이 일관된다.
+- [x] `onClick` 실행 지점 표준화 변경이 상위 Feature 수용 기준을 깨지 않음을 검증한다.
 
 ## 하위 Task
 - [T-057] 정의한다: `onClick` 실행 지점 표준화 범위와 수용 기준 (`./define-scope-and-acceptance/task.md`)
 - [T-058] 구현한다: `onClick` 실행 지점 표준화 핵심 시나리오 (`./implement-main-scenario/task.md`)
 - [T-059] 검증한다: `onClick` 실행 지점 표준화 회귀와 실패 시나리오 (`./validate-regression-and-failure-flow/task.md`)
 - [T-060] 준비한다: `onClick` 실행 지점 표준화 관측과 릴리스 운영 (`./prepare-observability-and-rollout/task.md`)
+
+
 

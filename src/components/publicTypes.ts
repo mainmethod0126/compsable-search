@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 export interface Region {
   displayName: string
@@ -43,6 +43,12 @@ type BivariantCallback<TArgs extends unknown[]> = {
 
 export interface RegionSelectOptions {
   placeHolder?: string
+  searchInputLabel?: string
+  searchInputPlaceholder?: string
+  searchIdleMessage?: string
+  searchNoResultMessage?: string
+  searchResultLimit?: number
+  searchInputIcon?: ReactNode
   onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   onSelectedEupmyeondong?: (selected: Region) => void
   onClick?: () => void

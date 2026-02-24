@@ -23,6 +23,14 @@ import {
   type KeywordInputEvent,
 } from './keywordInputModel'
 import { RegionDetailPanel } from './RegionDetailPanel'
+import { RegionSearchInput } from './RegionSearchInput'
+import {
+  buildRegionSearchIndex,
+  DEFAULT_REGION_SEARCH_RESULT_LIMIT,
+  filterRegionSearchResults,
+  mapRegionSearchResultToCondition,
+  type RegionSearchResult,
+} from './regionSearchModel'
 import { resolveSelectorByType } from './selectorTypeUtils'
 import { SelectedConditionBasket } from './SelectedConditionBasket'
 import { toggleRegionCondition } from './selectionPolicy'
@@ -38,6 +46,11 @@ import './ComposableSearch.css'
 
 const DETAILED_CONDITION_PLACEHOLDER = '상세 조건을 선택해 주세요.'
 const REGION_PLACEHOLDER = '지역 선택'
+const REGION_SEARCH_LABEL = '지역 검색'
+const REGION_SEARCH_PLACEHOLDER = '시/도, 시/군/구, 읍/면/동 검색'
+const REGION_SEARCH_IDLE_MESSAGE =
+  '지역명을 입력하면 시/도, 시/군/구, 읍/면/동 미리보기를 제공합니다.'
+const REGION_SEARCH_NO_RESULT_MESSAGE = '일치하는 지역이 없습니다.'
 const KEYWORD_PLACEHOLDER = '키워드 선택'
 const KEYWORD_INPUT_LABEL = '키워드 입력'
 const KEYWORD_INPUT_GUIDE_TEXT =
@@ -75,6 +88,7 @@ export function ComposableSearch({
   style,
 }: ComposableSearchProps) {
   const [activePanelMode, setActivePanelMode] = useState<DetailPanelMode>('none')
+  const [regionSearchQuery, setRegionSearchQuery] = useState('')
   const [selectedRegionConditions, setSelectedRegionConditions] = useState<
     SelectedRegionCondition[]
   >([])
@@ -93,6 +107,19 @@ export function ComposableSearch({
   const keywordPolicy = useMemo(
     () => resolveKeywordPolicy(keywordSelector?.options),
     [keywordSelector?.options],
+  )
+  const regionSearchIndex = useMemo(
+    () => (regionSelector ? buildRegionSearchIndex(regionSelector) : []),
+    [regionSelector],
+  )
+  const regionSearchResults = useMemo(
+    () =>
+      filterRegionSearchResults(regionSearchIndex, regionSearchQuery, {
+        limit:
+          regionSelector?.options?.searchResultLimit ??
+          DEFAULT_REGION_SEARCH_RESULT_LIMIT,
+      }),
+    [regionSearchIndex, regionSearchQuery, regionSelector?.options?.searchResultLimit],
   )
 
   const selectedRegionConditionsRef = useRef(selectedRegionConditions)
@@ -168,6 +195,16 @@ export function ComposableSearch({
       }
       return next
     })
+  }
+
+  const handleSelectRegionSearchResult = (result: RegionSearchResult) => {
+    if (!regionSelector) {
+      return
+    }
+
+    const { condition, selectedRegion } = mapRegionSearchResultToCondition(result)
+    handleToggleRegionCondition(condition, selectedRegion, regionSelector.options)
+    setRegionSearchQuery('')
   }
 
   const handleRemoveCondition = (
@@ -291,6 +328,30 @@ export function ComposableSearch({
           )
         })}
       </div>
+      {regionSelector ? (
+        <div className="cs-region-search-area" data-testid="cs-region-search-area">
+          <RegionSearchInput
+            emptyMessage={
+              regionSelector.options?.searchNoResultMessage ??
+              REGION_SEARCH_NO_RESULT_MESSAGE
+            }
+            icon={regionSelector.options?.searchInputIcon}
+            idleMessage={
+              regionSelector.options?.searchIdleMessage ??
+              REGION_SEARCH_IDLE_MESSAGE
+            }
+            label={regionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL}
+            placeholder={
+              regionSelector.options?.searchInputPlaceholder ??
+              REGION_SEARCH_PLACEHOLDER
+            }
+            results={regionSearchResults}
+            value={regionSearchQuery}
+            onChange={setRegionSearchQuery}
+            onSelectResult={handleSelectRegionSearchResult}
+          />
+        </div>
+      ) : null}
       <div
         className="cs-detailed-area"
         data-state={activePanelMode === 'none' ? 'closed' : 'open'}

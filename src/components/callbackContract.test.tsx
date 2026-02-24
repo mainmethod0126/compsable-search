@@ -23,6 +23,24 @@ const regionData = {
   },
 } as const
 
+const searchableRegionData = {
+  sidos: [
+    { displayName: '서울특별시', name: '서울특별시', code: '11' },
+    { displayName: '경기도', name: '경기도', code: '41' },
+    { displayName: '충청남도', name: '충청남도', code: '44' },
+  ],
+  sigungus: {
+    '11': [{ displayName: '광진구', name: '광진구', code: '11215' }],
+    '41': [{ displayName: '수원시 장안구', name: '수원시 장안구', code: '41111' }],
+    '44': [{ displayName: '서산시', name: '서산시', code: '44210' }],
+  },
+  eupmyeondongs: {
+    '11215': [{ displayName: '자양동', name: '자양동', code: '1121510500' }],
+    '41111': [{ displayName: '조원동', name: '조원동', code: '4111113300' }],
+    '44210': [{ displayName: '동문동', name: '동문동', code: '4421010100' }],
+  },
+} as const
+
 function createRegionSelector(
   overrides: Partial<RegionSelectProps> = {},
 ): RegionSelectProps {
@@ -36,6 +54,33 @@ function createRegionSelector(
       ...(
         regionData.eupmyeondongs[
           sigunguCode as keyof typeof regionData.eupmyeondongs
+        ] ?? []
+      ),
+    ],
+    options: {
+      placeHolder: '지역 선택',
+    },
+    ...overrides,
+  }
+}
+
+function createSearchableRegionSelector(
+  overrides: Partial<RegionSelectProps> = {},
+): RegionSelectProps {
+  return {
+    type: 'region',
+    findAllSidos: () => [...searchableRegionData.sidos],
+    findAllSigungus: (sidoCode: string) => [
+      ...(
+        searchableRegionData.sigungus[
+          sidoCode as keyof typeof searchableRegionData.sigungus
+        ] ?? []
+      ),
+    ],
+    findAllEupmyeondongs: (sigunguCode: string) => [
+      ...(
+        searchableRegionData.eupmyeondongs[
+          sigunguCode as keyof typeof searchableRegionData.eupmyeondongs
         ] ?? []
       ),
     ],
@@ -256,6 +301,44 @@ describe('callback contract', () => {
       expect.stringContaining(CALLBACK_ERROR_PREFIX),
       expect.stringContaining('region.onSelectedEupmyeondong'),
       expect.any(Error),
+    )
+  })
+
+  it('검색 미리보기 클릭도 onChange/onSelectedEupmyeondong 계약을 동일하게 준수한다', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onSelectedEupmyeondong = vi.fn()
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createSearchableRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange,
+              onSelectedEupmyeondong,
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.type(screen.getByRole('textbox', { name: '지역 검색' }), '서')
+    await user.click(
+      screen.getByRole('button', { name: '충청남도 > 서산시' }),
+    )
+
+    expect(onSelectedEupmyeondong).toHaveBeenCalledTimes(1)
+    expect(onSelectedEupmyeondong).toHaveBeenLastCalledWith(
+      expect.objectContaining({ code: '44210', displayName: '서산시 전체' }),
+    )
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: '44210',
+          displayName: '충청남도>서산시>서산시 전체',
+        }),
+      ]),
     )
   })
 })

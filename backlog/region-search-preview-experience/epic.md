@@ -3,7 +3,7 @@
 ## 메타
 - ID: `E-06`
 - 우선순위: `P0`
-- 상태: `TBD`
+- 상태: `Done`
 - GitHub Issue: `TBD`
 
 ## 문제와 사용자 가치
@@ -20,10 +20,11 @@
 
 ## 범위
 - 포함:
-  - 시/도 컬럼 상단 근처 지역 검색 입력 UI 추가
+  - `cs-selector-area` 하위 좌상단(`cs-detailed-area` 바깥) 지역 검색 입력 UI 추가
   - 좌측 SVG 아이콘 슬롯을 포함한 검색 입력 컴포넌트 분리
   - 시/도/시군구/읍면동 전체를 대상으로 한 부분 일치 미리보기 생성
   - 미리보기 클릭 시 선택 조건 칩 반영 및 기존 콜백 계약 유지
+  - DOM 배치 계약(`selector-area` 하위, `detailed-area` 외부) 테스트 고정
   - 단위/통합/회귀 테스트, 운영 관측/롤백 문서 반영
 - 제외:
   - 초성 검색/오탈자 보정/퍼지 검색 알고리즘
@@ -35,8 +36,10 @@
 - [F-15] 지역 검색 모델과 미리보기 선택 연동 구현 (`./region-search-model-and-selection-integration/feature.md`)
 
 ## 관련 정보
-- 기준 PRD: `.agents/issues/region-search-feature/plan.md`, `.agents/issues/region-search-feature/issue.md`
+- 기준 PRD: `.agents/issues/completed/region-search-feature/plan.md`, `.agents/issues/completed/region-search-feature/issue.md`
 - 비고/TBD:
   - GitHub 등록 대상 저장소(`owner/repo`)와 라벨 정책은 `TBD`
   - 검색 결과 기본 노출 개수/정렬 우선순위는 `TBD`로 유지하고 하위 Task에서 확정한다.
+
+
 

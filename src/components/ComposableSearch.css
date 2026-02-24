@@ -13,6 +13,95 @@
   gap: 8px;
 }
 
+.cs-region-search-area {
+  display: block;
+}
+
+.cs-region-search-input {
+  max-width: 460px;
+  display: grid;
+  gap: 6px;
+}
+
+.cs-region-search-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #213143;
+}
+
+.cs-region-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #bec8d2;
+  border-radius: 10px;
+  padding: 0 10px;
+  background-color: #ffffff;
+}
+
+.cs-region-search-field:focus-within {
+  border-color: #3a78c3;
+  box-shadow: 0 0 0 2px #dbe9ff;
+}
+
+.cs-region-search-icon {
+  color: #2d5f9c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-region-search-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cs-region-search-control {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 9px 0;
+  font-size: 14px;
+  color: #1f2d3d;
+}
+
+.cs-region-search-control:focus {
+  outline: none;
+}
+
+.cs-region-search-message {
+  margin: 0;
+  font-size: 12px;
+  color: #5a6a7f;
+}
+
+.cs-region-search-preview-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #d7dfe6;
+  border-radius: 8px;
+  background-color: #ffffff;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.cs-region-search-preview-item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background-color: transparent;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #1f2d3d;
+  cursor: pointer;
+}
+
+.cs-region-search-preview-item:hover {
+  background-color: #f0f6ff;
+}
+
 .cs-selector-trigger {
   display: inline-flex;
   align-items: center;
@@ -299,6 +388,10 @@
 }
 
 @media (max-width: 768px) {
+  .cs-region-search-input {
+    max-width: 100%;
+  }
+
   .cs-region-columns {
     grid-template-columns: 1fr;
   }
