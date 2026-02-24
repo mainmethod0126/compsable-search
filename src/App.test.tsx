@@ -5,19 +5,13 @@ import App from './App'
 async function selectFirstRegionPath(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: /지역 선택/ }))
 
-  const sidoColumn = screen
-    .getByRole('heading', { name: '시/도' })
-    .closest('section') as HTMLElement
+  const sidoColumn = screen.getByTestId('cs-region-column-sido')
   await user.click(within(sidoColumn).getAllByRole('button')[0])
 
-  const sigunguColumn = screen
-    .getByRole('heading', { name: '시/군/구' })
-    .closest('section') as HTMLElement
+  const sigunguColumn = screen.getByTestId('cs-region-column-sigungu')
   await user.click(within(sigunguColumn).getAllByRole('button')[0])
 
-  const eupmyeondongColumn = screen
-    .getByRole('heading', { name: '읍/면/동' })
-    .closest('section') as HTMLElement
+  const eupmyeondongColumn = screen.getByTestId('cs-region-column-eupmyeondong')
   await user.click(within(eupmyeondongColumn).getAllByRole('checkbox')[0])
 }
 

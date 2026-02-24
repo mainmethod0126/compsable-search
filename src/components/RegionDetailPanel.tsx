@@ -152,7 +152,7 @@ export function RegionDetailPanel({
           }
           emptyMessage={EMPTY_STATE_MESSAGES.NO_ITEMS}
           onSelectedRegion={handleSelectedSido}
-          title="시/도"
+          testId="cs-region-column-sido"
         />
         <SelectableRegionColumn
           key={`sigungu-${selectedSido?.code ?? 'none'}-${isSelectedSidoWhole ? 'whole' : 'detail'}`}
@@ -162,7 +162,7 @@ export function RegionDetailPanel({
           }
           emptyMessage={sigunguEmptyMessage}
           onSelectedRegion={handleSelectedSigungu}
-          title="시/군/구"
+          testId="cs-region-column-sigungu"
           wholeRegionToggle={
             selectedSidoWholeRegion
               ? {
@@ -178,7 +178,7 @@ export function RegionDetailPanel({
           emptyMessage={eupmyeondongEmptyMessage}
           selectedConditionIdSet={selectedConditionIdSet}
           onToggleRegion={handleToggleEupmyeondong}
-          title="읍/면/동"
+          testId="cs-region-column-eupmyeondong"
         />
       </div>
     </div>

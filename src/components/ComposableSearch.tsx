@@ -1,5 +1,5 @@
 import type { KeyboardEventHandler } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   dispatchKeywordOnClick,
   dispatchKeywordOnInvalidToken,
@@ -87,6 +87,7 @@ export function ComposableSearch({
   className,
   style,
 }: ComposableSearchProps) {
+  const detailedPanelId = useId()
   const [activePanelMode, setActivePanelMode] = useState<DetailPanelMode>('none')
   const [regionSearchQuery, setRegionSearchQuery] = useState('')
   const [selectedRegionConditions, setSelectedRegionConditions] = useState<
@@ -259,9 +260,14 @@ export function ComposableSearch({
       ),
     [keywordInputState.tokens, selectedRegionConditions],
   )
+  const isRegionPanelOpen =
+    activePanelMode === 'region' && Boolean(regionSelector)
+  const isKeywordPanelOpen =
+    activePanelMode === 'keyword' && Boolean(keywordSelector)
+  const isDetailedPanelOpen = isRegionPanelOpen || isKeywordPanelOpen
 
   const detailedContent =
-    activePanelMode === 'keyword' && keywordSelector ? (
+    isKeywordPanelOpen && keywordSelector ? (
       <KeywordDetailPanel
         errorMessage={keywordErrorMessage}
         guideText={keywordSelector.options?.guideText ?? KEYWORD_INPUT_GUIDE_TEXT}
@@ -279,7 +285,7 @@ export function ComposableSearch({
         onInputFocus={() => applyKeywordInputEvent({ type: 'FOCUS' })}
         onInputKeyDown={handleKeywordInputKeyDown}
       />
-    ) : regionSelector ? (
+    ) : isRegionPanelOpen && regionSelector ? (
     <RegionDetailPanel
       selector={regionSelector}
       selectedConditions={selectedRegionConditions}
@@ -300,6 +306,8 @@ export function ComposableSearch({
               <button
                 key={`selector-region-${index}`}
                 className="cs-selector-trigger"
+                aria-controls={detailedPanelId}
+                aria-expanded={isRegionPanelOpen}
                 type="button"
                 onClick={() => handleToggleRegionTrigger(selector)}
               >
@@ -317,6 +325,8 @@ export function ComposableSearch({
             <button
               key={`selector-keyword-${index}`}
               className="cs-selector-trigger"
+              aria-controls={detailedPanelId}
+              aria-expanded={isKeywordPanelOpen}
               type="button"
               onClick={() => handleToggleKeywordTrigger(selector.options)}
             >
@@ -328,7 +338,7 @@ export function ComposableSearch({
           )
         })}
       </div>
-      {regionSelector ? (
+      {isRegionPanelOpen ? (
         <div className="cs-region-search-area" data-testid="cs-region-search-area">
           <RegionSearchInput
             emptyMessage={
@@ -353,9 +363,11 @@ export function ComposableSearch({
         </div>
       ) : null}
       <div
+        id={detailedPanelId}
         className="cs-detailed-area"
-        data-state={activePanelMode === 'none' ? 'closed' : 'open'}
+        data-state={isDetailedPanelOpen ? 'open' : 'closed'}
         data-testid="cs-detailed-area"
+        hidden={!isDetailedPanelOpen}
       >
         {detailedContent}
       </div>

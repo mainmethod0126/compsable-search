@@ -323,6 +323,7 @@ describe('callback contract', () => {
       />,
     )
 
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.type(screen.getByRole('textbox', { name: '지역 검색' }), '서')
     await user.click(
       screen.getByRole('button', { name: '충청남도 > 서산시' }),

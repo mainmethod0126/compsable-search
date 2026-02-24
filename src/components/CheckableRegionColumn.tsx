@@ -2,23 +2,22 @@ import { EMPTY_STATE_MESSAGES } from './emptyStateMessages'
 import type { Region } from './types'
 
 interface CheckableRegionColumnProps {
-  title: string
   regions: Region[]
   emptyMessage?: string
   selectedConditionIdSet: Set<string>
   onToggleRegion: (region: Region) => void
+  testId?: string
 }
 
 export function CheckableRegionColumn({
-  title,
   regions,
   emptyMessage = EMPTY_STATE_MESSAGES.NO_ITEMS,
   selectedConditionIdSet,
   onToggleRegion,
+  testId,
 }: CheckableRegionColumnProps) {
   return (
-    <section className="cs-region-column">
-      <h3 className="cs-region-column-title">{title}</h3>
+    <section className="cs-region-column" data-testid={testId}>
       {regions.length === 0 ? (
         <p className="cs-empty-message">{emptyMessage}</p>
       ) : (
@@ -39,7 +38,7 @@ export function CheckableRegionColumn({
                   type="checkbox"
                   onChange={() => onToggleRegion(region)}
                 />
-                <span>{region.displayName}</span>
+                <span className="cs-region-item-label">{region.displayName}</span>
               </label>
             )
           })}

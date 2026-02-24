@@ -1,4 +1,5 @@
 .cs-composable-search {
+  --cs-region-column-item-height: 36px;
   display: grid;
   gap: 16px;
   border: 1px solid #d2dae2;
@@ -114,6 +115,21 @@
   cursor: pointer;
 }
 
+.cs-selector-trigger::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.cs-selector-trigger[aria-expanded='true']::after {
+  transform: rotate(225deg);
+}
+
 .cs-selector-trigger:hover {
   border-color: #7f8ea3;
 }
@@ -132,8 +148,8 @@
 
 .cs-detailed-area {
   border: 1px solid #d2dae2;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 0;
+  padding: 0;
   overflow-x: hidden;
 }
 
@@ -142,7 +158,7 @@
 }
 
 .cs-detailed-area[data-state='open'] {
-  background: #f4f8ff;
+  background: #fbfcfd;
 }
 
 .cs-detailed-placeholder {
@@ -153,23 +169,23 @@
 .cs-region-columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0;
+  border-radius: 0;
 }
 
 .cs-region-column {
-  border: 1px solid #dbe3ea;
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
   padding: 8px;
   min-height: 180px;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  align-content: start;
   gap: 8px;
   overflow: hidden;
 }
 
-.cs-region-column-title {
-  margin: 0;
-  font-size: 14px;
+.cs-region-column + .cs-region-column {
+  border-left: 1px solid #dbe3ea;
 }
 
 .cs-region-column-whole-toggle {
@@ -181,7 +197,7 @@
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 6px;
+  gap: 0;
   max-height: 280px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -197,44 +213,50 @@
 
 .cs-region-item {
   width: 100%;
+  height: var(--cs-region-column-item-height);
+  display: flex;
+  align-items: center;
   text-align: left;
-  border: 1px solid #d7dfe6;
+  border: 0;
   background-color: #ffffff;
-  padding: 8px 10px;
+  padding: 0 10px;
   border-radius: 6px;
+  box-sizing: border-box;
   cursor: pointer;
 }
 
+.cs-region-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cs-region-item:hover {
-  border-color: #b8c8d9;
   background-color: #f7fbff;
   color: #1f2d3d;
 }
 
 .cs-region-item.is-current {
   background-color: #3a78c3;
-  border-color: #2b66af;
   color: #ffffff;
 }
 
 .cs-region-item.has-descendant-selected {
   background-color: #eef5ff;
-  border-color: #b4c9e8;
-  border-style: solid;
   color: #2e5f97;
 }
 
 .cs-region-item.is-current.has-descendant-selected {
   background-color: #3a78c3;
-  border-color: #2b66af;
-  border-style: solid;
   box-shadow: none;
   color: #ffffff;
 }
 
 .cs-checkable-list {
   display: grid;
-  gap: 6px;
+  gap: 0;
   max-height: 280px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -245,24 +267,26 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid #d7dfe6;
+  width: 100%;
+  height: var(--cs-region-column-item-height);
+  padding: 0 8px;
+  border: 0;
   border-radius: 6px;
+  box-sizing: border-box;
 }
 
 .cs-checkable-item:hover {
-  border-color: #b8c8d9;
   background-color: #f7fbff;
   color: #1f2d3d;
 }
 
 .cs-checkable-item.is-selected {
-  border-color: #4e89d6;
   color: #174a8b;
 }
 
 .cs-checkable-input {
   margin: 0;
+  flex: 0 0 auto;
 }
 
 .cs-empty-message {
@@ -394,6 +418,11 @@
 
   .cs-region-columns {
     grid-template-columns: 1fr;
+  }
+
+  .cs-region-column + .cs-region-column {
+    border-left: 0;
+    border-top: 1px solid #dbe3ea;
   }
 
   .cs-selected-condition-scroll {

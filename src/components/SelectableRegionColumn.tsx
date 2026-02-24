@@ -9,13 +9,13 @@ interface WholeRegionToggle {
 }
 
 interface SelectableRegionColumnProps {
-  title: string
   regions: Region[]
   parentRegion?: Region
   emptyMessage?: string
   onSelectedRegion: (selectedRegion: Region) => void
   wholeRegionToggle?: WholeRegionToggle
   descendantSelectedRegionCodeSet?: Set<string>
+  testId?: string
 }
 
 function resolveRegions(regions: Region[], parentRegion?: Region): Region[] {
@@ -34,13 +34,13 @@ function resolveRegions(regions: Region[], parentRegion?: Region): Region[] {
 }
 
 export function SelectableRegionColumn({
-  title,
   regions,
   parentRegion,
   emptyMessage = EMPTY_STATE_MESSAGES.NO_ITEMS,
   onSelectedRegion,
   wholeRegionToggle,
   descendantSelectedRegionCodeSet,
+  testId,
 }: SelectableRegionColumnProps) {
   const [currentRegionCode, setCurrentRegionCode] = useState<string | null>(null)
   const resolvedRegions = useMemo(
@@ -54,8 +54,7 @@ export function SelectableRegionColumn({
     : null
 
   return (
-    <section className="cs-region-column">
-      <h3 className="cs-region-column-title">{title}</h3>
+    <section className="cs-region-column" data-testid={testId}>
       {wholeRegionToggle ? (
         <div className="cs-region-column-whole-toggle">
           <label
@@ -69,7 +68,9 @@ export function SelectableRegionColumn({
               type="checkbox"
               onChange={() => wholeRegionToggle.onToggle(wholeRegionToggle.region)}
             />
-            <span>{wholeRegionToggle.region.displayName}</span>
+            <span className="cs-region-item-label">
+              {wholeRegionToggle.region.displayName}
+            </span>
           </label>
         </div>
       ) : null}
@@ -93,7 +94,7 @@ export function SelectableRegionColumn({
                     onSelectedRegion(region)
                   }}
                 >
-                  {region.displayName}
+                  <span className="cs-region-item-label">{region.displayName}</span>
                 </button>
               </li>
             )

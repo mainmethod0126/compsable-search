@@ -77,4 +77,17 @@ describe('style scope isolation', () => {
       /@media\s*\(max-width:\s*768px\)[\s\S]*\.cs-selected-condition-scroll\s*\{[\s\S]*max-height/m,
     )
   })
+
+  it('region/checkable item은 데이터 수와 무관하게 동일한 고정 높이 규칙을 가진다', () => {
+    const css = composableSearchCss
+    const rootRule = extractRuleBody(css, '.cs-composable-search')
+    const regionItemRule = extractRuleBody(css, '.cs-region-item')
+    const checkableItemRule = extractRuleBody(css, '.cs-checkable-item')
+
+    expect(rootRule).toContain('--cs-region-column-item-height')
+    expect(regionItemRule).toContain('height: var(--cs-region-column-item-height)')
+    expect(checkableItemRule).toContain(
+      'height: var(--cs-region-column-item-height)',
+    )
+  })
 })

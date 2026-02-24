@@ -103,6 +103,11 @@ describe('ComposableSearch', () => {
     vi.restoreAllMocks()
   })
 
+  const getSidoColumn = () => screen.getByTestId('cs-region-column-sido')
+  const getSigunguColumn = () => screen.getByTestId('cs-region-column-sigungu')
+  const getEupmyeondongColumn = () =>
+    screen.getByTestId('cs-region-column-eupmyeondong')
+
   it('selector/detailed/selected 영역을 순서대로 렌더링하고 selector 순서를 보존한다', () => {
     render(
       <ComposableSearch
@@ -128,8 +133,11 @@ describe('ComposableSearch', () => {
     expect(selectorButtons[1]).toHaveTextContent('키워드 선택')
   })
 
-  it('지역 검색 입력은 cs-selector-area 바깥 아래에 배치되고 cs-detailed-area 바깥에 유지된다', () => {
+  it('지역 선택 트리거 클릭 후 지역 검색 입력은 cs-selector-area 바깥 아래에 배치되고 cs-detailed-area 바깥에 유지된다', async () => {
+    const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
 
     const selectorArea = screen.getByTestId('cs-selector-area')
     const searchArea = screen.getByTestId('cs-region-search-area')
@@ -153,6 +161,7 @@ describe('ComposableSearch', () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createSearchableRegionSelector()]} />)
 
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
     const searchInput = screen.getByRole('textbox', { name: '지역 검색' })
     await user.type(searchInput, '수')
 
@@ -180,9 +189,44 @@ describe('ComposableSearch', () => {
     expect(detailArea).toHaveAttribute('data-state', 'closed')
   })
 
-  it('상세 콘텐츠 주입 후 시/도 컬럼이 로딩된다', () => {
+  it('selector 트리거 클릭 시 해당 상세 패널만 펼쳐진다', async () => {
+    const user = userEvent.setup()
+    render(
+      <ComposableSearch
+        selectorsProps={[createRegionSelector(), keywordSelector]}
+      />,
+    )
+
+    expect(screen.queryByTestId('cs-region-column-sido')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: '지역 검색' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: '키워드 입력' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    expect(
+      screen.getByRole('textbox', { name: '키워드 입력' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('cs-region-column-sido')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: '지역 검색' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    expect(getSidoColumn()).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: '지역 검색' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: '키워드 입력' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('region 패널을 열면 시/도 컬럼이 로딩된다', async () => {
+    const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
 
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
     expect(screen.getByText('서울특별시')).toBeInTheDocument()
     expect(screen.getByText('부산광역시')).toBeInTheDocument()
   })
@@ -193,15 +237,9 @@ describe('ComposableSearch', () => {
 
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
 
-    const sidoColumn = screen
-      .getByRole('heading', { name: '시/도' })
-      .closest('section') as HTMLElement
-    const sigunguColumn = screen
-      .getByRole('heading', { name: '시/군/구' })
-      .closest('section') as HTMLElement
-    const eupmyeondongColumn = screen
-      .getByRole('heading', { name: '읍/면/동' })
-      .closest('section') as HTMLElement
+    const sidoColumn = getSidoColumn()
+    const sigunguColumn = getSigunguColumn()
+    const eupmyeondongColumn = getEupmyeondongColumn()
 
     expect(
       within(sidoColumn).getByRole('button', { name: '서울특별시' }),
@@ -225,9 +263,7 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
     await user.click(screen.getByRole('button', { name: '강남구' }))
 
-    const initialSigunguColumn = screen
-      .getByRole('heading', { name: '시/군/구' })
-      .closest('section') as HTMLElement
+    const initialSigunguColumn = getSigunguColumn()
 
     expect(
       within(initialSigunguColumn).getByRole('button', { name: '강남구' }),
@@ -235,12 +271,8 @@ describe('ComposableSearch', () => {
 
     await user.click(screen.getByRole('button', { name: '부산광역시' }))
 
-    const refreshedSigunguColumn = screen
-      .getByRole('heading', { name: '시/군/구' })
-      .closest('section') as HTMLElement
-    const refreshedEupmyeondongColumn = screen
-      .getByRole('heading', { name: '읍/면/동' })
-      .closest('section') as HTMLElement
+    const refreshedSigunguColumn = getSigunguColumn()
+    const refreshedEupmyeondongColumn = getEupmyeondongColumn()
 
     expect(
       within(refreshedSigunguColumn).getByRole('button', { name: '해운대구' }),
@@ -427,19 +459,11 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
 
-    const getSigunguColumn = () =>
-      screen.getByRole('heading', { name: '시/군/구' }).closest('section')
-    const getEupmyeondongColumn = () =>
-      screen.getByRole('heading', { name: '읍/면/동' }).closest('section')
-
     const sigunguColumn = getSigunguColumn()
     const eupmyeondongColumn = getEupmyeondongColumn()
 
-    expect(sigunguColumn).not.toBeNull()
-    expect(eupmyeondongColumn).not.toBeNull()
-
     await user.click(
-      within(sigunguColumn as HTMLElement).getByRole('checkbox', {
+      within(sigunguColumn).getByRole('checkbox', {
         name: '서울특별시 전체',
       }),
     )
@@ -447,7 +471,7 @@ describe('ComposableSearch', () => {
       screen.getByText('서울특별시>서울특별시 전체>서울특별시 전체'),
     ).toBeInTheDocument()
     expect(
-      within(eupmyeondongColumn as HTMLElement).queryByRole('checkbox', {
+      within(eupmyeondongColumn).queryByRole('checkbox', {
         name: '서울특별시 전체',
       }),
     ).not.toBeInTheDocument()
@@ -463,7 +487,7 @@ describe('ComposableSearch', () => {
     ).toBeInTheDocument()
 
     await user.click(
-      within(getSigunguColumn() as HTMLElement).getByRole('checkbox', {
+      within(getSigunguColumn()).getByRole('checkbox', {
         name: '서울특별시 전체',
       }),
     )
@@ -481,13 +505,8 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
 
-    const getSigunguColumn = () =>
-      screen.getByRole('heading', { name: '시/군/구' }).closest('section')
-    const getEupmyeondongColumn = () =>
-      screen.getByRole('heading', { name: '읍/면/동' }).closest('section')
-
     await user.click(
-      within(getSigunguColumn() as HTMLElement).getByRole('checkbox', {
+      within(getSigunguColumn()).getByRole('checkbox', {
         name: '서울특별시 전체',
       }),
     )
@@ -496,7 +515,7 @@ describe('ComposableSearch', () => {
     ).toBeInTheDocument()
 
     await user.click(
-      within(getSigunguColumn() as HTMLElement).getByRole('checkbox', {
+      within(getSigunguColumn()).getByRole('checkbox', {
         name: '서울특별시 전체',
       }),
     )
@@ -505,29 +524,29 @@ describe('ComposableSearch', () => {
       screen.queryByText('서울특별시>서울특별시 전체>서울특별시 전체'),
     ).not.toBeInTheDocument()
     expect(
-      within(getSigunguColumn() as HTMLElement).getByRole('button', {
+      within(getSigunguColumn()).getByRole('button', {
         name: '강남구',
       }),
     ).not.toHaveClass('is-current')
     expect(
-      within(getEupmyeondongColumn() as HTMLElement).getByText(
+      within(getEupmyeondongColumn()).getByText(
         '상위 지역을 먼저 선택해 주세요.',
       ),
     ).toBeInTheDocument()
 
     await user.click(
-      within(getSigunguColumn() as HTMLElement).getByRole('button', {
+      within(getSigunguColumn()).getByRole('button', {
         name: '강남구',
       }),
     )
 
     expect(
-      within(getSigunguColumn() as HTMLElement).getByRole('button', {
+      within(getSigunguColumn()).getByRole('button', {
         name: '강남구',
       }),
     ).toHaveClass('is-current')
     expect(
-      within(getEupmyeondongColumn() as HTMLElement).getByRole('checkbox', {
+      within(getEupmyeondongColumn()).getByRole('checkbox', {
         name: '역삼동',
       }),
     ).toBeInTheDocument()
@@ -541,19 +560,11 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '부산광역시' }))
     await user.click(screen.getByRole('button', { name: '해운대구' }))
 
-    const getSigunguColumn = () =>
-      screen.getByRole('heading', { name: '시/군/구' }).closest('section')
-    const getEupmyeondongColumn = () =>
-      screen.getByRole('heading', { name: '읍/면/동' }).closest('section')
-
     const sigunguColumn = getSigunguColumn()
     const eupmyeondongColumn = getEupmyeondongColumn()
 
-    expect(sigunguColumn).not.toBeNull()
-    expect(eupmyeondongColumn).not.toBeNull()
-
     await user.click(
-      within(eupmyeondongColumn as HTMLElement).getByRole('checkbox', {
+      within(eupmyeondongColumn).getByRole('checkbox', {
         name: '해운대구 전체',
       }),
     )
@@ -562,7 +573,7 @@ describe('ComposableSearch', () => {
     ).toBeInTheDocument()
 
     await user.click(
-      within(sigunguColumn as HTMLElement).getByRole('checkbox', {
+      within(sigunguColumn).getByRole('checkbox', {
         name: '부산광역시 전체',
       }),
     )
@@ -572,12 +583,12 @@ describe('ComposableSearch', () => {
       screen.getByText('부산광역시>부산광역시 전체>부산광역시 전체'),
     ).toBeInTheDocument()
     expect(
-      within(getSigunguColumn() as HTMLElement).getByRole('button', {
+      within(getSigunguColumn()).getByRole('button', {
         name: '해운대구',
       }),
     ).not.toHaveClass('is-current')
     expect(
-      within(getEupmyeondongColumn() as HTMLElement).getByText(
+      within(getEupmyeondongColumn()).getByText(
         '상위 지역을 먼저 선택해 주세요.',
       ),
     ).toBeInTheDocument()
@@ -591,12 +602,8 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
     await user.click(screen.getByRole('button', { name: '강남구' }))
 
-    const sigunguColumn = screen
-      .getByRole('heading', { name: '시/군/구' })
-      .closest('section') as HTMLElement
-    const eupmyeondongColumn = screen
-      .getByRole('heading', { name: '읍/면/동' })
-      .closest('section') as HTMLElement
+    const sigunguColumn = getSigunguColumn()
+    const eupmyeondongColumn = getEupmyeondongColumn()
 
     const sigunguRegionItem = within(sigunguColumn).getByRole('button', {
       name: '강남구',
@@ -618,13 +625,6 @@ describe('ComposableSearch', () => {
   it('하위 읍/면/동 선택 시 상위 시/도/시/군/구에 하위 선택 색상 인디케이터를 표시하고 해제 시 원복한다', async () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
-
-    const getSidoColumn = () =>
-      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
-    const getSigunguColumn = () =>
-      screen
-        .getByRole('heading', { name: '시/군/구' })
-        .closest('section') as HTMLElement
 
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
@@ -666,13 +666,6 @@ describe('ComposableSearch', () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
 
-    const getSidoColumn = () =>
-      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
-    const getSigunguColumn = () =>
-      screen
-        .getByRole('heading', { name: '시/군/구' })
-        .closest('section') as HTMLElement
-
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
     await user.click(screen.getByRole('button', { name: '강남구' }))
@@ -698,13 +691,6 @@ describe('ComposableSearch', () => {
   it('시/군/구 전체(서울특별시 전체) 선택 시 시/도에 하위 선택 인디케이터를 표시하고 해제 시 원복한다', async () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
-
-    const getSidoColumn = () =>
-      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
-    const getSigunguColumn = () =>
-      screen
-        .getByRole('heading', { name: '시/군/구' })
-        .closest('section') as HTMLElement
 
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
@@ -732,9 +718,6 @@ describe('ComposableSearch', () => {
   it('current와 has-descendant-selected는 서로 다른 클래스로 동시에 구분 가능하다', async () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
-
-    const getSidoColumn = () =>
-      screen.getByRole('heading', { name: '시/도' }).closest('section') as HTMLElement
 
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
@@ -870,7 +853,8 @@ describe('ComposableSearch', () => {
     expect(onChange).toHaveBeenLastCalledWith([])
   })
 
-  it('상위 선택 유무와 데이터 존재 여부에 따라 빈 상태 문구를 구분해 렌더링한다', () => {
+  it('상위 선택 유무와 데이터 존재 여부에 따라 빈 상태 문구를 구분해 렌더링한다', async () => {
+    const user = userEvent.setup()
     render(
       <ComposableSearch
         selectorsProps={[
@@ -883,9 +867,9 @@ describe('ComposableSearch', () => {
       />,
     )
 
-    expect(
-      screen.getByRole('heading', { name: '시/도' }).closest('section'),
-    ).toHaveTextContent('표시할 지역이 없습니다.')
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+
+    expect(getSidoColumn()).toHaveTextContent('표시할 지역이 없습니다.')
     expect(screen.getAllByText('상위 지역을 먼저 선택해 주세요.')).toHaveLength(2)
   })
 
@@ -905,9 +889,7 @@ describe('ComposableSearch', () => {
     await user.click(screen.getByRole('button', { name: '지역 선택' }))
     await user.click(screen.getByRole('button', { name: '서울특별시' }))
 
-    const sigunguColumn = screen
-      .getByRole('heading', { name: '시/군/구' })
-      .closest('section') as HTMLElement
+    const sigunguColumn = getSigunguColumn()
 
     expect(within(sigunguColumn).getByText('표시할 지역이 없습니다.')).toBeInTheDocument()
   })
