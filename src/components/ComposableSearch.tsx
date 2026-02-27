@@ -338,38 +338,43 @@ export function ComposableSearch({
           )
         })}
       </div>
-      {isRegionPanelOpen ? (
-        <div className="cs-region-search-area" data-testid="cs-region-search-area">
-          <RegionSearchInput
-            emptyMessage={
-              regionSelector.options?.searchNoResultMessage ??
-              REGION_SEARCH_NO_RESULT_MESSAGE
-            }
-            icon={regionSelector.options?.searchInputIcon}
-            idleMessage={
-              regionSelector.options?.searchIdleMessage ??
-              REGION_SEARCH_IDLE_MESSAGE
-            }
-            label={regionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL}
-            placeholder={
-              regionSelector.options?.searchInputPlaceholder ??
-              REGION_SEARCH_PLACEHOLDER
-            }
-            results={regionSearchResults}
-            value={regionSearchQuery}
-            onChange={setRegionSearchQuery}
-            onSelectResult={handleSelectRegionSearchResult}
-          />
-        </div>
-      ) : null}
       <div
-        id={detailedPanelId}
-        className="cs-detailed-area"
+        className="cs-expanded-area"
         data-state={isDetailedPanelOpen ? 'open' : 'closed'}
-        data-testid="cs-detailed-area"
-        hidden={!isDetailedPanelOpen}
       >
-        {detailedContent}
+        {isRegionPanelOpen ? (
+          <div className="cs-region-search-area" data-testid="cs-region-search-area">
+            <RegionSearchInput
+              emptyMessage={
+                regionSelector.options?.searchNoResultMessage ??
+                REGION_SEARCH_NO_RESULT_MESSAGE
+              }
+              icon={regionSelector.options?.searchInputIcon}
+              idleMessage={
+                regionSelector.options?.searchIdleMessage ??
+                REGION_SEARCH_IDLE_MESSAGE
+              }
+              label={regionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL}
+              placeholder={
+                regionSelector.options?.searchInputPlaceholder ??
+                REGION_SEARCH_PLACEHOLDER
+              }
+              results={regionSearchResults}
+              value={regionSearchQuery}
+              onChange={setRegionSearchQuery}
+              onSelectResult={handleSelectRegionSearchResult}
+            />
+          </div>
+        ) : null}
+        <div
+          id={detailedPanelId}
+          className="cs-detailed-area"
+          data-state={isDetailedPanelOpen ? 'open' : 'closed'}
+          data-testid="cs-detailed-area"
+          hidden={!isDetailedPanelOpen}
+        >
+          {detailedContent}
+        </div>
       </div>
       <div className="cs-selected-area" data-testid="cs-selected-area">
         <SelectedConditionBasket
