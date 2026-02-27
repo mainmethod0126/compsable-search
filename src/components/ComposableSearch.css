@@ -11,7 +11,16 @@
 .cs-selector-area {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0;
+}
+
+.cs-selector-area > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.cs-selector-area > .cs-selector-trigger + .cs-selector-trigger {
+  margin-left: -1px;
 }
 
 .cs-region-search-area {
@@ -35,7 +44,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid #bec8d2;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 0 10px;
   background-color: #ffffff;
 }
@@ -104,11 +113,12 @@
 }
 
 .cs-selector-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   border: 1px solid #bec8d2;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 8px 12px;
   background: #f8fafc;
   color: #1f2d3d;
@@ -119,11 +129,16 @@
   content: '';
   width: 7px;
   height: 7px;
-  margin-left: 2px;
+  margin-left: auto;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg);
   transition: transform 0.2s ease;
+}
+
+.cs-selector-trigger[aria-expanded='true'] {
+  z-index: 2;
+  border-color: #2d5f9c;
 }
 
 .cs-selector-trigger[aria-expanded='true']::after {
@@ -131,7 +146,18 @@
 }
 
 .cs-selector-trigger:hover {
+  z-index: 1;
   border-color: #7f8ea3;
+}
+
+.cs-selector-trigger:focus-visible {
+  z-index: 1;
+}
+
+.cs-selector-trigger[aria-expanded='true']:hover,
+.cs-selector-trigger[aria-expanded='true']:focus-visible {
+  z-index: 2;
+  border-color: #2d5f9c;
 }
 
 .cs-selector-icon {
@@ -164,6 +190,10 @@
 .cs-detailed-placeholder {
   margin: 0;
   color: #5a6a7f;
+}
+
+.cs-region-detail-panel {
+  border-radius: 0;
 }
 
 .cs-region-columns {
