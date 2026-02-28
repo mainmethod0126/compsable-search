@@ -104,6 +104,7 @@ export type ComposableSelectProps = RegionSelectProps | KeywordSelectProps
 
 export interface ComposableSearchProps {
   selectorsProps?: ComposableSelectProps[]
+  onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   className?: string
   style?: CSSProperties
   placeHolder?: string

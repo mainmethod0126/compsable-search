@@ -134,6 +134,42 @@ describe('callback contract', () => {
     expect(onChange).toHaveBeenLastCalledWith([])
   })
 
+  it('top-level onChange가 제공되면 region.options.onChange 대신 우선 호출된다', async () => {
+    const user = userEvent.setup()
+    const topLevelOnChange = vi.fn()
+    const legacyRegionOnChange = vi.fn()
+
+    render(
+      <ComposableSearch
+        onChange={topLevelOnChange}
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              onChange: legacyRegionOnChange,
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(topLevelOnChange).toHaveBeenCalledTimes(1)
+    expect(topLevelOnChange).toHaveBeenLastCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: '1168010100',
+          displayName: '서울특별시>강남구>역삼동',
+        }),
+      ]),
+    )
+    expect(legacyRegionOnChange).not.toHaveBeenCalled()
+  })
+
   it('region + keyword 조합 상태를 onChange payload에 함께 전달한다', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

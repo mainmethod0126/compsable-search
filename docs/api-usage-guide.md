@@ -9,6 +9,7 @@ import {
 } from './src/components'
 
 const props: ComposableSearchProps = {
+  onChange: (selectedItems: SearchSelectionItem[]) => {},
   selectorsProps: [
     {
       type: 'region',
@@ -18,7 +19,8 @@ const props: ComposableSearchProps = {
       options: {
         placeHolder: '지역 선택',
         onClick: () => {},
-        onChange: (selectedItems: SearchSelectionItem[]) => {},
+        searchNoResultMessage: '검색 결과가 없습니다.',
+        onChange: (selectedItems: SearchSelectionItem[]) => {}, // fallback
         onSelectedEupmyeondong: (selected) => {},
       },
     },
@@ -45,10 +47,16 @@ const props: ComposableSearchProps = {
 ```
 
 ## 2. 콜백 계약
+- `ComposableSearch.onChange` (권장)
+  - 선택 조건이 변경될 때마다 호출된다.
+  - payload 타입: `SearchSelectionItem[]`
+  - 우선순위:
+    - `props.onChange`가 지정되면 최우선으로 사용된다.
+    - `props.onChange`가 없을 때 `region.options.onChange`가 fallback으로 호출된다.
 - `region.options.onClick`
   - 지역 selector 트리거 클릭 시 항상 호출된다.
 - `region.options.onChange`
-  - 선택 조건이 변경될 때마다 호출된다.
+  - `ComposableSearch.onChange` 미지정 시 선택 조건이 변경될 때마다 호출된다.
   - payload 타입: `SearchSelectionItem[]`
   - payload 구성:
     - 지역 조건: `SelectedRegionCondition` (`sido`, `sigungu`, `eupmyeondong` 포함)
@@ -69,7 +77,15 @@ const props: ComposableSearchProps = {
     - `token-too-long`
     - `max-token-reached`
 
-## 3. 키워드 입력 정책
+## 3. Selector 해석 정책
+- `selectorsProps`에 동일 `type`(`region` 또는 `keyword`)이 여러 개 있으면 첫 번째 항목만 사용된다(first-wins).
+- 중복 `type` 감지 시 개발 환경에서 `console.warn` 경고가 출력된다.
+
+## 4. 지역 검색 메시지 정책
+- `RegionSelectOptions.searchNoResultMessage`는 사용자가 검색어를 입력했고(query 존재), 검색 결과가 0건일 때 노출된다.
+- 검색어가 없을 때는 `searchIdleMessage`가 우선한다.
+
+## 5. 키워드 입력 정책
 - 상태:
   - `idle` → `typing` → `token-committed` → `max-token-reached`
 - 이벤트:
@@ -84,12 +100,17 @@ const props: ComposableSearchProps = {
   - `maxTokens = 5`
   - `maxTokenLength = 20`
 
-## 4. 콜백 오류 처리 정책
+## 6. 콜백 오류 처리 정책
 - 콜백 내부에서 예외가 발생해도 UI 선택 흐름은 중단되지 않는다.
 - 오류는 `console.error`로 기록되며 prefix는 다음과 같다.
   - `[ComposableSearch] callback error`
 
-## 5. 권장 검증 명령
+## 7. 0.2.x 호환성 안내
+- `0.2.x`는 non-breaking 범위를 유지하며, `ComposableSearch.onChange` 추가는 additive 변경으로 취급된다.
+- 레거시 경로 `src/components/types.ts`는 계속 유지되며, 신규 소비자는 `src/components/publicTypes` 경로 사용을 권장한다.
+- 레거시 소비자 전환 기간 동안 `region.options.onChange`는 fallback 경로로 계속 지원된다.
+
+## 8. 권장 검증 명령
 - `npm test`
 - `npm run lint`
 - `npm run build`

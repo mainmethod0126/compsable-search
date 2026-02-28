@@ -175,6 +175,28 @@ describe('ComposableSearch', () => {
     expect(searchInput).toHaveValue('')
   })
 
+  it('region 검색 결과가 없을 때 searchNoResultMessage를 노출한다', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createSearchableRegionSelector({
+            options: {
+              placeHolder: '지역 선택',
+              searchNoResultMessage: '검색 결과가 없습니다.',
+            },
+          }),
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.type(screen.getByRole('textbox', { name: '지역 검색' }), '없는지역')
+
+    expect(screen.getByText('검색 결과가 없습니다.')).toBeInTheDocument()
+  })
+
   it('region 트리거 클릭 시 상세 패널이 open/closed 토글된다', async () => {
     const user = userEvent.setup()
     render(<ComposableSearch selectorsProps={[createRegionSelector()]} />)
@@ -853,6 +875,52 @@ describe('ComposableSearch', () => {
     expect(onChange).toHaveBeenLastCalledWith([])
   })
 
+  it('conditionId prefix가 keyword 형태여도 region 선택 아이템이면 region 분기로 삭제한다', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            findAllSidos: () => [
+              { displayName: '테스트시', name: '테스트시', code: '90' },
+            ],
+            findAllSigungus: () => [
+              { displayName: '테스트구', name: '테스트구', code: '9001' },
+            ],
+            findAllEupmyeondongs: () => [
+              {
+                displayName: '테스트동',
+                name: '테스트동',
+                code: 'keyword:90010100',
+              },
+            ],
+            options: {
+              placeHolder: '지역 선택',
+              onChange,
+            },
+          }),
+          keywordSelector,
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '테스트시' }))
+    await user.click(screen.getByRole('button', { name: '테스트구' }))
+    await user.click(screen.getByRole('checkbox', { name: '테스트동' }))
+
+    expect(screen.getByText('테스트시>테스트구>테스트동')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: '테스트시>테스트구>테스트동 삭제' }),
+    )
+
+    expect(screen.queryByText('테스트시>테스트구>테스트동')).not.toBeInTheDocument()
+    expect(onChange).toHaveBeenLastCalledWith([])
+  })
+
   it('상위 선택 유무와 데이터 존재 여부에 따라 빈 상태 문구를 구분해 렌더링한다', async () => {
     const user = userEvent.setup()
     render(
@@ -985,5 +1053,62 @@ describe('ComposableSearch', () => {
       ),
     ).not.toBeInTheDocument()
     expect(onChange).toHaveBeenLastCalledWith([])
+  })
+
+  it('regionSearchIndex는 non-selector 상태 변경과 options 재생성에서 재계산되지 않는다', async () => {
+    const user = userEvent.setup()
+    const findAllSidos = vi.fn(() => [...searchableRegionData.sidos])
+    const findAllSigungus = vi.fn((sidoCode: string) => [
+      ...(
+        searchableRegionData.sigungus[
+          sidoCode as keyof typeof searchableRegionData.sigungus
+        ] ?? []
+      ),
+    ])
+    const findAllEupmyeondongs = vi.fn((sigunguCode: string) => [
+      ...(
+        searchableRegionData.eupmyeondongs[
+          sigunguCode as keyof typeof searchableRegionData.eupmyeondongs
+        ] ?? []
+      ),
+    ])
+
+    const selector = {
+      type: 'region' as const,
+      findAllSidos,
+      findAllSigungus,
+      findAllEupmyeondongs,
+      options: {
+        placeHolder: '지역 선택',
+      },
+    }
+
+    const { rerender } = render(
+      <ComposableSearch selectorsProps={[selector, keywordSelector]} />,
+    )
+
+    expect(findAllSidos).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    await user.type(screen.getByRole('textbox', { name: '키워드 입력' }), 'React{Enter}')
+
+    expect(findAllSidos).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <ComposableSearch
+        selectorsProps={[
+          {
+            ...selector,
+            options: {
+              ...selector.options,
+              placeHolder: '지역 선택(표시문구 변경)',
+            },
+          },
+          keywordSelector,
+        ]}
+      />,
+    )
+
+    expect(findAllSidos).toHaveBeenCalledTimes(1)
   })
 })

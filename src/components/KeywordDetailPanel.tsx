@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler } from 'react'
+import { useId, type KeyboardEventHandler } from 'react'
 
 interface KeywordDetailPanelProps {
   label: string
@@ -27,17 +27,20 @@ export function KeywordDetailPanel({
   onInputBlur,
   onInputKeyDown,
 }: KeywordDetailPanelProps) {
-  const hintId = 'cs-keyword-hint'
-  const errorId = 'cs-keyword-error'
+  const instanceId = useId()
+  const inputId = `cs-keyword-input-${instanceId}`
+  const hintId = `cs-keyword-hint-${instanceId}`
+  const errorId = `cs-keyword-error-${instanceId}`
+  const describedBy = errorMessage ? `${hintId} ${errorId}` : hintId
 
   return (
     <section className="cs-keyword-panel" data-testid="cs-keyword-panel">
       <div className="cs-keyword-input-row">
         <input
           aria-label={label}
-          aria-describedby={errorMessage ? `${hintId} ${errorId}` : hintId}
+          aria-describedby={describedBy}
           className="cs-keyword-input"
-          id="cs-keyword-input"
+          id={inputId}
           placeholder={inputPlaceholder}
           type="text"
           value={inputValue}

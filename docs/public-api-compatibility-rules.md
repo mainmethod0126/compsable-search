@@ -3,7 +3,7 @@
 ## 메타
 - 문서 버전: `v0.2`
 - 적용 범위: `0.2.x`
-- 마지막 갱신: `2026-02-19`
+- 마지막 갱신: `2026-02-28`
 - 관련 Feature:
   - `[F-04] 공개 타입 계약 리팩터링`
   - `[F-12] 키워드 API 계약과 소비자 가이드 정리`
@@ -11,8 +11,11 @@
 ## 1. 호환성 기본 원칙
 - `0.2.x`에서는 region-only 모델을 유지하던 소비자 코드의 점진적 전환을 지원한다.
 - 기존 소비자 코드가 타입 체크에서 즉시 깨지지 않도록 하위 호환 별칭과 callback 시그니처 완화(bivariance)를 유지한다.
+- `ComposableSearchProps.onChange` 추가는 additive 변경으로 취급하며 non-breaking 범위에서 제공한다.
+- 조건 변경 콜백 우선순위는 `props.onChange` 우선, 미지정 시 `region.options.onChange` fallback으로 고정한다.
 - 파괴적 변경이 필요한 경우 `0.2.0` 이상에서만 수행하고, 최소 한 릴리스 전에 대체 경로를 제공한다.
 - 공개 계약과 내부 구현 계약을 분리하되, 기존 공개 진입점(`src/components/types.ts`)은 별칭으로 유지한다.
+- `0.2.x` 전체 구간에서 레거시 경로(`src/components/types.ts`) 제거는 금지한다.
 
 ## 2. 공개 계약 안정 영역
 - 런타임 export:
@@ -32,8 +35,10 @@
 | 구분 | 허용 | 금지 |
 | --- | --- | --- |
 | 타입 필드 | optional 필드 추가, 신규 타입 추가 export | 기존 필드 삭제/이름 변경, optional -> required 변경 |
-| 콜백 계약 | `onChange` payload에 keyword 조건 추가(`SearchSelectionItem[]`) | callback 호출 자체 누락, 기존 region payload 의미 역전 |
+| 콜백 계약 | `ComposableSearchProps.onChange` 신규 추가, `onChange` payload에 keyword 조건 추가(`SearchSelectionItem[]`) | callback 호출 자체 누락, `props.onChange` 우선순위 역전, 기존 region payload 의미 역전 |
 | selector 타입 | `type` literal 기반 확장 유틸 추가 | 기존 `region`/`keyword` 의미 변경 |
+| selector 중복 처리 | 동일 `type` 중복 입력 시 first-wins + 개발 경고(`console.warn`) 유지 | first-wins 제거, 무경고 동작으로의 회귀 |
+| 지역 검색 메시지 | `searchNoResultMessage` 노출 조건(검색 query 존재 + 결과 0건) 명시/유지 | query가 없거나 결과가 있을 때 동일 메시지 오노출 |
 | import 경로 | 신규 권장 경로(`publicTypes`) 추가 | 기존 경로(`types.ts`) 제거 |
 
 ## 4. 예외 규칙

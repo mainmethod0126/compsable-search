@@ -108,6 +108,9 @@ describe('public type contract', () => {
 
   it('ComposableSearchProps는 region/keyword selector 조합을 허용한다', () => {
     const props: ComposableSearchProps = {
+      onChange: (selectedItems) => {
+        expect(selectedItems).toBeDefined()
+      },
       selectorsProps: [
         {
           type: 'region',
@@ -123,5 +126,6 @@ describe('public type contract', () => {
     }
 
     expect(props.selectorsProps).toHaveLength(2)
+    props.onChange?.([])
   })
 })

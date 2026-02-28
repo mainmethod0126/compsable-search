@@ -1,17 +1,12 @@
 import type { KeyboardEventHandler } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
+  dispatchComposableOnChange,
   dispatchKeywordOnClick,
   dispatchKeywordOnInvalidToken,
-  dispatchRegionOnChange,
   dispatchRegionOnClick,
   dispatchRegionOnSelectedEupmyeondong,
 } from './callbackPipeline'
-import type {
-  InternalKeywordSelectOptions,
-  InternalRegionSelectOptions,
-  InternalRegionSelector,
-} from './internalTypes'
 import { KeywordDetailPanel } from './KeywordDetailPanel'
 import {
   createInitialKeywordInputState,
@@ -31,15 +26,18 @@ import {
   mapRegionSearchResultToCondition,
   type RegionSearchResult,
 } from './regionSearchModel'
-import { resolveSelectorByType } from './selectorTypeUtils'
+import {
+  createSelectorResolutionWarningContext,
+  resolveSelectorsWithPolicy,
+} from './selectorTypeUtils'
 import { SelectedConditionBasket } from './SelectedConditionBasket'
 import { toggleRegionCondition } from './selectionPolicy'
 import type {
   ComposableSearchProps,
-  ComposableSelectProps,
-  KeywordSelectProps,
   Region,
+  RegionDataSource,
   SearchSelectionItem,
+  SelectedKeywordCondition,
   SelectedRegionCondition,
 } from './types'
 import './ComposableSearch.css'
@@ -56,18 +54,6 @@ const KEYWORD_INPUT_PLACEHOLDER = '키워드를 입력해 주세요.'
 
 type DetailPanelMode = 'none' | 'region' | 'keyword'
 
-function resolveRegionSelector(
-  selectorsProps: ComposableSelectProps[],
-): InternalRegionSelector | undefined {
-  return resolveSelectorByType(selectorsProps, 'region')
-}
-
-function resolveKeywordSelector(
-  selectorsProps: ComposableSelectProps[],
-): KeywordSelectProps | undefined {
-  return resolveSelectorByType(selectorsProps, 'keyword')
-}
-
 function resolveClassName(className?: string): string {
   return ['cs-composable-search', className].filter(Boolean).join(' ')
 }
@@ -79,8 +65,56 @@ function buildCombinedSelectionPayload(
   return [...selectedRegionConditions, ...selectedKeywordConditions]
 }
 
+function isSelectedKeywordCondition(
+  condition: SearchSelectionItem | undefined,
+): condition is SelectedKeywordCondition {
+  return Boolean(condition && 'normalizedKeyword' in condition)
+}
+
+const regionSearchIndexCache = new WeakMap<
+  RegionDataSource['findAllSidos'],
+  WeakMap<
+    RegionDataSource['findAllSigungus'],
+    WeakMap<RegionDataSource['findAllEupmyeondongs'], RegionSearchResult[]>
+  >
+>()
+
+function resolveRegionSearchIndexWithCache(
+  regionDataSource: Pick<
+    RegionDataSource,
+    'findAllSidos' | 'findAllSigungus' | 'findAllEupmyeondongs'
+  >,
+): RegionSearchResult[] {
+  const { findAllSidos, findAllSigungus, findAllEupmyeondongs } = regionDataSource
+  let sigunguCacheBySido = regionSearchIndexCache.get(findAllSidos)
+  if (!sigunguCacheBySido) {
+    sigunguCacheBySido = new WeakMap()
+    regionSearchIndexCache.set(findAllSidos, sigunguCacheBySido)
+  }
+
+  let eupmyeondongCacheBySigungu = sigunguCacheBySido.get(findAllSigungus)
+  if (!eupmyeondongCacheBySigungu) {
+    eupmyeondongCacheBySigungu = new WeakMap()
+    sigunguCacheBySido.set(findAllSigungus, eupmyeondongCacheBySigungu)
+  }
+
+  const cachedIndex = eupmyeondongCacheBySigungu.get(findAllEupmyeondongs)
+  if (cachedIndex) {
+    return cachedIndex
+  }
+
+  const nextIndex = buildRegionSearchIndex({
+    findAllSidos,
+    findAllSigungus,
+    findAllEupmyeondongs,
+  })
+  eupmyeondongCacheBySigungu.set(findAllEupmyeondongs, nextIndex)
+  return nextIndex
+}
+
 export function ComposableSearch({
   selectorsProps = [],
+  onChange,
   className,
   style,
 }: ComposableSearchProps) {
@@ -94,12 +128,11 @@ export function ComposableSearch({
     createInitialKeywordInputState,
   )
 
-  const regionSelector = useMemo(
-    () => resolveRegionSelector(selectorsProps),
-    [selectorsProps],
-  )
-  const keywordSelector = useMemo(
-    () => resolveKeywordSelector(selectorsProps),
+  const { regionSelector, keywordSelector } = useMemo(
+    () =>
+      resolveSelectorsWithPolicy(selectorsProps, {
+        warningContext: createSelectorResolutionWarningContext(),
+      }),
     [selectorsProps],
   )
   const keywordPolicy = useMemo(
@@ -107,7 +140,10 @@ export function ComposableSearch({
     [keywordSelector?.options],
   )
   const regionSearchIndex = useMemo(
-    () => (regionSelector ? buildRegionSearchIndex(regionSelector) : []),
+    () =>
+      regionSelector
+        ? resolveRegionSearchIndexWithCache(regionSelector)
+        : [],
     [regionSelector],
   )
   const regionSearchResults = useMemo(
@@ -131,23 +167,23 @@ export function ComposableSearch({
     keywordConditionRef.current = keywordInputState.tokens
   }, [keywordInputState.tokens])
 
-  const handleToggleRegionTrigger = (selector: InternalRegionSelector) => {
+  const handleToggleRegionTrigger = () => {
     setActivePanelMode((previous) => (previous === 'region' ? 'none' : 'region'))
-    dispatchRegionOnClick(selector.options)
+    dispatchRegionOnClick(regionSelector?.options)
   }
 
-  const handleToggleKeywordTrigger = (options?: InternalKeywordSelectOptions) => {
+  const handleToggleKeywordTrigger = () => {
     setActivePanelMode((previous) => (previous === 'keyword' ? 'none' : 'keyword'))
-    dispatchKeywordOnClick(options)
+    dispatchKeywordOnClick(keywordSelector?.options)
   }
 
   const dispatchCombinedOnChange = (
-    options: InternalRegionSelectOptions | undefined,
     nextRegionConditions: SelectedRegionCondition[],
     nextKeywordConditions: SearchSelectionItem[],
   ) => {
-    dispatchRegionOnChange(
-      options,
+    dispatchComposableOnChange(
+      onChange,
+      regionSelector?.options,
       buildCombinedSelectionPayload(nextRegionConditions, nextKeywordConditions),
     )
   }
@@ -167,7 +203,6 @@ export function ComposableSearch({
 
       if (!hasSameKeywordTokenSequence(previous.tokens, next.tokens)) {
         dispatchCombinedOnChange(
-          regionSelector?.options,
           selectedRegionConditionsRef.current,
           next.tokens,
         )
@@ -180,16 +215,15 @@ export function ComposableSearch({
   const handleToggleRegionCondition = (
     nextCondition: SelectedRegionCondition,
     selectedRegion: Region,
-    options?: InternalRegionSelectOptions,
   ) => {
     setSelectedRegionConditions((previous) => {
       const wasSelected = previous.some(
         (condition) => condition.id === nextCondition.id,
       )
       const next = toggleRegionCondition(previous, nextCondition)
-      dispatchCombinedOnChange(options, next, keywordConditionRef.current)
+      dispatchCombinedOnChange(next, keywordConditionRef.current)
       if (!wasSelected) {
-        dispatchRegionOnSelectedEupmyeondong(options, selectedRegion)
+        dispatchRegionOnSelectedEupmyeondong(regionSelector?.options, selectedRegion)
       }
       return next
     })
@@ -201,32 +235,32 @@ export function ComposableSearch({
     }
 
     const { condition, selectedRegion } = mapRegionSearchResultToCondition(result)
-    handleToggleRegionCondition(condition, selectedRegion, regionSelector.options)
+    handleToggleRegionCondition(condition, selectedRegion)
     setRegionSearchQuery('')
   }
 
-  const handleRemoveCondition = (
-    conditionId: string,
-    options?: InternalRegionSelectOptions,
-  ) => {
-    if (conditionId.startsWith('keyword:')) {
+  const handleRemoveCondition = (conditionId: string) => {
+    const selectedKeywordCondition = keywordConditionRef.current.find(
+      (condition) => condition.id === conditionId,
+    )
+    if (isSelectedKeywordCondition(selectedKeywordCondition)) {
       applyKeywordInputEvent({ type: 'REMOVE_TOKEN', tokenId: conditionId })
       return
     }
 
     setSelectedRegionConditions((previous) => {
       const next = previous.filter((condition) => condition.id !== conditionId)
-      dispatchCombinedOnChange(options, next, keywordConditionRef.current)
+      dispatchCombinedOnChange(next, keywordConditionRef.current)
       return next
     })
   }
 
-  const handleClearAllConditions = (options?: InternalRegionSelectOptions) => {
+  const handleClearAllConditions = () => {
     setSelectedRegionConditions([])
     setKeywordInputState((previous) =>
       transitionKeywordInputState(previous, { type: 'CLEAR_ALL' }, keywordPolicy),
     )
-    dispatchCombinedOnChange(options, [], [])
+    dispatchCombinedOnChange([], [])
   }
 
   const keywordErrorMessage = resolveKeywordInputErrorMessage(
@@ -257,22 +291,32 @@ export function ComposableSearch({
       ),
     [keywordInputState.tokens, selectedRegionConditions],
   )
-  const isRegionPanelOpen =
-    activePanelMode === 'region' && Boolean(regionSelector)
-  const isKeywordPanelOpen =
-    activePanelMode === 'keyword' && Boolean(keywordSelector)
+  const openedRegionSelector =
+    activePanelMode === 'region' ? regionSelector : undefined
+  const openedKeywordSelector =
+    activePanelMode === 'keyword' ? keywordSelector : undefined
+  const isRegionPanelOpen = Boolean(openedRegionSelector)
+  const isKeywordPanelOpen = Boolean(openedKeywordSelector)
   const isDetailedPanelOpen = isRegionPanelOpen || isKeywordPanelOpen
+  const shouldShowRegionSearchNoResultMessage =
+    isRegionPanelOpen &&
+    regionSearchQuery.trim().length > 0 &&
+    regionSearchResults.length === 0 &&
+    Boolean(openedRegionSelector?.options?.searchNoResultMessage)
 
   const detailedContent =
-    isKeywordPanelOpen && keywordSelector ? (
+    openedKeywordSelector ? (
       <KeywordDetailPanel
         errorMessage={keywordErrorMessage}
-        guideText={keywordSelector.options?.guideText ?? KEYWORD_INPUT_GUIDE_TEXT}
+        guideText={
+          openedKeywordSelector.options?.guideText ?? KEYWORD_INPUT_GUIDE_TEXT
+        }
         inputPlaceholder={
-          keywordSelector.options?.inputPlaceholder ?? KEYWORD_INPUT_PLACEHOLDER
+          openedKeywordSelector.options?.inputPlaceholder ??
+          KEYWORD_INPUT_PLACEHOLDER
         }
         inputValue={keywordInputState.inputValue}
-        label={keywordSelector.options?.label ?? KEYWORD_INPUT_LABEL}
+        label={openedKeywordSelector.options?.label ?? KEYWORD_INPUT_LABEL}
         maxTokens={keywordPolicy.maxTokens}
         tokenCount={keywordInputState.tokens.length}
         onInputBlur={() => applyKeywordInputEvent({ type: 'BLUR' })}
@@ -282,15 +326,15 @@ export function ComposableSearch({
         onInputFocus={() => applyKeywordInputEvent({ type: 'FOCUS' })}
         onInputKeyDown={handleKeywordInputKeyDown}
       />
-    ) : isRegionPanelOpen && regionSelector ? (
-    <RegionDetailPanel
-      selector={regionSelector}
-      selectedConditions={selectedRegionConditions}
-      onToggleRegionCondition={handleToggleRegionCondition}
-    />
-  ) : (
-    <p className="cs-detailed-placeholder">{DETAILED_CONDITION_PLACEHOLDER}</p>
-  )
+    ) : openedRegionSelector ? (
+      <RegionDetailPanel
+        selector={openedRegionSelector}
+        selectedConditions={selectedRegionConditions}
+        onToggleRegionCondition={handleToggleRegionCondition}
+      />
+    ) : (
+      <p className="cs-detailed-placeholder">{DETAILED_CONDITION_PLACEHOLDER}</p>
+    )
 
   return (
     <section className={resolveClassName(className)} style={style}>
@@ -306,7 +350,7 @@ export function ComposableSearch({
                 aria-controls={detailedPanelId}
                 aria-expanded={isRegionPanelOpen}
                 type="button"
-                onClick={() => handleToggleRegionTrigger(selector)}
+                onClick={handleToggleRegionTrigger}
               >
                 <span aria-hidden="true" className="cs-selector-icon">
                   R
@@ -325,7 +369,7 @@ export function ComposableSearch({
               aria-controls={detailedPanelId}
               aria-expanded={isKeywordPanelOpen}
               type="button"
-              onClick={() => handleToggleKeywordTrigger(selector.options)}
+              onClick={handleToggleKeywordTrigger}
             >
               <span aria-hidden="true" className="cs-selector-icon">
                 K
@@ -339,14 +383,16 @@ export function ComposableSearch({
         className="cs-expanded-area"
         data-state={isDetailedPanelOpen ? 'open' : 'closed'}
       >
-        {isRegionPanelOpen ? (
+        {openedRegionSelector ? (
           <div className="cs-region-search-area" data-testid="cs-region-search-area">
             <RegionSearchInput
-              icon={regionSelector.options?.searchInputIcon}
-              idleMessage={regionSelector.options?.searchIdleMessage}
-              label={regionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL}
+              icon={openedRegionSelector.options?.searchInputIcon}
+              idleMessage={openedRegionSelector.options?.searchIdleMessage}
+              label={
+                openedRegionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL
+              }
               placeholder={
-                regionSelector.options?.searchInputPlaceholder ??
+                openedRegionSelector.options?.searchInputPlaceholder ??
                 REGION_SEARCH_PLACEHOLDER
               }
               results={regionSearchResults}
@@ -354,6 +400,11 @@ export function ComposableSearch({
               onChange={setRegionSearchQuery}
               onSelectResult={handleSelectRegionSearchResult}
             />
+            {shouldShowRegionSearchNoResultMessage ? (
+              <p className="cs-region-search-message">
+                {openedRegionSelector.options?.searchNoResultMessage}
+              </p>
+            ) : null}
           </div>
         ) : null}
         <div
@@ -369,12 +420,8 @@ export function ComposableSearch({
       <div className="cs-selected-area" data-testid="cs-selected-area">
         <SelectedConditionBasket
           selectedConditions={selectedConditions}
-          onRemoveCondition={(conditionId) =>
-            handleRemoveCondition(conditionId, regionSelector?.options)
-          }
-          onClearAllConditions={() =>
-            handleClearAllConditions(regionSelector?.options)
-          }
+          onRemoveCondition={handleRemoveCondition}
+          onClearAllConditions={handleClearAllConditions}
         />
       </div>
     </section>

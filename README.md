@@ -39,6 +39,7 @@ export function SearchExample() {
 
   return (
     <ComposableSearch
+      onChange={handleSelectionChange}
       selectorsProps={[
         {
           type: 'region',
@@ -49,7 +50,9 @@ export function SearchExample() {
           options: {
             placeHolder: '지역 선택',
             searchInputPlaceholder: '지역명 입력',
-            onChange: handleSelectionChange,
+            searchNoResultMessage: '검색 결과가 없습니다.',
+            onChange: (selectedItems) =>
+              console.log('fallback onChange(최상위 onChange 미지정 시)', selectedItems),
             onSelectedEupmyeondong: (selected) =>
               console.log('지역 확정', selected.code),
           },
@@ -76,7 +79,10 @@ export function SearchExample() {
 ## 핵심 동작
 
 - `selectorsProps` 순서대로 트리거 버튼이 렌더링됩니다.
+- `selectorsProps`에 동일 `type`이 중복되면 첫 번째 selector만 상세 패널/로직에 사용됩니다(first-wins).
+- 동일 `type` 중복이 감지되면 개발 환경에서 `console.warn`으로 경고를 남깁니다.
 - `region` 트리거 클릭 시 지역 상세 패널이 열리고, 검색 입력으로 빠른 지역 탐색이 가능합니다.
+- 지역 검색어가 있고 결과가 0건일 때 `RegionSelectOptions.searchNoResultMessage`가 노출됩니다.
 - 지역 선택은 `시/도 -> 시/군/구 -> 읍/면/동` 3단계입니다.
 - `keyword` 트리거 클릭 시 키워드 입력 패널이 열립니다.
 - 키워드 입력은 상태머신(`idle`, `typing`, `token-committed`, `max-token-reached`)으로 관리됩니다.
@@ -85,11 +91,20 @@ export function SearchExample() {
 
 ## 선택 결과와 콜백 계약
 
-### `region.options.onChange`
+### `ComposableSearch.onChange` (권장)
 
 - 호출 시점: 지역 또는 키워드 조건이 변경될 때마다 호출됩니다.
 - 시그니처: `(selectedItems: SearchSelectionItem[]) => void`
-- 현재 공개 API에서 조건 변경 콜백은 `region.options.onChange` 한 곳으로 통합되어 있습니다.
+- 우선순위: `props.onChange`가 지정되면 이 콜백이 최우선으로 사용되고, `region.options.onChange`는 호출되지 않습니다.
+- payload 구성:
+  - 지역 조건: `SelectedRegionCondition`
+  - 키워드 조건: `SelectedKeywordCondition`
+
+### `region.options.onChange`
+
+- 호출 시점: `ComposableSearch.onChange`를 지정하지 않았을 때, 지역 또는 키워드 조건이 변경될 때마다 호출됩니다.
+- 시그니처: `(selectedItems: SearchSelectionItem[]) => void`
+- `0.2.x`에서는 기존 소비자 코드 호환을 위해 fallback 콜백으로 유지됩니다.
 - payload 구성:
   - 지역 조건: `SelectedRegionCondition`
   - 키워드 조건: `SelectedKeywordCondition`
@@ -166,6 +181,7 @@ export function SearchExample() {
 
 ## 추가 문서
 
+- `0.2.x`는 non-breaking 범위를 유지하며, 기존 레거시 import 경로(`src/components/types.ts`)도 유지됩니다.
 - 하위 호환 규칙: `docs/public-api-compatibility-rules.md`
 - API 가이드: `docs/api-usage-guide.md`
 - 키워드 입력 상태머신: `docs/keyword-input-state-machine.md`

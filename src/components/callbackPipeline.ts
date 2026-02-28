@@ -7,7 +7,7 @@ import type {
   SearchSelectionItem,
 } from './types'
 
-type CallbackScope = 'region' | 'keyword'
+type CallbackScope = 'region' | 'keyword' | 'composableSearch'
 type CallbackName =
   | 'onChange'
   | 'onSelectedEupmyeondong'
@@ -50,6 +50,19 @@ export function dispatchRegionOnChange(
   payload: SearchSelectionItem[],
 ): void {
   executeCallbackSafely('region', 'onChange', options?.onChange, payload)
+}
+
+export function dispatchComposableOnChange(
+  onChange: ((selectedItems: SearchSelectionItem[]) => void) | undefined,
+  options: RegionSelectOptions | undefined,
+  payload: SearchSelectionItem[],
+): void {
+  if (onChange) {
+    executeCallbackSafely('composableSearch', 'onChange', onChange, payload)
+    return
+  }
+
+  dispatchRegionOnChange(options, payload)
 }
 
 export function dispatchRegionOnSelectedEupmyeondong(

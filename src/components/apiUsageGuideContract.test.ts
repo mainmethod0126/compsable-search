@@ -15,6 +15,7 @@ const EUPMYEONDONGS: Record<string, Region[]> = {
 
 function createGuideExampleProps(): ComposableSearchProps {
   return {
+    onChange: (selectedItems: SearchSelectionItem[]) => selectedItems,
     selectorsProps: [
       {
         type: 'region',
@@ -54,6 +55,7 @@ describe('API usage guide contract', () => {
   it('가이드 예제가 최신 공개 타입 계약에서 타입 오류 없이 구성된다', () => {
     const props = createGuideExampleProps()
     expect(props.selectorsProps).toHaveLength(2)
+    expect(props.onChange).toBeDefined()
   })
 
   it('가이드 예제의 region 콜백 시그니처는 문서 계약과 일치한다', () => {
