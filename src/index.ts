@@ -1,6 +1,11 @@
+export { ComposableSearch } from './components/ComposableSearch'
+export {
+  isKeywordSelector,
+  isRegionSelector,
+  resolveSelectorByType,
+} from './components/selectorTypeUtils'
+export { createKeywordSelector, createRegionSelector } from './components/selectors'
 export type {
-  ChangeMeta,
-  ComposableSearchValue,
   ComposableSearchProps,
   ComposableSelectItem,
   ComposableSelectProps,
@@ -8,18 +13,14 @@ export type {
   KeywordInvalidTokenContext,
   KeywordNormalizationCasePolicy,
   KeywordNormalizationPolicy,
-  KeywordSelectOptions,
   KeywordSelectProps,
   Region,
   RegionDataSource,
-  RegionSelectOptions,
   RegionSelectProps,
   RegionSelectionItem,
   SearchSelectionItem,
   SelectedCondition,
   SelectedKeywordCondition,
   SelectedRegionCondition,
-  SelectorInstance,
-  SelectorPlugin,
-  SelectorPluginRegistry,
-} from './publicTypes'
+} from './components/publicTypes'
+export type { SelectorOfType, SelectorType } from './components/selectorTypeUtils'

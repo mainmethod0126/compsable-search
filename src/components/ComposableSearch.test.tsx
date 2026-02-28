@@ -2,7 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createDemoRegionDataSource } from '../DemoService'
 import { ComposableSearch } from './ComposableSearch'
-import type { RegionSelectProps } from './types'
+import type {
+  RegionSelectProps,
+  SelectedRegionCondition,
+  SelectorInstance,
+} from './types'
 
 const regionData = {
   sidos: [
@@ -131,6 +135,158 @@ describe('ComposableSearch', () => {
     const selectorButtons = within(selectorArea).getAllByRole('button')
     expect(selectorButtons[0]).toHaveTextContent('지역 선택')
     expect(selectorButtons[1]).toHaveTextContent('키워드 선택')
+  })
+
+  it('selectors만 전달해도 렌더링되며 selectorsProps보다 selectors가 우선한다', () => {
+    const selectors: SelectorInstance[] = [
+      {
+        id: 'region-runtime',
+        type: 'region',
+        props: createRegionSelector({
+          options: {
+            placeholder: '런타임 지역 선택',
+            placeHolder: '레거시 지역 선택',
+          },
+        }),
+      },
+      {
+        id: 'keyword-runtime',
+        type: 'keyword',
+        props: {
+          type: 'keyword',
+          options: {
+            placeholder: '런타임 키워드 선택',
+            placeHolder: '레거시 키워드 선택',
+          },
+        },
+      },
+    ]
+
+    render(
+      <ComposableSearch
+        selectors={selectors}
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeHolder: '무시되어야 하는 레거시 지역 선택',
+            },
+          }),
+          {
+            type: 'keyword',
+            options: {
+              placeHolder: '무시되어야 하는 레거시 키워드 선택',
+            },
+          },
+        ]}
+      />,
+    )
+
+    const selectorButtons = within(screen.getByTestId('cs-selector-area')).getAllByRole(
+      'button',
+    )
+    expect(selectorButtons[0]).toHaveTextContent('런타임 지역 선택')
+    expect(selectorButtons[1]).toHaveTextContent('런타임 키워드 선택')
+    expect(
+      screen.queryByRole('button', {
+        name: '무시되어야 하는 레거시 지역 선택',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('controlled value에서는 onValueChange만 emit하고 렌더 반영은 부모 value 갱신 이후에만 일어난다', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+    const selectors: SelectorInstance[] = [
+      {
+        id: 'region-main',
+        type: 'region',
+        props: createRegionSelector(),
+      },
+    ]
+    const { rerender } = render(
+      <ComposableSearch
+        value={[]}
+        onValueChange={onValueChange}
+        selectors={selectors}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(onValueChange).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('서울특별시>강남구>역삼동')).not.toBeInTheDocument()
+
+    const nextControlledValue: SelectedRegionCondition[] = [
+      {
+        id: '1168010100',
+        displayName: '서울특별시>강남구>역삼동',
+        sido: { displayName: '서울특별시', name: '서울특별시', code: '11' },
+        sigungu: { displayName: '강남구', name: '강남구', code: '11680' },
+        eupmyeondong: {
+          displayName: '역삼동',
+          name: '역삼동',
+          code: '1168010100',
+        },
+      },
+    ]
+
+    rerender(
+      <ComposableSearch
+        value={nextControlledValue}
+        onValueChange={onValueChange}
+        selectors={selectors}
+      />,
+    )
+
+    expect(screen.getByText('서울특별시>강남구>역삼동')).toBeInTheDocument()
+
+    const callCountAfterReflect = onValueChange.mock.calls.length
+    rerender(
+      <ComposableSearch
+        value={[
+          {
+            ...nextControlledValue[0],
+            sido: { ...nextControlledValue[0].sido },
+            sigungu: { ...nextControlledValue[0].sigungu },
+            eupmyeondong: { ...nextControlledValue[0].eupmyeondong },
+          },
+        ]}
+        onValueChange={onValueChange}
+        selectors={selectors}
+      />,
+    )
+    expect(onValueChange).toHaveBeenCalledTimes(callCountAfterReflect)
+  })
+
+  it('placeholder 라벨은 options.placeholder > options.placeHolder > 기본값 우선순위를 따른다', () => {
+    render(
+      <ComposableSearch
+        selectorsProps={[
+          createRegionSelector({
+            options: {
+              placeholder: '최신 지역 placeholder',
+              placeHolder: '레거시 지역 placeholder',
+            },
+          }),
+          {
+            type: 'keyword',
+            options: {
+              placeHolder: '레거시 키워드 placeholder',
+            },
+          },
+        ]}
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: '최신 지역 placeholder' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '레거시 키워드 placeholder' }),
+    ).toBeInTheDocument()
   })
 
   it('지역 선택 트리거 클릭 후 지역 검색 입력은 cs-selector-area 바깥 아래에 배치되고 cs-detailed-area 바깥에 유지된다', async () => {

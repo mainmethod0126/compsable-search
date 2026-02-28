@@ -1,0 +1,5 @@
+{
+  "name": "cjs-consumer-fixture",
+  "private": true,
+  "type": "commonjs"
+}

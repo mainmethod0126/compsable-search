@@ -2,7 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ComposableSearch } from './ComposableSearch'
 import { CALLBACK_ERROR_PREFIX } from './callbackPipeline'
-import type { RegionSelectProps } from './types'
+import type {
+  RegionSelectProps,
+  SearchSelectionItem,
+  SelectorInstance,
+} from './types'
 
 const regionData = {
   sidos: [
@@ -168,6 +172,97 @@ describe('callback contract', () => {
       ]),
     )
     expect(legacyRegionOnChange).not.toHaveBeenCalled()
+  })
+
+  it('onValueChange는 source/selectorType/selectorId meta를 포함해 전달하고 레거시 onChange 계약도 유지한다', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+    const onChange = vi.fn()
+    const selectors: SelectorInstance[] = [
+      {
+        id: 'region-main',
+        type: 'region',
+        props: createRegionSelector(),
+      },
+    ]
+
+    render(
+      <ComposableSearch
+        selectors={selectors}
+        onValueChange={onValueChange}
+        onChange={onChange}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(onValueChange).toHaveBeenCalledTimes(1)
+    expect(onValueChange).toHaveBeenLastCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: '1168010100',
+          displayName: '서울특별시>강남구>역삼동',
+        }),
+      ]),
+      expect.objectContaining({
+        source: 'region',
+        selectorType: 'region',
+        selectorId: 'region-main',
+      }),
+    )
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('controlled 모드에서 동일 값 제안은 onValueChange/onChange를 중복 emit하지 않는다', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+    const onChange = vi.fn()
+    const controlledValue: SearchSelectionItem[] = [
+      {
+        id: 'keyword:react',
+        displayName: '키워드: react',
+        keyword: 'react',
+        normalizedKeyword: 'react',
+      },
+    ]
+
+    render(
+      <ComposableSearch
+        value={controlledValue}
+        onValueChange={onValueChange}
+        onChange={onChange}
+        selectors={[
+          {
+            id: 'region-main',
+            type: 'region',
+            props: createRegionSelector({
+              options: {
+                placeHolder: '지역 선택',
+              },
+            }),
+          },
+          {
+            id: 'keyword-main',
+            type: 'keyword',
+            props: {
+              type: 'keyword',
+              options: {
+                placeHolder: '키워드 선택',
+              },
+            },
+          },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '키워드 선택' }))
+    await user.type(screen.getByRole('textbox', { name: '키워드 입력' }), 'react{Enter}')
+
+    expect(onValueChange).not.toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('region + keyword 조합 상태를 onChange payload에 함께 전달한다', async () => {

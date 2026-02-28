@@ -1,0 +1,5 @@
+{
+  "name": "esm-consumer-fixture",
+  "private": true,
+  "type": "module"
+}

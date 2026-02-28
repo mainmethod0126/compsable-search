@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type {
+  ChangeMeta,
   ComposableSearchProps,
+  ComposableSearchValue,
   ComposableSelectItem,
   KeywordSelectOptions,
+  SelectorInstance,
+  SelectorPlugin,
+  SelectorPluginRegistry,
   RegionDataSource,
   RegionSelectOptions,
   RegionSelectProps,
@@ -17,6 +22,29 @@ const regionDataSource: RegionDataSource = {
   findAllEupmyeondongs: () => [
     { displayName: '역삼동', name: '역삼동', code: '1168010100' },
   ],
+}
+
+const regionSelectorInstance: SelectorInstance<'region'> = {
+  id: 'region-selector',
+  type: 'region',
+  props: {
+    type: 'region',
+    ...regionDataSource,
+    options: {
+      placeholder: '지역 선택',
+    },
+  },
+}
+
+const keywordSelectorInstance: SelectorInstance<'keyword'> = {
+  id: 'keyword-selector',
+  type: 'keyword',
+  props: {
+    type: 'keyword',
+    options: {
+      placeholder: '키워드 선택',
+    },
+  },
 }
 
 describe('public type contract', () => {
@@ -72,6 +100,16 @@ describe('public type contract', () => {
     legacyOnChange([])
   })
 
+  it('RegionSelectOptions는 placeholder + placeHolder 하위 호환 필드를 모두 지원한다', () => {
+    const options: RegionSelectOptions = {
+      placeholder: '지역 선택',
+      placeHolder: '지역 선택(레거시)',
+    }
+
+    expect(options.placeholder).toBe('지역 선택')
+    expect(options.placeHolder).toBe('지역 선택(레거시)')
+  })
+
   it('KeywordSelectOptions는 입력 모델 설정과 유효성 콜백 계약을 제공한다', () => {
     const onInvalidToken: NonNullable<KeywordSelectOptions['onInvalidToken']> = (
       error,
@@ -81,6 +119,7 @@ describe('public type contract', () => {
       expect(context.maxTokens).toBeGreaterThan(0)
     }
     const options: KeywordSelectOptions = {
+      placeholder: '키워드 선택',
       placeHolder: '키워드 선택',
       label: '키워드 입력',
       guideText: 'Enter로 확정',
@@ -92,6 +131,7 @@ describe('public type contract', () => {
       onInvalidToken,
     }
 
+    expect(options.placeholder).toBe('키워드 선택')
     expect(options.maxTokens).toBe(5)
   })
 
@@ -106,7 +146,64 @@ describe('public type contract', () => {
     expect(condition.id).toBe('keyword:vite')
   })
 
-  it('ComposableSearchProps는 region/keyword selector 조합을 허용한다', () => {
+  it('SelectorPluginRegistry는 selector instance 기반 plugin 계약을 수용한다', () => {
+    const regionPlugin: SelectorPlugin<'region'> = {
+      id: 'region-telemetry',
+      type: 'region',
+      onInit: (instance) => {
+        expect(instance.id).toBe('region-selector')
+      },
+      onDispose: (instance) => {
+        expect(instance.type).toBe('region')
+      },
+    }
+    const plugins: SelectorPluginRegistry = {
+      regionTelemetry: regionPlugin,
+    }
+
+    const regionTelemetryPlugin = plugins.regionTelemetry
+    if (regionTelemetryPlugin.type === 'region') {
+      regionTelemetryPlugin.onInit?.(regionSelectorInstance)
+      regionTelemetryPlugin.onDispose?.(regionSelectorInstance)
+    }
+    expect(Object.keys(plugins)).toEqual(['regionTelemetry'])
+  })
+
+  it('ComposableSearchProps는 0.3 value 기반 계약을 수용한다', () => {
+    const value: ComposableSearchValue = []
+    const meta: ChangeMeta = {
+      source: 'region',
+      selectorType: 'region',
+      selectorId: regionSelectorInstance.id,
+    }
+
+    const onValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
+      nextValue,
+      changeMeta,
+    ) => {
+      expect(nextValue).toBe(value)
+      expect(changeMeta.source).toBe('region')
+    }
+
+    const props: ComposableSearchProps = {
+      value,
+      defaultValue: [],
+      onValueChange,
+      selectors: [regionSelectorInstance, keywordSelectorInstance],
+      plugins: {
+        regionTelemetry: {
+          id: 'region-telemetry',
+          type: 'region',
+        },
+      },
+      placeholder: '조건 선택',
+    }
+
+    expect(props.selectors).toHaveLength(2)
+    props.onValueChange?.(value, meta)
+  })
+
+  it('ComposableSearchProps는 레거시 selectorsProps/onChange/placeHolder도 유지한다', () => {
     const props: ComposableSearchProps = {
       onChange: (selectedItems) => {
         expect(selectedItems).toBeDefined()
@@ -123,6 +220,7 @@ describe('public type contract', () => {
           },
         },
       ],
+      placeHolder: '조건 선택(레거시)',
     }
 
     expect(props.selectorsProps).toHaveLength(2)

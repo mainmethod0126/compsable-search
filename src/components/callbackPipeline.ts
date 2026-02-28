@@ -1,4 +1,5 @@
 import type {
+  ChangeMeta,
   KeywordInputErrorCode,
   KeywordInvalidTokenContext,
   KeywordSelectOptions,
@@ -10,6 +11,7 @@ import type {
 type CallbackScope = 'region' | 'keyword' | 'composableSearch'
 type CallbackName =
   | 'onChange'
+  | 'onValueChange'
   | 'onSelectedEupmyeondong'
   | 'onClick'
   | 'onInvalidToken'
@@ -63,6 +65,22 @@ export function dispatchComposableOnChange(
   }
 
   dispatchRegionOnChange(options, payload)
+}
+
+export function dispatchComposableOnValueChange(
+  onValueChange:
+    | ((nextValue: SearchSelectionItem[], meta: ChangeMeta) => void)
+    | undefined,
+  nextValue: SearchSelectionItem[],
+  meta: ChangeMeta,
+): void {
+  executeCallbackSafely(
+    'composableSearch',
+    'onValueChange',
+    onValueChange,
+    nextValue,
+    meta,
+  )
 }
 
 export function dispatchRegionOnSelectedEupmyeondong(

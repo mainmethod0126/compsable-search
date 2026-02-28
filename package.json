@@ -1,16 +1,41 @@
 {
   "name": "compsable-search",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:lib": "vite build --config vite.lib.config.ts && npm run build:types",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:large": "vitest run src/DemoService.test.ts src/App.test.tsx src/components/ComposableSearch.test.tsx"
+    "test:large": "vitest run src/DemoService.test.ts src/App.test.tsx src/components/ComposableSearch.test.tsx",
+    "verify:esm-consumer": "node scripts/verify-esm-consumer.mjs",
+    "verify:cjs-consumer": "node scripts/verify-cjs-consumer.mjs",
+    "verify:package": "node scripts/verify-package.mjs"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "react": "^19.2.0",

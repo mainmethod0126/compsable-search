@@ -42,6 +42,11 @@ type BivariantCallback<TArgs extends unknown[]> = {
 }['bivarianceHack']
 
 export interface RegionSelectOptions {
+  placeholder?: string
+  /**
+   * @deprecated `placeholder`를 사용하세요.
+   * 0.3.x 하위 호환을 위해 유지합니다.
+   */
   placeHolder?: string
   searchInputLabel?: string
   searchInputPlaceholder?: string
@@ -81,6 +86,11 @@ export interface KeywordInvalidTokenContext {
 }
 
 export interface KeywordSelectOptions {
+  placeholder?: string
+  /**
+   * @deprecated `placeholder`를 사용하세요.
+   * 0.3.x 하위 호환을 위해 유지합니다.
+   */
   placeHolder?: string
   inputPlaceholder?: string
   label?: string
@@ -101,11 +111,72 @@ export interface KeywordSelectProps {
 }
 
 export type ComposableSelectProps = RegionSelectProps | KeywordSelectProps
+export type SelectorType = ComposableSelectProps['type']
+
+export type ComposableSearchValue = SearchSelectionItem[]
+
+export interface ChangeMeta {
+  source: 'region' | 'keyword' | 'external' | 'initialize'
+  selectorType?: SelectorType
+  selectorId?: string
+}
+
+interface RegionSelectorInstanceShape {
+  id: string
+  type: 'region'
+  props: RegionSelectProps
+}
+
+interface KeywordSelectorInstanceShape {
+  id: string
+  type: 'keyword'
+  props: KeywordSelectProps
+}
+
+type AnySelectorInstance = RegionSelectorInstanceShape | KeywordSelectorInstanceShape
+
+export type SelectorInstance<TType extends SelectorType = SelectorType> = Extract<
+  AnySelectorInstance,
+  { type: TType }
+>
+
+export interface SelectorPlugin<TType extends SelectorType = SelectorType> {
+  id: string
+  type: TType
+  onInit?: BivariantCallback<[instance: SelectorInstance<TType>]>
+  onDispose?: BivariantCallback<[instance: SelectorInstance<TType>]>
+}
+
+export type AnySelectorPlugin =
+  | SelectorPlugin<'region'>
+  | SelectorPlugin<'keyword'>
+
+export type SelectorPluginRegistry = Record<string, AnySelectorPlugin>
 
 export interface ComposableSearchProps {
+  value?: ComposableSearchValue
+  defaultValue?: ComposableSearchValue
+  onValueChange?: BivariantCallback<
+    [nextValue: ComposableSearchValue, meta: ChangeMeta]
+  >
+  selectors?: SelectorInstance[]
+  plugins?: SelectorPluginRegistry
+  placeholder?: string
+  /**
+   * @deprecated `selectors`를 사용하세요.
+   * 0.3.x 하위 호환을 위해 유지합니다.
+   */
   selectorsProps?: ComposableSelectProps[]
+  /**
+   * @deprecated `onValueChange`를 사용하세요.
+   * 0.3.x 하위 호환을 위해 유지합니다.
+   */
   onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   className?: string
   style?: CSSProperties
+  /**
+   * @deprecated `placeholder`를 사용하세요.
+   * 0.3.x 하위 호환을 위해 유지합니다.
+   */
   placeHolder?: string
 }

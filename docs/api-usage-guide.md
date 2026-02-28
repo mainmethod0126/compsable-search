@@ -1,116 +1,195 @@
-# ComposableSearch API 사용 가이드
+# ComposableSearch API 사용 가이드 (0.3)
 
-## 1. 빠른 시작
+## 1. 핵심 변경
+
+`0.3`의 기본 사용 방식은 아래 조합입니다.
+
+- 상태: `value`(controlled) 또는 `defaultValue`(uncontrolled)
+- 변경 이벤트: `onValueChange(nextValue, meta)`
+- 선택기 구성: `selectors` + `createRegionSelector`/`createKeywordSelector`
+
+`selectorsProps`, `onChange`, `placeHolder`는 하위 호환을 위해 유지되지만 deprecated입니다.
+
+## 2. 0.3 권장 예제
+
 ```tsx
+import { useMemo, useState } from 'react'
 import {
   ComposableSearch,
+  createKeywordSelector,
+  createRegionSelector,
   type ComposableSearchProps,
+  type Region,
   type SearchSelectionItem,
 } from './src/components'
 
-const props: ComposableSearchProps = {
-  onChange: (selectedItems: SearchSelectionItem[]) => {},
-  selectorsProps: [
-    {
-      type: 'region',
-      findAllSidos,
-      findAllSigungus,
-      findAllEupmyeondongs,
-      options: {
-        placeHolder: '지역 선택',
-        onClick: () => {},
-        searchNoResultMessage: '검색 결과가 없습니다.',
-        onChange: (selectedItems: SearchSelectionItem[]) => {}, // fallback
-        onSelectedEupmyeondong: (selected) => {},
-      },
-    },
-    {
-      type: 'keyword',
-      options: {
-        placeHolder: '키워드 선택',
-        label: '키워드 입력',
-        inputPlaceholder: '키워드를 입력해 주세요.',
-        guideText: 'Enter로 키워드 확정, 입력이 비었을 때 Backspace로 마지막 키워드 삭제',
-        maxTokens: 5,
-        maxTokenLength: 20,
-        normalization: {
-          casePolicy: 'lower',
-        },
-        onInvalidToken: (error, context) => {},
-        onClick: () => {},
-      },
-    },
+const SIDOS: Region[] = [
+  { displayName: '서울특별시', name: '서울특별시', code: '11' },
+  { displayName: '부산광역시', name: '부산광역시', code: '26' },
+]
+
+const SIGUNGUS_BY_SIDO: Record<string, Region[]> = {
+  '11': [
+    { displayName: '강남구', name: '강남구', code: '11680' },
+    { displayName: '송파구', name: '송파구', code: '11710' },
   ],
+  '26': [{ displayName: '해운대구', name: '해운대구', code: '26350' }],
 }
 
-<ComposableSearch {...props} />
+const EUPMYEONDONGS_BY_SIGUNGU: Record<string, Region[]> = {
+  '11680': [{ displayName: '역삼동', name: '역삼동', code: '1168010100' }],
+  '11710': [{ displayName: '잠실동', name: '잠실동', code: '1171010100' }],
+  '26350': [{ displayName: '우동', name: '우동', code: '2635010500' }],
+}
+
+export function SearchPanel() {
+  const [value, setValue] = useState<SearchSelectionItem[]>([])
+
+  const selectors = useMemo(
+    () => [
+      createRegionSelector('region-main', {
+        findAllSidos: () => SIDOS,
+        findAllSigungus: (sidoCode) => SIGUNGUS_BY_SIDO[sidoCode] ?? [],
+        findAllEupmyeondongs: (sigunguCode) =>
+          EUPMYEONDONGS_BY_SIGUNGU[sigunguCode] ?? [],
+        options: {
+          placeholder: '지역 선택',
+          searchInputPlaceholder: '지역명 입력',
+          searchNoResultMessage: '검색 결과가 없습니다.',
+        },
+      }),
+      createKeywordSelector('keyword-main', {
+        options: {
+          placeholder: '키워드 선택',
+          label: '키워드 입력',
+          inputPlaceholder: '키워드를 입력해 주세요.',
+          guideText: 'Enter로 키워드 확정, 입력이 비었을 때 Backspace로 마지막 키워드 삭제',
+          maxTokens: 5,
+          maxTokenLength: 20,
+          normalization: {
+            casePolicy: 'lower',
+          },
+        },
+      }),
+    ],
+    [],
+  )
+
+  const handleValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
+    nextValue,
+    meta,
+  ) => {
+    setValue(nextValue)
+    console.log('onValueChange', {
+      source: meta.source,
+      selectorType: meta.selectorType,
+      selectorId: meta.selectorId,
+      nextValue,
+    })
+  }
+
+  return (
+    <ComposableSearch
+      value={value}
+      onValueChange={handleValueChange}
+      selectors={selectors}
+      placeholder="조건 선택"
+    />
+  )
+}
 ```
 
-## 2. 콜백 계약
-- `ComposableSearch.onChange` (권장)
-  - 선택 조건이 변경될 때마다 호출된다.
-  - payload 타입: `SearchSelectionItem[]`
-  - 우선순위:
-    - `props.onChange`가 지정되면 최우선으로 사용된다.
-    - `props.onChange`가 없을 때 `region.options.onChange`가 fallback으로 호출된다.
-- `region.options.onClick`
-  - 지역 selector 트리거 클릭 시 항상 호출된다.
-- `region.options.onChange`
-  - `ComposableSearch.onChange` 미지정 시 선택 조건이 변경될 때마다 호출된다.
-  - payload 타입: `SearchSelectionItem[]`
-  - payload 구성:
-    - 지역 조건: `SelectedRegionCondition` (`sido`, `sigungu`, `eupmyeondong` 포함)
-    - 키워드 조건: `SelectedKeywordCondition` (`keyword`, `normalizedKeyword` 포함)
-  - 정렬 정책:
-    - `region` 조건이 먼저, `keyword` 조건이 뒤에 온다.
-    - `keyword` 조건은 토큰 확정 순서를 유지한다.
-- `region.options.onSelectedEupmyeondong`
-  - 사용자가 지역 조건을 새로 확정(선택)할 때 호출된다.
-  - 해제(toggle off) 시에는 호출되지 않는다.
-- `keyword.options.onClick`
-  - 키워드 selector 트리거 클릭 시 항상 호출된다.
-- `keyword.options.onInvalidToken`
-  - 유효하지 않은 키워드 입력 확정 시 호출된다.
-  - 오류 코드:
-    - `empty-token`
-    - `duplicate-token`
-    - `token-too-long`
-    - `max-token-reached`
+## 3. `value`/`defaultValue`/`onValueChange`
 
-## 3. Selector 해석 정책
-- `selectorsProps`에 동일 `type`(`region` 또는 `keyword`)이 여러 개 있으면 첫 번째 항목만 사용된다(first-wins).
-- 중복 `type` 감지 시 개발 환경에서 `console.warn` 경고가 출력된다.
+- `value`를 전달하면 controlled 모드입니다.
+- `value` 없이 `defaultValue`를 전달하면 uncontrolled 모드입니다.
+- `onValueChange`는 두 모드 모두에서 호출됩니다.
 
-## 4. 지역 검색 메시지 정책
-- `RegionSelectOptions.searchNoResultMessage`는 사용자가 검색어를 입력했고(query 존재), 검색 결과가 0건일 때 노출된다.
-- 검색어가 없을 때는 `searchIdleMessage`가 우선한다.
+```tsx
+const handleValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
+  nextValue,
+  meta,
+) => {
+  // nextValue: SearchSelectionItem[]
+  // meta.source: 'region' | 'keyword' | 'external' | 'initialize'
+  // meta.selectorType: 'region' | 'keyword' | undefined
+  // meta.selectorId: string | undefined
+}
 
-## 5. 키워드 입력 정책
-- 상태:
-  - `idle` → `typing` → `token-committed` → `max-token-reached`
-- 이벤트:
-  - `Enter`: 현재 입력 토큰 확정
-  - `Blur`: 현재 입력 토큰 확정
-  - `Backspace`(입력 비어 있음): 마지막 토큰 제거
-- 기본 정규화 정책:
-  - 앞뒤 공백 제거
-  - 연속 공백을 단일 공백으로 변환
-  - 소문자 정규화(`casePolicy: 'lower'`)
-- 기본 제한 정책:
-  - `maxTokens = 5`
-  - `maxTokenLength = 20`
+<ComposableSearch
+  defaultValue={[]}
+  onValueChange={handleValueChange}
+  selectors={selectors}
+/>
+```
 
-## 6. 콜백 오류 처리 정책
-- 콜백 내부에서 예외가 발생해도 UI 선택 흐름은 중단되지 않는다.
-- 오류는 `console.error`로 기록되며 prefix는 다음과 같다.
-  - `[ComposableSearch] callback error`
+## 4. `selectors`와 selector 팩토리
 
-## 7. 0.2.x 호환성 안내
-- `0.2.x`는 non-breaking 범위를 유지하며, `ComposableSearch.onChange` 추가는 additive 변경으로 취급된다.
-- 레거시 경로 `src/components/types.ts`는 계속 유지되며, 신규 소비자는 `src/components/publicTypes` 경로 사용을 권장한다.
-- 레거시 소비자 전환 기간 동안 `region.options.onChange`는 fallback 경로로 계속 지원된다.
+- `selectors`는 `SelectorInstance[]`를 받습니다.
+- `createRegionSelector(id, props)` / `createKeywordSelector(id, props)`를 사용하면 타입 안전하게 생성할 수 있습니다.
+- 동일 `type`이 여러 개면 first-wins 정책으로 첫 번째 항목만 상세 패널/선택 로직에서 사용됩니다.
 
-## 8. 권장 검증 명령
-- `npm test`
-- `npm run lint`
-- `npm run build`
+## 5. `placeholder` 표준화와 `placeHolder` deprecated
+
+- 표준 필드: `placeholder`
+- deprecated 필드: `placeHolder` (`0.3.x` 하위 호환)
+- 렌더링 우선순위:
+  - `options.placeholder`
+  - `options.placeHolder`
+  - 내부 기본값 (`지역 선택` / `키워드 선택`)
+
+권장 패턴:
+
+```tsx
+createKeywordSelector('keyword-main', {
+  options: {
+    placeholder: '키워드 선택',
+    // placeHolder: '키워드 선택', // deprecated
+  },
+})
+```
+
+## 6. `adaptLegacySelectorsProps` 사용법
+
+`selectorsProps` 기반 코드를 즉시 전면 교체하기 어렵다면 어댑터로 점진 이관할 수 있습니다.
+
+```tsx
+import {
+  ComposableSearch,
+  adaptLegacySelectorsProps,
+  type ComposableSearchProps,
+} from './src/components'
+
+const legacySelectorsProps: NonNullable<ComposableSearchProps['selectorsProps']> = [
+  {
+    type: 'region',
+    findAllSidos,
+    findAllSigungus,
+    findAllEupmyeondongs,
+    options: {
+      placeHolder: '지역 선택',
+    },
+  },
+  {
+    type: 'keyword',
+    options: {
+      placeHolder: '키워드 선택',
+    },
+  },
+]
+
+<ComposableSearch
+  selectors={adaptLegacySelectorsProps(legacySelectorsProps)}
+  onValueChange={(nextValue, meta) => {
+    console.log(nextValue, meta)
+  }}
+/>
+```
+
+## 7. 레거시 API 상태
+
+- `selectorsProps`: deprecated, `selectors`로 이관 권장
+- `onChange`: deprecated, `onValueChange`로 이관 권장
+- `placeHolder`: deprecated, `placeholder`로 이관 권장
+
+상세 전환 절차는 `docs/migration-notes/0.3.0-migration.md`를 참고하세요.

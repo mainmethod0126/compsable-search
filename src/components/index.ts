@@ -23,4 +23,6 @@ export type {
   SelectedRegionCondition,
 } from './publicTypes'
 export type { SelectorOfType, SelectorType } from './selectorTypeUtils'
+export { createKeywordSelector, createRegionSelector } from './selectors'
+export { adaptLegacySelectorsProps } from './compat'
 
