@@ -47,10 +47,7 @@ import './ComposableSearch.css'
 const DETAILED_CONDITION_PLACEHOLDER = '상세 조건을 선택해 주세요.'
 const REGION_PLACEHOLDER = '지역 선택'
 const REGION_SEARCH_LABEL = '지역 검색'
-const REGION_SEARCH_PLACEHOLDER = '시/도, 시/군/구, 읍/면/동 검색'
-const REGION_SEARCH_IDLE_MESSAGE =
-  '지역명을 입력하면 시/도, 시/군/구, 읍/면/동 미리보기를 제공합니다.'
-const REGION_SEARCH_NO_RESULT_MESSAGE = '일치하는 지역이 없습니다.'
+const REGION_SEARCH_PLACEHOLDER = '지역명 입력'
 const KEYWORD_PLACEHOLDER = '키워드 선택'
 const KEYWORD_INPUT_LABEL = '키워드 입력'
 const KEYWORD_INPUT_GUIDE_TEXT =
@@ -345,15 +342,8 @@ export function ComposableSearch({
         {isRegionPanelOpen ? (
           <div className="cs-region-search-area" data-testid="cs-region-search-area">
             <RegionSearchInput
-              emptyMessage={
-                regionSelector.options?.searchNoResultMessage ??
-                REGION_SEARCH_NO_RESULT_MESSAGE
-              }
               icon={regionSelector.options?.searchInputIcon}
-              idleMessage={
-                regionSelector.options?.searchIdleMessage ??
-                REGION_SEARCH_IDLE_MESSAGE
-              }
+              idleMessage={regionSelector.options?.searchIdleMessage}
               label={regionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL}
               placeholder={
                 regionSelector.options?.searchInputPlaceholder ??

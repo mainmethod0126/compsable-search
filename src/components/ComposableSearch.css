@@ -33,19 +33,15 @@
 .cs-region-search-input {
   max-width: 460px;
   display: grid;
-  gap: 6px;
-}
-
-.cs-region-search-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #213143;
+  gap: 0;
 }
 
 .cs-region-search-field {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #bec8d2;
   border-radius: 0;
   padding: 0 10px;
@@ -65,8 +61,8 @@
 }
 
 .cs-region-search-svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .cs-region-search-control {
@@ -83,7 +79,7 @@
 }
 
 .cs-region-search-message {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 12px;
   color: #5a6a7f;
 }
@@ -92,8 +88,10 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #d7dfe6;
-  border-radius: 8px;
+  border-radius: 0;
   background-color: #ffffff;
   max-height: 180px;
   overflow-y: auto;
@@ -196,8 +194,17 @@
 }
 
 .cs-expanded-area[data-state='open'] {
+  position: relative;
+  z-index: 1;
   border: 1px solid #d2dae2;
+  border-color: #2d5f9c;
   margin: -1px -1px 0;
+}
+
+.cs-expanded-area[data-state='open']
+  + .cs-selected-area
+  .cs-selected-condition-basket {
+  border-top-color: #2d5f9c;
 }
 
 .cs-selected-area {
@@ -349,12 +356,7 @@
 .cs-keyword-panel {
   display: grid;
   gap: 8px;
-}
-
-.cs-keyword-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #213143;
+  padding: 8px;
 }
 
 .cs-keyword-input-row {

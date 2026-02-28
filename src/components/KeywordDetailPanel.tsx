@@ -32,11 +32,9 @@ export function KeywordDetailPanel({
 
   return (
     <section className="cs-keyword-panel" data-testid="cs-keyword-panel">
-      <label className="cs-keyword-label" htmlFor="cs-keyword-input">
-        {label}
-      </label>
       <div className="cs-keyword-input-row">
         <input
+          aria-label={label}
           aria-describedby={errorMessage ? `${hintId} ${errorId}` : hintId}
           className="cs-keyword-input"
           id="cs-keyword-input"

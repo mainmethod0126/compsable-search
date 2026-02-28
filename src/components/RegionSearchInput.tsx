@@ -7,8 +7,7 @@ interface RegionSearchInputProps {
   icon?: ReactNode
   label: string
   placeholder: string
-  idleMessage: string
-  emptyMessage: string
+  idleMessage?: string
   onChange: (value: string) => void
   onSelectResult: (result: RegionSearchResult) => void
 }
@@ -18,11 +17,11 @@ function DefaultRegionSearchIcon() {
     <svg
       aria-hidden="true"
       className="cs-region-search-svg"
-      viewBox="0 0 20 20"
+      viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M12.8 12.8a5.2 5.2 0 1 1 1.4-1.4l3.8 3.8-1.4 1.4-3.8-3.8Zm-7.6-3.6a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0Z"
+        d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14ZM9.5 14A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"
         fill="currentColor"
       />
     </svg>
@@ -36,7 +35,6 @@ export function RegionSearchInput({
   label,
   placeholder,
   idleMessage,
-  emptyMessage,
   onChange,
   onSelectResult,
 }: RegionSearchInputProps) {
@@ -50,9 +48,6 @@ export function RegionSearchInput({
 
   return (
     <section className="cs-region-search-input">
-      <label className="cs-region-search-label" htmlFor={inputId}>
-        {label}
-      </label>
       <div className="cs-region-search-field">
         <span aria-hidden="true" className="cs-region-search-icon">
           {icon ?? <DefaultRegionSearchIcon />}
@@ -68,25 +63,25 @@ export function RegionSearchInput({
           onChange={handleChange}
         />
       </div>
-      {!hasQuery ? (
+      {hasQuery ? (
+        results.length > 0 ? (
+          <ul className="cs-region-search-preview-list">
+            {results.map((result) => (
+              <li key={`${result.level}-${result.id}`}>
+                <button
+                  className="cs-region-search-preview-item"
+                  type="button"
+                  onClick={() => onSelectResult(result)}
+                >
+                  {result.pathLabel}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null
+      ) : idleMessage ? (
         <p className="cs-region-search-message">{idleMessage}</p>
-      ) : results.length === 0 ? (
-        <p className="cs-region-search-message">{emptyMessage}</p>
-      ) : (
-        <ul className="cs-region-search-preview-list">
-          {results.map((result) => (
-            <li key={`${result.level}-${result.id}`}>
-              <button
-                className="cs-region-search-preview-item"
-                type="button"
-                onClick={() => onSelectResult(result)}
-              >
-                {result.pathLabel}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      ) : null}
     </section>
   )
 }
