@@ -1,105 +1,113 @@
-﻿# react-composable-search PRD
+# react-composable-search PRD
 
 ## 1. Product Summary
 
-`react-composable-search` is a React component for composing search-condition selectors. The current implementation provides one container with three areas.
+`react-composable-search` is a React component that provides a composable search-condition UI. The current implementation exposes the following three sections in one container.
 
-- Top Selector area: renders `region` and `keyword` selector triggers
-- Middle Detailed Conditions area: renders a 3-level region UI (Sido, Sigungu, Eup/Myeon/Dong)
-- Bottom Selected Conditions area: renders selected chips, single delete, and clear-all
+- Selector area: renders `region` and `keyword` triggers
+- Detailed Conditions area: renders either a 3-level region panel (Sido, Sigungu, Eup/Myeon/Dong) or a keyword input panel
+- Selected Conditions area: renders selected chips with single-delete and clear-all
 
-This PRD is reverse-engineered from the current repository implementation (`src/components/**`, `src/App.tsx`, `src/DemoService.tsx`) and is written with enough detail to reproduce the same product behavior.
+The current implementation includes hierarchical region selection, region search preview selection, a keyword token input state machine, and safe callback execution (exception isolation).
 
 ## 2. Problem Statement
 
-Search UIs are repeatedly reimplemented because filter composition differs by domain. Region filters in particular require recurring logic: hierarchical traversal (Sido -> Sigungu -> Eup/Myeon/Dong), multi-select, selected-chip rendering, and parent/child conflict handling.
+Search-condition UIs are repeatedly reimplemented across domains. Region filters are especially complex because they require hierarchical traversal, whole-selection options, mutual exclusivity rules, and chip synchronization. Keyword input also needs consistent normalization, deduplication, and limit enforcement.
 
 Problems to solve:
 
-- Standardize repeated condition-selection patterns into reusable components
-- Externalize region data dependencies through injected data functions
-- Keep selection state behavior consistent (toggle, single delete, clear all)
-- Maintain a small and predictable integration API for library consumers
+- Standardize reusable region/keyword condition selection
+- Separate domain data dependency through injected data sources
+- Provide a single combined onChange payload for region + keyword
+- Ensure callback exceptions do not break UI interaction flow
 
 ## 3. Target Users and Core Use Cases
 
 ### 3.1 Target Users
 
-- React frontend engineers integrating search-condition UI quickly
-- Library maintainers managing API stability and regressions
-- End users selecting and removing region conditions
+- React frontend engineers who need fast integration
+- Component maintainers who manage API contracts and regressions
+- End users who combine region and keyword filters
 
 ### 3.2 Core Use Cases
 
-- US-001: A developer passes `selectorsProps` (`region`, `keyword`) and renders the full condition UI.
-- US-002: An end user opens the region detail area and selects in sequence: Sido -> Sigungu -> Eup/Myeon/Dong.
-- US-003: An end user toggles either the Sido-whole checkbox in the Sigungu column or Eup/Myeon/Dong checkboxes to add/remove conditions.
-- US-004: An end user removes a single condition via a chip delete button.
-- US-005: An end user removes all conditions via the clear-all button.
-- US-006: An end user gets a visually natural selection experience because checkbox-based region labels and normal region-item labels use consistent typography.
-- US-007: When either a child region like `Gangnam-gu > Yeoksam-dong` or a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected, an end user can immediately recognize in upper columns that a descendant is selected through a distinct color cue.
+- US-001: A developer renders both `region` and `keyword` via `selectorsProps`.
+- US-002: An end user opens the region panel and selects Sido -> Sigungu -> Eup/Myeon/Dong.
+- US-003: An end user toggles Sido-whole in Sigungu column or checkboxes in Eup/Myeon/Dong column.
+- US-004: An end user searches in region input and clicks a preview item to apply a condition immediately.
+- US-005: An end user opens the keyword panel and commits tokens via Enter/Blur.
+- US-006: An end user removes the last keyword token with Backspace when input is empty.
+- US-007: An end user removes chips individually or clears all chips.
+- US-008: A developer receives combined region+keyword payload from `region.options.onChange`.
+- US-009: A developer handles invalid keyword commits using `keyword.options.onInvalidToken`.
+- US-010: A developer is protected from UI breakage even when callbacks throw.
 
 ## 4. Goals
 
-- G-001 (`Must`): Run region-selection UI with only externally injected data functions.
-- G-002 (`Must`): Reflect selected conditions immediately as chips with single-delete and clear-all.
-- G-003 (`Must`): Prevent duplicate conditions and keep ID-based toggle behavior consistent.
-- G-004 (`Should`): Keep consumer-facing API concise.
-- G-005 (`Should`): Enable full UI and state-flow reproduction from PRD only.
+- G-001 (`Must`): Provide region/keyword condition selection in one component
+- G-002 (`Must`): Reflect condition changes immediately in chips and callback payloads
+- G-003 (`Must`): Automatically resolve conflicts between whole/detail region conditions
+- G-004 (`Must`): Provide keyword normalization, deduplication, max count, and max length rules
+- G-005 (`Should`): Keep public API/types concise and backward-compatible
+- G-006 (`Should`): Keep user interaction flow resilient under callback exceptions
 
 ## 5. Non-Goals
 
-- NG-001: Search-result listing/pagination/sorting API behavior
-- NG-002: Built-in server-state management (e.g., React Query)
-- NG-003: Region source data collection/normalization
-- NG-004: Full localization system
-- NG-005: Advanced accessibility completion (arrow-key navigation, roving tabindex)
+- NG-001: Search-result API, paging, sorting
+- NG-002: Built-in async region loading/error UI
+- NG-003: Built-in server-state library integration
+- NG-004: Advanced keyboard navigation completion (roving tabindex, etc.)
+- NG-005: Full i18n system
 
 ## 6. Scope of This Release
 
 ### 6.1 In Scope
 
-- `ComposableSearch` container and 3-section layout
-- `region` selector and detail-area toggle
-- 3-column region UI (`SelectableRegionColumn` x2 + `CheckableRegionColumn` x1)
-- Selected chips, chip delete, clear-all
-- `keyword` selector trigger rendering (placeholder + optional click)
-- Demo behavior with `DemoService` data
+- Selector rendering and single-panel toggle (`region`/`keyword`)
+- Region-panel search input, preview list, and click-to-select
+- 3-level region columns (two selectable columns + one checkable column) with whole/detail mutual exclusivity
+- Descendant-selection visual indicator (`has-descendant-selected`)
+- Keyword panel (label/guide/counter/error message)
+- Keyword state machine (normalization, duplicate/length/count constraints, Enter/Blur/Backspace)
+- Selected chips, single delete, clear all
+- Combined `region.options.onChange` payload (region + keyword)
+- Safe callback execution (exception isolation with `console.error`)
 
 ### 6.2 Out of Scope
 
-- npm-ready entry and bundle packaging completion
-- Standardized search submit event/button
-- Actual `keyword` input/autocomplete/tokenization
-- Async loading/error UI for region data
+- Dedicated "no search result" UI when query returns zero matches
+- Keyword autocomplete/suggestion API
+- Fully controlled external-state mode
+- Automated package-release pipeline
 
 ## 7. Functional Requirements
 
 | ID | Priority | Requirement | Detailed Specification | Linked Acceptance Criteria |
 | --- | --- | --- | --- | --- |
-| FR-001 | Must | Container structure | `ComposableSearch` must render selector/detailed/selected sections in order. `className` and `style` must be merged on root. | AC-001 |
-| FR-002 | Must | Selector order preservation | Selectors must render in the same order as `selectorsProps`. | AC-002 |
-| FR-003 | Must | Region trigger toggle | Clicking `region` trigger must toggle detailed area open/close state. | AC-003 |
-| FR-004 | Must | Detailed content injection | Detailed area must render ReactNode provided by `setDetailedConditionsContent`. Initial value is a placeholder node. | AC-004 |
-| FR-005 | Must | Initial Sido loading | On Region selector mount, call `findAllSidos()` and populate Sido column children. | AC-005 |
-| FR-006 | Must | No automatic current selection in selectable columns | `SelectableRegionColumn` must not auto-assign `current` or auto-invoke `onSelectedRegion` on initial render, parent change, or list refresh. `current` assignment and `onSelectedRegion` invocation must happen only after explicit user click. | AC-006 |
-| FR-007 | Must | Load Sigungu after Sido and provide Sido-whole checkbox | On Sido selection, call `findAllSigungus(sidoCode)` and update Sigungu column. The Sigungu column must also allow direct checkbox toggle for `displayName + " 전체"`. | AC-007, AC-020 |
-| FR-008 | Must | Load Eup/Myeon/Dong after Sigungu | On Sigungu selection, call `findAllEupmyeondongs(sigunguCode)` and update checkbox column. The Sido-whole option already exposed in the Sigungu column must not be duplicated in Eup/Myeon/Dong. | AC-008 |
-| FR-009 | Must | Eup/Myeon/Dong toggle | Checkbox change must toggle by condition ID (`eupmyeondong.code`). Added condition label format is `sido>sigungu>eupmyeondong`. | AC-009 |
-| FR-010 | Must | Duplicate prevention | Same ID must not be duplicated. Re-select removes existing item. | AC-010 |
-| FR-011 | Should | Parent/child conflict rule | A "whole region" condition (`sigungu.code === eupmyeondong.code`) is mutually exclusive with detail conditions in the same Sigungu. | AC-011 |
-| FR-012 | Must | Selected chip rendering | Selected condition array must render as chips with delete buttons. | AC-012 |
-| FR-013 | Must | Single delete | Clicking chip delete removes only matching `conditionId`. | AC-013 |
-| FR-014 | Must | Clear all | Clicking clear-all removes all conditions. Button is disabled when condition count is zero. | AC-014 |
-| FR-015 | Must | Empty-state guidance by context | Region-column empty states must use Korean guidance by cause: show `상위 지역을 먼저 선택해 주세요.` when parent region is not selected yet, and show `표시할 지역이 없습니다.` when data is genuinely empty after parent selection. | AC-015 |
-| FR-016 | Should | Visual state markers | `current` item uses highlighted background; `selected` item uses highlighted text style. | AC-016 |
-| FR-017 | Could | Region options callbacks | Keep extension points: `options.onChange`, `options.onSelectedEupmyeondong`, `options.onClick`. | AC-017 |
-| FR-018 | Must | Keyword trigger | `keyword` selector renders icon + placeholder button and invokes `options.onClick` when provided. | AC-018 |
-| FR-019 | Must | Mutual exclusivity between Sido whole and child Sigungu | Selecting a Sido "whole" condition must clear child Sigungu conditions in the same Sido, and selecting a child Sigungu must clear the Sido "whole" condition in that same scope. In particular, if a child Sigungu is already selected and the user checks Sido "whole", the existing child Sigungu condition must be removed immediately. Example: `Seoul whole` and `Seoul Gangnam-gu` cannot coexist; after selecting `Busan Haeundae-gu`, checking `Busan whole` must leave only `Busan whole`. | AC-019 |
-| FR-020 | Must | Direct Sido-whole selection from Sigungu column | Users must be able to add/remove Sido-whole condition directly from Sigungu column checkbox without repeating the same "whole" selection step in Eup/Myeon/Dong. | AC-020 |
-| FR-021 | Must | No auto-selection of Sigungu before explicit user action | In the Sigungu column, right after list refresh triggers (Sido change or Sido-whole check/uncheck), the first item (e.g., `Gangnam-gu`) must not be auto-assigned as `current`/selected. Until a user explicitly clicks a Sigungu item, both Sigungu `current` and Eup/Myeon/Dong list must remain unselected. | AC-021 |
-| FR-022 | Should | Typography consistency across region items | Checkbox label text (`Sido whole`, Eup/Myeon/Dong) and normal region-item text (Sido/Sigungu/Eup/Myeon/Dong) must use the same typography baseline (`font-family`, `font-size`, `font-weight`, `line-height`). Selection emphasis must rely on color/background changes, while typography values stay consistent. | AC-022 |
-| FR-023 | Must | Ancestor color indicator for descendant selection | When a Eup/Myeon/Dong item (e.g., `Yeoksam-dong`) is selected, and also when a "whole" option in Sigungu/Eup-Myeon-Dong (e.g., `Seoul whole`, `Gangnam-gu whole`) is selected as a descendant condition, ancestor items in that path (Sido `Seoul`, Sigungu `Gangnam-gu`) must be rendered with a separate visual color state (`has-descendant-selected`) that is distinct from `current`/direct `selected`. The visual system may stay in a blue family, but `current` and `has-descendant-selected` must be clearly separated by tone/saturation and auxiliary cues (e.g., border style). This state persists while at least one descendant is selected and returns to default immediately after the last descendant is removed. | AC-023 |
+| FR-001 | Must | Container structure | `ComposableSearch` renders selector/detailed/selected in order. | AC-001 |
+| FR-002 | Must | Selector order preservation | Preserve the exact order of `selectorsProps`. | AC-001 |
+| FR-003 | Must | Single-panel toggle | `region` and `keyword` panels are mutually exclusive and toggle on trigger click. | AC-002 |
+| FR-004 | Must | Region search placement | When region panel is open, region search area appears below selector and outside detailed area. | AC-003 |
+| FR-005 | Must | Initial Sido loading | Build Sido column using `findAllSidos()` from region data source. | AC-004 |
+| FR-006 | Must | No auto current selection | `SelectableRegionColumn` must not auto-assign `current` before explicit user click. | AC-005 |
+| FR-007 | Must | Update Sigungu after Sido selection | On Sido select, update Sigungu via `findAllSigungus(sidoCode)` and expose Sido-whole checkbox. | AC-006 |
+| FR-008 | Must | Update Eup/Myeon/Dong after Sigungu selection | On Sigungu select, call `findAllEupmyeondongs(sigunguCode)` and prepend `Sigungu whole` item. | AC-007 |
+| FR-009 | Must | Region toggle behavior | Region check items toggle by `condition.id` and never keep duplicates. | AC-008 |
+| FR-010 | Must | Mutual exclusivity rules | Whole/detail in same Sigungu and Sido-whole/child in same Sido cannot coexist. | AC-008 |
+| FR-011 | Should | Descendant indicator | Apply `has-descendant-selected` visual state to ancestors when descendants are selected. | AC-009 |
+| FR-012 | Must | Empty-state differentiation | Render different guidance for no-parent-selected vs truly empty data. | AC-010 |
+| FR-013 | Must | Chip synchronization | Render selected conditions as chips with single delete and clear all. | AC-011 |
+| FR-014 | Must | Region search indexing/filtering | Flatten region tree, support partial match, and apply result limit (`searchResultLimit`, default 20). | AC-012 |
+| FR-015 | Must | Search-result mapping | Map Sido/Sigungu/Eup-Myeon-Dong results to `SelectedRegionCondition`, toggle condition, and clear query. | AC-012 |
+| FR-016 | Must | Keyword panel rendering | Clicking keyword trigger opens keyword panel with label/guide/counter. | AC-013 |
+| FR-017 | Must | Keyword normalization/constraints | Apply trim, whitespace collapsing, case policy, and duplicate/length/count limits. | AC-013 |
+| FR-018 | Must | Keyword input events | Enter/Blur commits input, and Backspace on empty input removes last token. | AC-013 |
+| FR-019 | Should | Invalid-token callback | On invalid commit, call `onInvalidToken(error, context)`. | AC-013 |
+| FR-020 | Must | Combined onChange payload | `region.options.onChange` uses `SearchSelectionItem[]` and emits region items before keyword items. | AC-014 |
+| FR-021 | Must | Callback exception isolation | UI state updates must continue even if region/keyword callbacks throw. | AC-015 |
+| FR-022 | Should | Typography consistency | Checkbox labels and normal region items keep the same typography contract. | AC-016 |
+| FR-023 | Should | Fixed list viewport | Region columns keep a fixed vertical viewport showing about 6 items at 36px item height. Columns with Sido-whole toggle keep `1 whole item + 5 list items`. | AC-017 |
+| FR-024 | Must | Region-selection confirmation callback | `onSelectedEupmyeondong` fires only on newly added region conditions, not on deselection. | AC-018 |
 
 ## 8. Component and API Requirements
 
@@ -107,143 +115,135 @@ Problems to solve:
 
 | Type | Fields | Constraints |
 | --- | --- | --- |
-| `Region` | `displayName: string`, `name: string`, `code: string` | `code` is selection ID and must be unique within relevant level. |
-| `SelectedCondition` | `id: string`, `displayName: string` | Minimal chip rendering unit |
-| `SeletedRegionCondition` | `SelectedCondition + sido + sigungu + eupmyeondong` | Region-specific condition type |
-| `SeletedKeywordCondition` | Extension of `SelectedCondition` | Keyword condition type (input UI not implemented yet) |
+| `Region` | `displayName`, `name`, `code` | `code` must be unique without collision. |
+| `SelectedRegionCondition` | `id`, `displayName`, `sido`, `sigungu`, `eupmyeondong` | Region condition item |
+| `SelectedKeywordCondition` | `id`, `displayName`, `keyword`, `normalizedKeyword` | Keyword condition item |
+| `SearchSelectionItem` | `SelectedRegionCondition \| SelectedKeywordCondition` | onChange payload item |
 
 ### 8.2 `ComposableSearchProps`
 
-| Field | Type | Required | Default | Behavior |
+| Field | Type | Required | Default | Note |
 | --- | --- | --- | --- | --- |
-| `selectorsProps` | `ComposableSelectProps[]` | No | `undefined` | Selector render source |
-| `className` | `string` | No | `''` | Merged into root className |
-| `style` | `CSSProperties` | No | `undefined` | Applied to root inline style |
-| `placeHolder` | `string` | No | `undefined` | Currently unused |
+| `selectorsProps` | `ComposableSelectProps[]` | No | `[]` | Selector composition |
+| `className` | `string` | No | `undefined` | Merged to root class |
+| `style` | `CSSProperties` | No | `undefined` | Root inline style |
+| `placeHolder` | `string` | No | `undefined` | Currently unused (backward-compatible field) |
 
-### 8.3 `ComposableSelectProps` (Union)
-
-- `RegionSelectProps`
-- `KeywordSelectProps`
-
-### 8.4 Consumer-facing Region API (target contract)
+### 8.3 Region API
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `type` | `'region'` | Yes | Selector discriminator |
-| `findAllSidos` | `() => Region[]` | Yes | Supplies Sido list |
-| `findAllSigungus` | `(sidoCode: string) => Region[]` | Yes | Supplies Sigungu list |
-| `findAllEupmyeondongs` | `(sigunguCode: string) => Region[]` | Yes | Supplies Eup/Myeon/Dong list |
-| `options.placeHolder` | `string` | No | Trigger text |
-| `options.onChange` | `(selectedItems: ComposableSelectItem[]) => void` | No | Selection-change extension point |
-| `options.onSelectedEupmyeondong` | `(selected: Region) => void` | No | Eup/Myeon/Dong extension point |
-| `options.onClick` | `() => void` | No | Trigger click extension point |
+| `type` | `'region'` | Yes | Selector type |
+| `findAllSidos` | `() => Region[]` | Yes | Sido list |
+| `findAllSigungus` | `(sidoCode: string) => Region[]` | Yes | Sigungu list |
+| `findAllEupmyeondongs` | `(sigunguCode: string) => Region[]` | Yes | Eup/Myeon/Dong list |
+| `options.placeHolder` | `string` | No | Region trigger text |
+| `options.searchInputLabel` | `string` | No | Search input accessibility label |
+| `options.searchInputPlaceholder` | `string` | No | Search input placeholder |
+| `options.searchIdleMessage` | `string` | No | Message when query is empty |
+| `options.searchNoResultMessage` | `string` | No | Present in type, currently not used in UI |
+| `options.searchResultLimit` | `number` | No | Max search results (default 20) |
+| `options.searchInputIcon` | `ReactNode` | No | Custom search icon |
+| `options.onChange` | `(selectedItems: SearchSelectionItem[]) => void` | No | Selection-change callback |
+| `options.onSelectedEupmyeondong` | `(selected: Region) => void` | No | Callback for newly added region condition |
+| `options.onClick` | `() => void` | No | Region trigger click callback |
 
-### 8.5 Consumer-facing Keyword API
+### 8.4 Keyword API
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `type` | `'keyword'` | Yes | Selector discriminator |
-| `options.placeHolder` | `string` | No | Button text |
-| `options.onClick` | `() => void` | No | Click callback |
+| `type` | `'keyword'` | Yes | Selector type |
+| `options.placeHolder` | `string` | No | Keyword trigger text |
+| `options.label` | `string` | No | Input label |
+| `options.inputPlaceholder` | `string` | No | Input placeholder |
+| `options.guideText` | `string` | No | Guide text |
+| `options.maxTokens` | `number` | No | Max token count (default 5) |
+| `options.maxTokenLength` | `number` | No | Max token length (default 20) |
+| `options.normalization.trim` | `boolean` | No | Trim boundary spaces |
+| `options.normalization.collapseWhitespace` | `boolean` | No | Collapse sequential whitespaces |
+| `options.normalization.casePolicy` | `'preserve' \| 'lower'` | No | Case normalization policy |
+| `options.onInvalidToken` | `(error, context) => void` | No | Validation-failure callback |
+| `options.onClick` | `() => void` | No | Keyword trigger click callback |
 
-### 8.6 State Transition Rules
+### 8.5 State Transition Rules
 
-- ST-001: Detailed area open/close is controlled by one boolean (`isOpenDetailedConditionArea`).
-- ST-002: `selectedConditions` is internally managed and not externally exposed.
-- ST-003: Region checkbox toggles add/remove by ID.
-- ST-004: Clear-all sets `selectedConditions = []`.
+- ST-001: Detailed panel state is managed by `activePanelMode: 'none' | 'region' | 'keyword'`.
+- ST-002: Region conditions and keyword tokens are managed internally and rendered together as chips.
+- ST-003: Region toggles, keyword commit/remove, and clear-all update combined onChange payload.
+- ST-004: `CLEAR_ALL` resets both region and keyword conditions.
 
 ## 9. Non-Functional Requirements
 
-| ID | Priority | Requirement | Measurement / Pass Criteria |
+| ID | Priority | Requirement | Pass Criteria |
 | --- | --- | --- | --- |
-| NFR-001 | Must | Minimal dependencies | Runtime deps remain only `react`, `react-dom`. |
-| NFR-002 | Must | npm-distribution-oriented design | Component must run via externally injected data functions and must not mutate global runtime. |
-| NFR-003 | Must | Minimize style conflicts | Prefer component-scoped class styling and avoid global selector pollution. |
-| NFR-004 | Should | Baseline accessibility | Buttons use `type="button"`; delete button includes `aria-label`. |
-| NFR-005 | Should | Empty-data safety | Empty arrays must render empty-state UI without runtime errors. |
-| NFR-006 | Could | Large-list handling | Up to 200 chips should remain interactable without noticeable lag. |
+| NFR-001 | Must | Minimal runtime dependency | Runtime dependencies remain `react`, `react-dom`. |
+| NFR-002 | Must | Style scope isolation | Use `cs-` namespaced class styles. |
+| NFR-003 | Must | Callback fault tolerance | UI transition continues even when callbacks throw. |
+| NFR-004 | Should | Baseline accessibility | Action buttons use `type="button"` and inputs have labels. |
+| NFR-005 | Should | Stability under large data | No functional regression with many chips/large region trees. |
 
 ## 10. Acceptance Criteria
 
 | ID | Scenario | Expected Result | Linked Requirements |
 | --- | --- | --- | --- |
-| AC-001 | Render `ComposableSearch` | selector, detailed, selected sections appear in order. | FR-001 |
-| AC-002 | `selectorsProps = [region, keyword]` | region renders first, keyword second. | FR-002 |
-| AC-003 | Click region trigger twice | detailed area toggles open then closed. | FR-003 |
-| AC-004 | After RegionSelect mount | detailed area is replaced by 3-column region UI. | FR-004 |
-| AC-005 | Initial mount | Sido column shows `findAllSidos()` results. | FR-005 |
-| AC-006 | Column node changes (including initial render) | Sido/Sigungu `SelectableRegionColumn` must keep `current` unselected and must not auto-call `onSelectedRegion` until explicit user click. | FR-006 |
-| AC-007 | Select Sido item | `findAllSigungus(selectedSido.code)` is called and Sigungu list refreshes. | FR-007 |
-| AC-008 | Select Sigungu item | `findAllEupmyeondongs(selectedSigungu.code)` is called and Eup/Myeon/Dong list refreshes. | FR-008 |
-| AC-009 | Check Eup/Myeon/Dong item | one chip is added with `>`-joined full path label. | FR-009 |
-| AC-010 | Toggle same item again | existing chip is removed; no duplicates remain. | FR-010 |
-| AC-011 | Mix whole + detail in same Sigungu | mutual exclusivity is maintained in that Sigungu scope. | FR-011 |
-| AC-012 | Select 3 conditions | 3 chips are rendered in selected area. | FR-012 |
-| AC-013 | Click chip delete | only that chip is removed. | FR-013 |
-| AC-014 | Click clear-all | all chips removed; button becomes disabled. | FR-014 |
-| AC-015 | Sigungu or Eup/Myeon/Dong column is empty | Show `상위 지역을 먼저 선택해 주세요.` when parent region is not selected; show `표시할 지역이 없습니다.` when result data is empty after parent selection. | FR-015 |
-| AC-016 | Compare current vs selected states | current has highlighted background; selected has highlighted text. | FR-016 |
-| AC-017 | Provide `options.onChange` | callback extension point exists and can be wired to selection updates. | FR-017 |
-| AC-018 | Click keyword trigger | `options.onClick` fires when provided. | FR-018 |
-| AC-019 | Switch between `Seoul whole` ↔ `Seoul Gangnam-gu`, and `Busan Haeundae-gu` -> `Busan whole` | Only the last-selected condition remains, and conflicting conditions in the same Sido scope are automatically cleared. Right after selecting `Busan whole`, the previously selected `Haeundae-gu` condition must be removed. | FR-019 |
-| AC-020 | Check `Seoul whole` in Sigungu column | Condition is added/removed immediately, and the same `Seoul whole` checkbox option is not duplicated in Eup/Myeon/Dong column. | FR-007, FR-020 |
-| AC-021 | Immediately after selecting `Seoul` or after checking then unchecking `Seoul whole` in Sigungu (without explicitly clicking `Gangnam-gu`) | `Gangnam-gu` must not become `current`/selected automatically; Sigungu `current` remains empty. `Gangnam-gu` `current` and Eup/Myeon/Dong refresh happen only after explicit user click on `Gangnam-gu`. | FR-021 |
-| AC-022 | Compare checkbox items (e.g., `Seoul whole`, `Yeoksam-dong`) with normal region items (e.g., `Seoul`, `Gangnam-gu`) in the same region-selection context | Compared texts have identical `font-family`, `font-size`, `font-weight`, and `line-height`. Under `selected/current/hover`, typography remains unchanged and only color/background changes. | FR-022 |
-| AC-023 | With `Seoul > Gangnam-gu > Yeoksam-dong` or `Seoul > Gangnam-gu whole` selected, inspect Sido and Sigungu columns | `Seoul` in the Sido column and `Gangnam-gu` in the Sigungu column are shown with a distinct descendant-selection color. Even if both states use blue tones, `current` and `has-descendant-selected` must be immediately distinguishable via tone/saturation or border-style differences, and the state must revert immediately when the last descendant (`Yeoksam-dong` or `Gangnam-gu whole`) is deselected. | FR-023 |
+| AC-001 | Render with `selectorsProps = [region, keyword]` | Three sections render in order and selector order is preserved. | FR-001, FR-002 |
+| AC-002 | Alternate clicking region/keyword triggers | Only one detail panel is open at a time, and reclick closes it. | FR-003 |
+| AC-003 | Open region panel | Search area is below selector and outside detailed area. | FR-004 |
+| AC-004 | Immediately after opening region panel | Sido column renders `findAllSidos()` results. | FR-005 |
+| AC-005 | Initial render and after list refresh | Sido/Sigungu `current` is not auto-selected. | FR-006 |
+| AC-006 | Select Sido and toggle Sido-whole | Sigungu list updates and Sido-whole toggle works. | FR-007 |
+| AC-007 | Select Sigungu | Eup/Myeon/Dong list updates with `Sigungu whole` at top. | FR-008 |
+| AC-008 | Cross-toggle whole/detail | Conflicting conditions are automatically removed and no duplicates remain. | FR-009, FR-010 |
+| AC-009 | Select/deselect descendants | Ancestor `has-descendant-selected` state appears/disappears correctly. | FR-011 |
+| AC-010 | No parent selected vs empty data | Different empty-state messages are shown per cause. | FR-012 |
+| AC-011 | Delete chip / clear all | Chip UI stays synchronized with selection state. | FR-013 |
+| AC-012 | Type region query and click preview result | Partial-match + limit rule applies; selecting result updates condition and clears query. | FR-014, FR-015 |
+| AC-013 | Keyword input with Enter/Blur/Backspace | Token commit/removal, normalization, duplicate/length/count limits, error UI and onInvalidToken work. | FR-016, FR-017, FR-018, FR-019 |
+| AC-014 | Select both region and keyword conditions | `onChange` receives combined payload containing both. | FR-020 |
+| AC-015 | Throw inside callbacks | Error is logged while UI flow and selection state continue. | FR-021 |
+| AC-016 | Compare checkbox labels and normal items | Typography contract remains consistent. | FR-022 |
+| AC-017 | Inspect region list viewport | Fixed viewport shows about six 36px items. | FR-023 |
+| AC-018 | Add then remove region condition | `onSelectedEupmyeondong` fires only on add. | FR-024 |
 
 ## 11. QA and Validation Plan
 
 ### 11.1 Static Validation
 
-- TypeScript build: `npm run build`
-- Lint: `npm run lint`
-- Public API typing check in consumer examples for `ComposableSearchProps`, `RegionSelectProps`, `KeywordSelectProps`
+- `npm test`
+- `npm run lint`
+- `npm run build`
 
 ### 11.2 Runtime Validation Scenarios
 
-- QA-001: Initial entry shows Sido list
-- QA-002: Changing Sido updates Sigungu list
-- QA-003: Changing Sigungu updates Eup/Myeon/Dong list
-- QA-004: Multi-select/unselect Eup/Myeon/Dong
-- QA-005: Single chip delete and clear-all
-- QA-006: Differentiate no-parent-selected vs empty-data states and render the correct Korean empty-state guidance
-- QA-007: Validate mutual exclusivity between Sido whole and child Sigungu (examples: `Seoul whole` <-> `Seoul Gangnam-gu`, and selecting `Busan whole` after `Busan Haeundae-gu` removes `Haeundae-gu` immediately)
-- QA-008: Checking `Seoul whole` directly in Sigungu is applied immediately, and the same whole option is not duplicated in Eup/Myeon/Dong
-- QA-009: On Sigungu list refresh (Sido change, and checking then unchecking `Seoul whole`), `Gangnam-gu` must not be auto-selected/current; the state remains unselected until explicit Sigungu click
-- QA-010: Typography (`font-family/font-size/font-weight/line-height`) is identical across Sigungu Sido-whole checkbox text, Eup/Myeon/Dong checkbox text, and normal region-item text
-- QA-011: With `Seoul > Gangnam-gu > Yeoksam-dong` and `Seoul > Gangnam-gu whole` selected, Sido `Seoul` and Sigungu `Gangnam-gu` show a dedicated descendant-selection color (`has-descendant-selected`) and are distinguishable from `current` through blue-tone/border-style differences, and both revert when the last descendant selection is removed
+- QA-001: Selector order and panel toggle
+- QA-002: Sido -> Sigungu -> Eup/Myeon/Dong loading and selection
+- QA-003: Whole/detail mutual exclusivity
+- QA-004: Descendant indicator (`has-descendant-selected`)
+- QA-005: Region search preview selection
+- QA-006: Keyword token normalization/constraints/invalid callback
+- QA-007: Chip single-delete/clear-all and onChange payload
+- QA-008: UI continuity when callbacks throw
+- QA-009: Style scope/typography/fixed item-height checks
 
-### 11.3 Current Validation Status as of February 9, 2026
+### 11.3 Validation Status as of 2026-02-28
 
-- `npm.cmd run build` fails
-- Failure cause: syntax error in `src/components/ComposableSearch.tsx` (unfinished function declaration inside `onSelectedWholeRegionCondition`)
+- `npm test` passed (`11 files`, `74 tests`)
+- `npm run lint` passed
+- `npm run build` failed
+- Failure cause: TypeScript TS18048 at `src/components/ComposableSearch.tsx:345`, `:346`, `:347`, `:349` (`regionSelector` possibly `undefined`)
 
 ## 12. Release and Versioning Plan
 
 - Versioning policy: SemVer (`MAJOR.MINOR.PATCH`)
-- Proposed initial release: `0.1.0-alpha`
-- `0.1.0-alpha` gates
-- Required: TypeScript build passes
-- Required: Manual validation passes for FR-001~FR-010, FR-012~FR-015
-- Required: `PRD.md` and `PRD.en.md` remain synchronized
-- `0.1.x`: bug fixes (selection logic, typing contract, render warnings)
-- `0.2.0`: evaluate real keyword input model and external state API
+- Current target: `0.2.x` stabilization
+- Release gates:
+  - Required: pass `npm test`, `npm run lint`, `npm run build`
+  - Required: keep `PRD.md` and `PRD.en.md` synchronized
+  - Recommended: manual demo(App) scenario check
 
 ## 13. Risks and Open Issues
 
-- OI-001 (`Must`): Build fails because of unfinished code in `ComposableSearch.tsx`.
-- OI-002 (`Must`): `RegionSelectProps` does not cleanly separate consumer props from internal injected props, risking type-contract mismatch.
-- OI-003 (`Should`): `onSelectedWholeRegionCondition` is defined but not used (dead code path).
-- OI-004 (`Should`): `options.onSelectedEupmyeondong`, `options.onClick` (region), and `options.onChange` are not fully wired to active runtime behavior.
-- OI-005 (`Should`): `SelectedConditionBasket` map render lacks `key` prop and can trigger React warnings.
-- OI-006 (`Should`): `console.log` remains in `SelectableRegionColumn`.
-- OI-007 (`Should`): Global selectors in `index.css` (`button`, `body`, `:root`) may conflict with host application styles.
-- OI-008 (`Could`): Demo legal-dong sample codes include abnormal values (`44182031000`, `55011033000`, `5Terms013010800`), introducing data-quality risk.
-- OI-009 (`Could`): `ComposableSearchProps.placeHolder` is currently unused.
-- OI-010 (`Must`): After selecting Sido-whole in Sigungu, the same Sido-whole checkbox is redundantly exposed again in Eup/Myeon/Dong, causing unnecessary duplicate selection steps.
-- OI-011 (`Must`): On Sigungu list refreshes (Sido change, checking then unchecking `Seoul whole`, etc.), the first Sigungu (`Gangnam-gu`) is auto-selected/current, changing child state before explicit user intent.
-- OI-012 (`Should`): Typography differs between checkbox label text and normal region-item text in region selection, making the UI feel visually inconsistent.
-- OI-013 (`Must`): Even when a child region like `Gangnam-gu > Yeoksam-dong` or a descendant "whole" option like `Seoul whole`/`Gangnam-gu whole` is selected, upper-column items (Sido `Seoul`, Sigungu `Gangnam-gu`) do not show a dedicated descendant-selection color, making current selection context hard to scan.
-
+- OI-001 (`Must`): `npm run build` fails with TS18048 due `regionSelector` nullability handling in `ComposableSearch.tsx`.
+- OI-002 (`Should`): `RegionSelectOptions.searchNoResultMessage` exists in public type but is currently unused in UI rendering path.
+- OI-003 (`Could`): `ComposableSearchProps.placeHolder` is kept for compatibility but not used at runtime.
+- OI-004 (`Should`): Some layout rules rely on CSS `:has(...)`; browser support policy should be explicitly reviewed for legacy environments.

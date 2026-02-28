@@ -1,5 +1,13 @@
 .cs-composable-search {
   --cs-region-column-item-height: 36px;
+  --cs-search-input-max-width: 460px;
+  --cs-region-column-visible-item-count: 6;
+  --cs-region-column-visible-list-height: calc(
+    var(--cs-region-column-item-height) * var(--cs-region-column-visible-item-count)
+  );
+  --cs-region-column-height: calc(
+    var(--cs-region-column-visible-list-height) + 24px
+  );
   display: grid;
   gap: 0;
   border: 1px solid #d2dae2;
@@ -31,7 +39,7 @@
 }
 
 .cs-region-search-input {
-  max-width: 460px;
+  max-width: var(--cs-search-input-max-width);
   display: grid;
   gap: 0;
 }
@@ -235,7 +243,8 @@
   border: 0;
   border-radius: 0;
   padding: 8px;
-  min-height: 180px;
+  min-height: var(--cs-region-column-height);
+  max-height: var(--cs-region-column-height);
   display: grid;
   align-content: start;
   gap: 8px;
@@ -249,6 +258,7 @@
 
 .cs-region-column-whole-toggle {
   margin: 0;
+  padding-right: 2px;
 }
 
 .cs-region-column-list {
@@ -257,10 +267,18 @@
   list-style: none;
   display: grid;
   gap: 0;
-  max-height: 280px;
+  max-height: var(--cs-region-column-visible-list-height);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 2px;
+}
+
+.cs-region-column:has(.cs-region-column-whole-toggle) .cs-region-column-list {
+  max-height: calc(var(--cs-region-column-item-height) * 5);
+}
+
+.cs-region-column:has(.cs-region-column-whole-toggle) {
+  gap: 0;
 }
 
 .cs-region-typography {
@@ -316,7 +334,7 @@
 .cs-checkable-list {
   display: grid;
   gap: 0;
-  max-height: 280px;
+  max-height: var(--cs-region-column-visible-list-height);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 2px;
@@ -364,13 +382,15 @@
   align-items: center;
   gap: 8px;
   border-radius: 0;
+  width: 100%;
+  max-width: var(--cs-search-input-max-width);
 }
 
 .cs-keyword-input {
   flex: 1;
   border: 1px solid #bec8d2;
   border-radius: 0;
-  padding: 8px 10px;
+  padding: 9px 10px;
   font-size: 14px;
 }
 
@@ -472,6 +492,10 @@
 
 @media (max-width: 768px) {
   .cs-region-search-input {
+    max-width: 100%;
+  }
+
+  .cs-keyword-input-row {
     max-width: 100%;
   }
 
