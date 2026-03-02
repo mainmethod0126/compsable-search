@@ -1,4 +1,7 @@
-import type { SelectorPlugin } from './SelectorPlugin'
+import type {
+  AnySelectorPlugin,
+  SelectorPluginLifecycleHookName,
+} from './SelectorPlugin'
 
 export const SELECTOR_PLUGIN_VALIDATION_CODE = {
   DUPLICATE_PLUGIN_ID: 'DUPLICATE_PLUGIN_ID',
@@ -12,7 +15,7 @@ export type SelectorPluginValidationCode =
 export interface SelectorPluginValidationIssue {
   code: SelectorPluginValidationCode
   pluginId: string
-  hookName?: string
+  hookName?: SelectorPluginLifecycleHookName
   message: string
 }
 
@@ -23,10 +26,10 @@ export interface SelectorPluginValidationResult {
 
 export interface ValidateSelectorPluginsOptions {
   enabledPluginIds?: readonly string[]
-  requiredHooks?: readonly string[]
+  requiredHooks?: readonly SelectorPluginLifecycleHookName[]
 }
 
-function collectDuplicatePluginIds(plugins: readonly SelectorPlugin[]): string[] {
+function collectDuplicatePluginIds(plugins: readonly AnySelectorPlugin[]): string[] {
   const seenPluginIds = new Set<string>()
   const duplicatedPluginIds = new Set<string>()
   const orderedDuplicates: string[] = []
@@ -53,7 +56,7 @@ function createIssue(
 }
 
 export function validateSelectorPlugins(
-  plugins: readonly SelectorPlugin[],
+  plugins: readonly AnySelectorPlugin[],
   options: ValidateSelectorPluginsOptions = {},
 ): SelectorPluginValidationResult {
   const issues: SelectorPluginValidationIssue[] = []
@@ -92,7 +95,7 @@ export function validateSelectorPlugins(
   const requiredHooks = options.requiredHooks ?? []
   plugins.forEach((plugin) => {
     requiredHooks.forEach((hookName) => {
-      const hook = plugin.hooks[hookName]
+      const hook = plugin[hookName]
       if (typeof hook === 'function') {
         return
       }

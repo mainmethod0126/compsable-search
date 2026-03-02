@@ -390,6 +390,58 @@ describe('callback contract', () => {
     )
   })
 
+  it('plugin onInit/onDispose 예외가 발생해도 렌더와 사용자 상호작용이 유지된다', async () => {
+    const user = userEvent.setup()
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    const onInit = vi.fn(() => {
+      throw new Error('plugin onInit failed')
+    })
+    const onDispose = vi.fn(() => {
+      throw new Error('plugin onDispose failed')
+    })
+    const selectors: SelectorInstance[] = [
+      {
+        id: 'region-main',
+        type: 'region',
+        props: createRegionSelector(),
+      },
+    ]
+    const { unmount } = render(
+      <ComposableSearch
+        selectors={selectors}
+        plugins={{
+          regionPlugin: {
+            id: 'region-plugin',
+            type: 'region',
+            onInit,
+            onDispose,
+          },
+        }}
+      />,
+    )
+
+    expect(onInit).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    expect(screen.getByTestId('cs-detailed-area')).toHaveAttribute('data-state', 'open')
+
+    unmount()
+
+    expect(onDispose).toHaveBeenCalledTimes(1)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('plugin.onInit'),
+      expect.any(Error),
+    )
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(CALLBACK_ERROR_PREFIX),
+      expect.stringContaining('plugin.onDispose'),
+      expect.any(Error),
+    )
+  })
+
   it('onChange/onSelectedEupmyeondong 콜백 오류가 발생해도 조건 선택/칩 렌더링은 중단되지 않는다', async () => {
     const user = userEvent.setup()
     const consoleErrorSpy = vi

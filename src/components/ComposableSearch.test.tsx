@@ -193,6 +193,139 @@ describe('ComposableSearch', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('plugins는 mount/대상 변경/unmount 시 onInit/onDispose를 호출한다', () => {
+    const onInit = vi.fn()
+    const onDispose = vi.fn()
+    const plugins = {
+      regionTelemetry: {
+        id: 'region-telemetry',
+        type: 'region' as const,
+        onInit,
+        onDispose,
+      },
+    }
+    const primaryRegionSelector: SelectorInstance<'region'> = {
+      id: 'region-primary',
+      type: 'region',
+      props: createRegionSelector(),
+    }
+    const fallbackRegionSelector: SelectorInstance<'region'> = {
+      id: 'region-fallback',
+      type: 'region',
+      props: createRegionSelector(),
+    }
+    const keywordRuntimeSelector: SelectorInstance<'keyword'> = {
+      id: 'keyword-runtime',
+      type: 'keyword',
+      props: keywordSelector,
+    }
+
+    const { rerender, unmount } = render(
+      <ComposableSearch
+        selectors={[primaryRegionSelector, keywordRuntimeSelector]}
+        plugins={plugins}
+      />,
+    )
+
+    expect(onInit).toHaveBeenCalledTimes(1)
+    expect(onInit).toHaveBeenLastCalledWith(primaryRegionSelector)
+    expect(onDispose).not.toHaveBeenCalled()
+
+    rerender(
+      <ComposableSearch
+        selectors={[fallbackRegionSelector, keywordRuntimeSelector]}
+        plugins={plugins}
+      />,
+    )
+
+    expect(onDispose).toHaveBeenCalledTimes(1)
+    expect(onDispose).toHaveBeenLastCalledWith(primaryRegionSelector)
+    expect(onInit).toHaveBeenCalledTimes(2)
+    expect(onInit).toHaveBeenLastCalledWith(fallbackRegionSelector)
+
+    unmount()
+
+    expect(onDispose).toHaveBeenCalledTimes(2)
+    expect(onDispose).toHaveBeenLastCalledWith(fallbackRegionSelector)
+  })
+
+  it('plugin type은 selector type별 첫 번째 selector instance(first-wins)와 매칭된다', () => {
+    const onRegionInit = vi.fn()
+    const onKeywordInit = vi.fn()
+
+    const firstRegionSelector: SelectorInstance<'region'> = {
+      id: 'region-first',
+      type: 'region',
+      props: createRegionSelector({
+        options: {
+          placeholder: '첫 번째 지역',
+        },
+      }),
+    }
+    const secondRegionSelector: SelectorInstance<'region'> = {
+      id: 'region-second',
+      type: 'region',
+      props: createRegionSelector({
+        options: {
+          placeholder: '두 번째 지역',
+        },
+      }),
+    }
+    const firstKeywordSelector: SelectorInstance<'keyword'> = {
+      id: 'keyword-first',
+      type: 'keyword',
+      props: {
+        ...keywordSelector,
+        options: {
+          ...keywordSelector.options,
+          placeholder: '첫 번째 키워드',
+        },
+      },
+    }
+    const secondKeywordSelector: SelectorInstance<'keyword'> = {
+      id: 'keyword-second',
+      type: 'keyword',
+      props: {
+        ...keywordSelector,
+        options: {
+          ...keywordSelector.options,
+          placeholder: '두 번째 키워드',
+        },
+      },
+    }
+
+    render(
+      <ComposableSearch
+        selectors={[
+          secondKeywordSelector,
+          firstRegionSelector,
+          secondRegionSelector,
+          firstKeywordSelector,
+        ]}
+        plugins={{
+          regionPlugin: {
+            id: 'region-plugin',
+            type: 'region',
+            onInit: onRegionInit,
+          },
+          keywordPlugin: {
+            id: 'keyword-plugin',
+            type: 'keyword',
+            onInit: onKeywordInit,
+          },
+        }}
+      />,
+    )
+
+    expect(onRegionInit).toHaveBeenCalledTimes(1)
+    expect(onRegionInit).toHaveBeenCalledWith(firstRegionSelector)
+    expect(onRegionInit).not.toHaveBeenCalledWith(secondRegionSelector)
+
+    expect(onKeywordInit).toHaveBeenCalledTimes(1)
+    expect(onKeywordInit).toHaveBeenCalledWith(secondKeywordSelector)
+    expect(onKeywordInit).not.toHaveBeenCalledWith(firstKeywordSelector)
+  })
+
   it('controlled value에서는 onValueChange만 emit하고 렌더 반영은 부모 value 갱신 이후에만 일어난다', async () => {
     const user = userEvent.setup()
     const onValueChange = vi.fn()

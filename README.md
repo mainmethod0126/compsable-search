@@ -14,7 +14,7 @@ import {
   type ComposableSearchProps,
   type Region,
   type SearchSelectionItem,
-} from './src/components'
+} from 'compsable-search'
 
 const SIDOS: Region[] = [
   { displayName: '서울특별시', name: '서울특별시', code: '11' },
@@ -78,7 +78,6 @@ export function SearchExample() {
       value={value}
       onValueChange={handleValueChange}
       selectors={selectors}
-      placeholder="조건 선택"
     />
   )
 }
@@ -106,8 +105,9 @@ export function SearchExample() {
 
 ## placeholder 정책
 
-- 표준 필드: `placeholder`
-- deprecated 필드: `placeHolder` (`0.3.x` 하위 호환용)
+- `ComposableSearchProps.placeholder`/`ComposableSearchProps.placeHolder`는 제거되었습니다.
+- selector 옵션 표준 필드: `options.placeholder`
+- deprecated selector 옵션: `options.placeHolder` (`0.3.x` 하위 호환용)
 - 렌더 우선순위: `options.placeholder` > `options.placeHolder` > 내부 기본값
 
 ## 레거시 호환
@@ -115,7 +115,7 @@ export function SearchExample() {
 `selectorsProps`를 아직 사용 중이면 `adaptLegacySelectorsProps`로 `selectors`로 변환해 점진 이관할 수 있습니다.
 
 ```tsx
-import { adaptLegacySelectorsProps, ComposableSearch } from './src/components'
+import { adaptLegacySelectorsProps, ComposableSearch } from 'compsable-search'
 
 const selectorsProps = [
   {

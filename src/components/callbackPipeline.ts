@@ -1,4 +1,5 @@
 import type {
+  AnySelectorPlugin,
   ChangeMeta,
   KeywordInputErrorCode,
   KeywordInvalidTokenContext,
@@ -6,15 +7,18 @@ import type {
   Region,
   RegionSelectOptions,
   SearchSelectionItem,
+  SelectorInstance,
 } from './types'
 
-type CallbackScope = 'region' | 'keyword' | 'composableSearch'
+type CallbackScope = 'region' | 'keyword' | 'composableSearch' | 'plugin'
 type CallbackName =
   | 'onChange'
   | 'onValueChange'
   | 'onSelectedEupmyeondong'
   | 'onClick'
   | 'onInvalidToken'
+  | 'onInit'
+  | 'onDispose'
 
 export const CALLBACK_ERROR_PREFIX = '[ComposableSearch] callback error'
 
@@ -119,4 +123,52 @@ export function dispatchKeywordOnInvalidToken(
     error,
     context,
   )
+}
+
+export function dispatchPluginOnInit(
+  plugin: AnySelectorPlugin | undefined,
+  instance: SelectorInstance | undefined,
+): void {
+  if (!plugin || !instance) {
+    return
+  }
+
+  if (plugin.type === 'region') {
+    if (instance.type !== 'region') {
+      return
+    }
+
+    executeCallbackSafely('plugin', 'onInit', plugin.onInit, instance)
+    return
+  }
+
+  if (instance.type !== 'keyword') {
+    return
+  }
+
+  executeCallbackSafely('plugin', 'onInit', plugin.onInit, instance)
+}
+
+export function dispatchPluginOnDispose(
+  plugin: AnySelectorPlugin | undefined,
+  instance: SelectorInstance | undefined,
+): void {
+  if (!plugin || !instance) {
+    return
+  }
+
+  if (plugin.type === 'region') {
+    if (instance.type !== 'region') {
+      return
+    }
+
+    executeCallbackSafely('plugin', 'onDispose', plugin.onDispose, instance)
+    return
+  }
+
+  if (instance.type !== 'keyword') {
+    return
+  }
+
+  executeCallbackSafely('plugin', 'onDispose', plugin.onDispose, instance)
 }

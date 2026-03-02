@@ -116,7 +116,7 @@ export type SelectorType = ComposableSelectProps['type']
 export type ComposableSearchValue = SearchSelectionItem[]
 
 export interface ChangeMeta {
-  source: 'region' | 'keyword' | 'external' | 'initialize'
+  source: 'region' | 'keyword' | 'external'
   selectorType?: SelectorType
   selectorId?: string
 }
@@ -161,7 +161,6 @@ export interface ComposableSearchProps {
   >
   selectors?: SelectorInstance[]
   plugins?: SelectorPluginRegistry
-  placeholder?: string
   /**
    * @deprecated `selectors`를 사용하세요.
    * 0.3.x 하위 호환을 위해 유지합니다.
@@ -174,9 +173,4 @@ export interface ComposableSearchProps {
   onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   className?: string
   style?: CSSProperties
-  /**
-   * @deprecated `placeholder`를 사용하세요.
-   * 0.3.x 하위 호환을 위해 유지합니다.
-   */
-  placeHolder?: string
 }

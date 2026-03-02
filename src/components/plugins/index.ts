@@ -1,7 +1,7 @@
 export type {
+  AnySelectorPlugin,
   SelectorPlugin,
-  SelectorPluginHook,
-  SelectorPluginHookMap,
+  SelectorPluginLifecycleHookName,
 } from './SelectorPlugin'
 export type { SelectorPluginRegistry } from './SelectorPluginRegistry'
 export {

@@ -1,5 +1,6 @@
 export type {
   ChangeMeta,
+  AnySelectorPlugin,
   ComposableSearchValue,
   ComposableSearchProps,
   ComposableSelectItem,

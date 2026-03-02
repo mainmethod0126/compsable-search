@@ -8,7 +8,7 @@
 - 변경 이벤트: `onValueChange(nextValue, meta)`
 - 선택기 구성: `selectors` + `createRegionSelector`/`createKeywordSelector`
 
-`selectorsProps`, `onChange`, `placeHolder`는 하위 호환을 위해 유지되지만 deprecated입니다.
+`selectorsProps`, `onChange`, selector 옵션의 `placeHolder`는 하위 호환을 위해 유지되지만 deprecated입니다.
 
 ## 2. 0.3 권장 예제
 
@@ -21,7 +21,7 @@ import {
   type ComposableSearchProps,
   type Region,
   type SearchSelectionItem,
-} from './src/components'
+} from 'compsable-search'
 
 const SIDOS: Region[] = [
   { displayName: '서울특별시', name: '서울특별시', code: '11' },
@@ -93,7 +93,6 @@ export function SearchPanel() {
       value={value}
       onValueChange={handleValueChange}
       selectors={selectors}
-      placeholder="조건 선택"
     />
   )
 }
@@ -111,7 +110,7 @@ const handleValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
   meta,
 ) => {
   // nextValue: SearchSelectionItem[]
-  // meta.source: 'region' | 'keyword' | 'external' | 'initialize'
+  // meta.source: 'region' | 'keyword' | 'external'
   // meta.selectorType: 'region' | 'keyword' | undefined
   // meta.selectorId: string | undefined
 }
@@ -129,10 +128,11 @@ const handleValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
 - `createRegionSelector(id, props)` / `createKeywordSelector(id, props)`를 사용하면 타입 안전하게 생성할 수 있습니다.
 - 동일 `type`이 여러 개면 first-wins 정책으로 첫 번째 항목만 상세 패널/선택 로직에서 사용됩니다.
 
-## 5. `placeholder` 표준화와 `placeHolder` deprecated
+## 5. `placeholder` 표준화와 `ComposableSearchProps` 정리
 
-- 표준 필드: `placeholder`
-- deprecated 필드: `placeHolder` (`0.3.x` 하위 호환)
+- `ComposableSearchProps.placeholder`/`ComposableSearchProps.placeHolder`는 제거되었습니다.
+- selector 옵션 표준 필드: `placeholder`
+- deprecated selector 옵션 필드: `placeHolder` (`0.3.x` 하위 호환)
 - 렌더링 우선순위:
   - `options.placeholder`
   - `options.placeHolder`
@@ -158,7 +158,7 @@ import {
   ComposableSearch,
   adaptLegacySelectorsProps,
   type ComposableSearchProps,
-} from './src/components'
+} from 'compsable-search'
 
 const legacySelectorsProps: NonNullable<ComposableSearchProps['selectorsProps']> = [
   {
@@ -190,6 +190,6 @@ const legacySelectorsProps: NonNullable<ComposableSearchProps['selectorsProps']>
 
 - `selectorsProps`: deprecated, `selectors`로 이관 권장
 - `onChange`: deprecated, `onValueChange`로 이관 권장
-- `placeHolder`: deprecated, `placeholder`로 이관 권장
+- `RegionSelectOptions.placeHolder`/`KeywordSelectOptions.placeHolder`: deprecated, `placeholder`로 이관 권장
 
 상세 전환 절차는 `docs/migration-notes/0.3.0-migration.md`를 참고하세요.

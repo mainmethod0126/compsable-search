@@ -8,24 +8,24 @@ import {
 } from './SelectorPluginRegistry'
 import { SELECTOR_PLUGIN_VALIDATION_CODE } from './pluginValidation'
 
-function createPlugin(
+type SelectorPluginType = SelectorPlugin['type']
+
+function createPlugin<TType extends SelectorPluginType>(
   id: string,
-  hooks: SelectorPlugin['hooks'],
-): SelectorPlugin {
+  type: TType,
+  hooks: Pick<SelectorPlugin<TType>, 'onInit' | 'onDispose'> = {},
+): SelectorPlugin<TType> {
   return {
     id,
-    hooks,
+    type,
+    ...hooks,
   }
 }
 
 describe('SelectorPluginRegistry', () => {
   it('create/get/getAll 유틸로 플러그인을 조회한다', () => {
-    const regionPlugin = createPlugin('region', {
-      setup: () => undefined,
-    })
-    const keywordPlugin = createPlugin('keyword', {
-      setup: () => undefined,
-    })
+    const regionPlugin = createPlugin('region', 'region')
+    const keywordPlugin = createPlugin('keyword', 'keyword')
     const registry = createSelectorPluginRegistry([regionPlugin, keywordPlugin])
 
     expect(getSelectorPlugin(registry, 'region')).toBe(regionPlugin)
@@ -35,12 +35,8 @@ describe('SelectorPluginRegistry', () => {
   })
 
   it('중복 id 플러그인을 검증에서 감지한다', () => {
-    const primaryRegionPlugin = createPlugin('region', {
-      setup: () => undefined,
-    })
-    const duplicateRegionPlugin = createPlugin('region', {
-      setup: () => undefined,
-    })
+    const primaryRegionPlugin = createPlugin('region', 'region')
+    const duplicateRegionPlugin = createPlugin('region', 'region')
     const registry = createSelectorPluginRegistry([
       primaryRegionPlugin,
       duplicateRegionPlugin,
@@ -58,9 +54,7 @@ describe('SelectorPluginRegistry', () => {
   })
 
   it('등록되지 않은 unknown plugin id를 감지한다', () => {
-    const regionPlugin = createPlugin('region', {
-      setup: () => undefined,
-    })
+    const regionPlugin = createPlugin('region', 'region')
     const registry = createSelectorPluginRegistry([regionPlugin])
 
     const validationResult = validateSelectorPluginRegistry(registry, {
@@ -77,14 +71,14 @@ describe('SelectorPluginRegistry', () => {
   })
 
   it('필수 훅이 없는 플러그인을 감지한다', () => {
-    const regionPlugin = createPlugin('region', {
-      setup: () => undefined,
+    const regionPlugin = createPlugin('region', 'region', {
+      onInit: () => undefined,
     })
-    const keywordPlugin = createPlugin('keyword', {})
+    const keywordPlugin = createPlugin('keyword', 'keyword')
     const registry = createSelectorPluginRegistry([regionPlugin, keywordPlugin])
 
     const validationResult = validateSelectorPluginRegistry(registry, {
-      requiredHooks: ['setup'],
+      requiredHooks: ['onInit'],
     })
 
     expect(validationResult.isValid).toBe(false)
@@ -92,28 +86,48 @@ describe('SelectorPluginRegistry', () => {
       expect.objectContaining({
         code: SELECTOR_PLUGIN_VALIDATION_CODE.MISSING_REQUIRED_HOOK,
         pluginId: 'keyword',
-        hookName: 'setup',
+        hookName: 'onInit',
       }),
     )
   })
 
   it('요구된 플러그인/필수 훅이 모두 충족되면 검증을 통과한다', () => {
-    const regionPlugin = createPlugin('region', {
-      setup: () => undefined,
+    const regionPlugin = createPlugin('region', 'region', {
+      onInit: () => undefined,
     })
-    const keywordPlugin = createPlugin('keyword', {
-      setup: () => undefined,
+    const keywordPlugin = createPlugin('keyword', 'keyword', {
+      onInit: () => undefined,
     })
     const registry = createSelectorPluginRegistry([regionPlugin, keywordPlugin])
 
     const validationResult = validateSelectorPluginRegistry(registry, {
       enabledPluginIds: ['region', 'keyword'],
-      requiredHooks: ['setup'],
+      requiredHooks: ['onInit'],
     })
 
     expect(validationResult).toEqual({
       isValid: true,
       issues: [],
     })
+  })
+
+  it('필수 훅이 함수가 아니면 검증에서 감지한다', () => {
+    const regionPlugin = createPlugin('region', 'region', {
+      onInit: 'not-a-function' as unknown as () => unknown,
+    })
+    const registry = createSelectorPluginRegistry([regionPlugin])
+
+    const validationResult = validateSelectorPluginRegistry(registry, {
+      requiredHooks: ['onInit'],
+    })
+
+    expect(validationResult.isValid).toBe(false)
+    expect(validationResult.issues).toContainEqual(
+      expect.objectContaining({
+        code: SELECTOR_PLUGIN_VALIDATION_CODE.MISSING_REQUIRED_HOOK,
+        pluginId: 'region',
+        hookName: 'onInit',
+      }),
+    )
   })
 })

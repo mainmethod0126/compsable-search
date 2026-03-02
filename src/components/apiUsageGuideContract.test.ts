@@ -104,7 +104,6 @@ function createGuideExampleProps(): ComposableSearchProps {
     onValueChange,
     selectors: [regionSelector, keywordSelector],
     plugins,
-    placeholder: '조건 선택',
     onChange: (selectedItems: SearchSelectionItem[]) => selectedItems,
     selectorsProps: [
       {
@@ -140,7 +139,6 @@ function createGuideExampleProps(): ComposableSearchProps {
         },
       },
     ],
-    placeHolder: '조건 선택(레거시)',
   }
 }
 
@@ -149,7 +147,8 @@ describe('API usage guide contract', () => {
     const props = createGuideExampleProps()
     expect(props.selectors).toHaveLength(2)
     expect(props.plugins).toBeDefined()
-    expect(props.placeholder).toBe('조건 선택')
+    expect('placeholder' in props).toBe(false)
+    expect('placeHolder' in props).toBe(false)
     expect(props.onValueChange).toBeDefined()
     expect(props.selectorsProps).toHaveLength(2)
     expect(props.onChange).toBeDefined()

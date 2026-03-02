@@ -9,7 +9,8 @@
 ## 1. 기본 원칙
 
 - `0.3.x`의 표준 공개 계약은 `value/defaultValue/onValueChange + selectors` 조합이다.
-- 기존 소비자 코드의 점진 전환을 위해 deprecated API(`selectorsProps`, `onChange`, `placeHolder`)를 유지한다.
+- `ComposableSearchProps.placeholder`/`ComposableSearchProps.placeHolder`는 공개 API에서 제거되었다.
+- 기존 소비자 코드의 점진 전환을 위해 deprecated API(`selectorsProps`, `onChange`, selector 옵션의 `placeHolder`)를 유지한다.
 - deprecated API는 대체 경로를 문서에 항상 함께 제공한다.
 - 런타임 동작 변경이 필요한 경우, 동일 major 내에서는 additive 변경을 우선한다.
 
@@ -19,6 +20,7 @@
   - `ComposableSearchProps.value?: ComposableSearchValue`
   - `ComposableSearchProps.defaultValue?: ComposableSearchValue`
   - `ComposableSearchProps.onValueChange?: (nextValue, meta) => void`
+  - `ChangeMeta.source: 'region' | 'keyword' | 'external'` (`initialize` 제거)
 - selector 구성
   - `ComposableSearchProps.selectors?: SelectorInstance[]`
   - `createRegionSelector(id, props)`
@@ -33,7 +35,6 @@
 
 - `ComposableSearchProps.selectorsProps`
 - `ComposableSearchProps.onChange`
-- `ComposableSearchProps.placeHolder`
 - `RegionSelectOptions.placeHolder`
 - `KeywordSelectOptions.placeHolder`
 
@@ -47,7 +48,7 @@
 | 구분 | 허용 | 금지 |
 | --- | --- | --- |
 | 타입 필드 | optional 필드 추가, 신규 타입 export 추가 | 기존 필드 삭제/이름 변경, optional -> required 변경 |
-| 상태/이벤트 | `onValueChange` 메타 확장(additive) | `onValueChange` 호출 누락, `nextValue` 의미 변경 |
+| 상태/이벤트 | `onValueChange` 메타 확장(additive, 단 `source`는 `'region' \| 'keyword' \| 'external'` 유지) | `onValueChange` 호출 누락, `nextValue` 의미 변경, `source`에 `initialize` 재도입 |
 | selector API | `selectors` 관련 보조 유틸 추가 | `createRegionSelector`/`createKeywordSelector` 시그니처 파괴 |
 | 레거시 변환 | `adaptLegacySelectorsProps` 비파괴 개선 | 동일 입력에서 비결정적 id/타입 결과 반환 |
 | placeholder | `placeholder` 우선 정책 유지 | `placeHolder`를 `placeholder`보다 우선 처리 |
@@ -55,7 +56,7 @@
 
 ## 5. compat 제거 정책
 
-- `selectorsProps`, `onChange`, `placeHolder` 제거 목표 버전: **TBD**
+- `selectorsProps`, `onChange`, selector 옵션의 `placeHolder` 제거 목표 버전: **TBD**
 - 제거 전 조건:
 1. 최소 한 개 minor 릴리스 이상 deprecation 안내 유지
 2. 마이그레이션 문서(`docs/migration-notes/0.3.0-migration.md`) 최신화

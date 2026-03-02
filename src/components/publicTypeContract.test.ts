@@ -169,6 +169,17 @@ describe('public type contract', () => {
     expect(Object.keys(plugins)).toEqual(['regionTelemetry'])
   })
 
+  it('ChangeMeta.source는 initialize 없이 region/keyword/external만 유지한다', () => {
+    const allowedSources: ChangeMeta['source'][] = [
+      'region',
+      'keyword',
+      'external',
+    ]
+
+    expect(allowedSources).toHaveLength(3)
+    expect(allowedSources).not.toContain('initialize')
+  })
+
   it('ComposableSearchProps는 0.3 value 기반 계약을 수용한다', () => {
     const value: ComposableSearchValue = []
     const meta: ChangeMeta = {
@@ -196,14 +207,14 @@ describe('public type contract', () => {
           type: 'region',
         },
       },
-      placeholder: '조건 선택',
     }
 
     expect(props.selectors).toHaveLength(2)
+    expect('placeholder' in props).toBe(false)
     props.onValueChange?.(value, meta)
   })
 
-  it('ComposableSearchProps는 레거시 selectorsProps/onChange/placeHolder도 유지한다', () => {
+  it('ComposableSearchProps는 레거시 selectorsProps/onChange를 유지한다', () => {
     const props: ComposableSearchProps = {
       onChange: (selectedItems) => {
         expect(selectedItems).toBeDefined()
@@ -220,10 +231,10 @@ describe('public type contract', () => {
           },
         },
       ],
-      placeHolder: '조건 선택(레거시)',
     }
 
     expect(props.selectorsProps).toHaveLength(2)
+    expect('placeHolder' in props).toBe(false)
     props.onChange?.([])
   })
 })

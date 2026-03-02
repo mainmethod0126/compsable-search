@@ -5,6 +5,8 @@ import {
   dispatchComposableOnValueChange,
   dispatchKeywordOnClick,
   dispatchKeywordOnInvalidToken,
+  dispatchPluginOnDispose,
+  dispatchPluginOnInit,
   dispatchRegionOnClick,
   dispatchRegionOnSelectedEupmyeondong,
 } from './callbackPipeline'
@@ -34,6 +36,7 @@ import {
 import { SelectedConditionBasket } from './SelectedConditionBasket'
 import { toggleRegionCondition } from './selectionPolicy'
 import type {
+  AnySelectorPlugin,
   ChangeMeta,
   ComposableSearchProps,
   ComposableSelectProps,
@@ -66,6 +69,10 @@ const LEGACY_KEYWORD_SELECTOR_ID = 'legacy-keyword-selector'
 
 type DetailPanelMode = 'none' | 'region' | 'keyword'
 type SelectorType = ComposableSelectProps['type']
+type InitializedPluginBinding = {
+  plugin: AnySelectorPlugin
+  selectorInstance: SelectorInstance
+}
 
 function resolveClassName(className?: string): string {
   return ['cs-composable-search', className].filter(Boolean).join(' ')
@@ -114,6 +121,19 @@ function resolveSelectorIdsByType(
     }
   })
   return selectorIdsByType
+}
+
+function resolveFirstSelectorInstanceByType(
+  selectorInstances: SelectorInstance[],
+): Partial<Record<SelectorType, SelectorInstance>> {
+  const selectorInstancesByType: Partial<Record<SelectorType, SelectorInstance>> =
+    {}
+  selectorInstances.forEach((selectorInstance) => {
+    if (!selectorInstancesByType[selectorInstance.type]) {
+      selectorInstancesByType[selectorInstance.type] = selectorInstance
+    }
+  })
+  return selectorInstancesByType
 }
 
 function resolveSelectorOptionLabel(
@@ -166,6 +186,7 @@ function resolveRegionSearchIndexWithCache(
 
 export function ComposableSearch({
   selectors,
+  plugins,
   selectorsProps = [],
   value,
   defaultValue,
@@ -199,6 +220,14 @@ export function ComposableSearch({
   const selectorIdsByType = useMemo(
     () => resolveSelectorIdsByType(selectorInstances),
     [selectorInstances],
+  )
+  const firstSelectorInstanceByType = useMemo(
+    () => resolveFirstSelectorInstanceByType(selectorInstances),
+    [selectorInstances],
+  )
+  const runtimePluginEntries = useMemo(
+    () => Object.entries(plugins ?? {}),
+    [plugins],
   )
   const { regionSelector, keywordSelector } = useMemo(
     () =>
@@ -243,6 +272,9 @@ export function ComposableSearch({
     selectedKeywordConditions,
   )
   const uncontrolledSelectedItemsRef = useRef(uncontrolledSelectedItems)
+  const initializedPluginBindingsRef = useRef<
+    Map<string, InitializedPluginBinding>
+  >(new Map())
 
   useEffect(() => {
     selectedRegionConditionsRef.current = selectedRegionConditions
@@ -255,6 +287,55 @@ export function ComposableSearch({
   useEffect(() => {
     uncontrolledSelectedItemsRef.current = uncontrolledSelectedItems
   }, [uncontrolledSelectedItems])
+
+  useEffect(() => {
+    const previousBindings = initializedPluginBindingsRef.current
+    const nextBindings = new Map<string, InitializedPluginBinding>()
+
+    runtimePluginEntries.forEach(([pluginKey, plugin]) => {
+      const selectorInstance = firstSelectorInstanceByType[plugin.type]
+      if (!selectorInstance) {
+        return
+      }
+
+      const previousBinding = previousBindings.get(pluginKey)
+      const hasSameBinding =
+        previousBinding?.plugin === plugin &&
+        previousBinding.selectorInstance === selectorInstance
+
+      if (hasSameBinding) {
+        nextBindings.set(pluginKey, previousBinding)
+        return
+      }
+
+      if (previousBinding) {
+        dispatchPluginOnDispose(
+          previousBinding.plugin,
+          previousBinding.selectorInstance,
+        )
+      }
+
+      dispatchPluginOnInit(plugin, selectorInstance)
+      nextBindings.set(pluginKey, { plugin, selectorInstance })
+    })
+
+    previousBindings.forEach((binding, pluginKey) => {
+      if (!nextBindings.has(pluginKey)) {
+        dispatchPluginOnDispose(binding.plugin, binding.selectorInstance)
+      }
+    })
+
+    initializedPluginBindingsRef.current = nextBindings
+  }, [firstSelectorInstanceByType, runtimePluginEntries])
+
+  useEffect(() => {
+    return () => {
+      initializedPluginBindingsRef.current.forEach((binding) => {
+        dispatchPluginOnDispose(binding.plugin, binding.selectorInstance)
+      })
+      initializedPluginBindingsRef.current.clear()
+    }
+  }, [])
 
   const resolveSelectorId = (selectorType: SelectorType): string =>
     selectorIdsByType[selectorType] ??
