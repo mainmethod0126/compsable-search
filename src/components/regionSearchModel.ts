@@ -1,4 +1,11 @@
-import type { Region, RegionDataSource, SelectedRegionCondition } from './types'
+import { LEGACY_REGION_SELECTOR_ID } from './internalTypes'
+import type {
+  MaybePromise,
+  Region,
+  RegionDataSource,
+  SelectedRegionCondition,
+  SelectorLoadContext,
+} from './types'
 
 export type RegionSearchResultLevel = 'sido' | 'sigungu' | 'eupmyeondong'
 
@@ -22,12 +29,41 @@ export interface MappedRegionSearchSelection {
   selectedRegion: Region
 }
 
+export interface MapRegionSearchResultOptions {
+  selectorId?: string
+}
+
 export const DEFAULT_REGION_SEARCH_RESULT_LIMIT = 20
 
 const LEVEL_PRIORITY: Record<RegionSearchResultLevel, number> = {
   eupmyeondong: 0,
   sigungu: 1,
   sido: 2,
+}
+
+function isPromiseLike<T>(value: MaybePromise<T>): value is Promise<T> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'then' in value &&
+    typeof value.then === 'function'
+  )
+}
+
+function isAborted(context?: SelectorLoadContext): boolean {
+  return Boolean(context?.signal.aborted)
+}
+
+function isAbortError(error: unknown): boolean {
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError'
+  }
+
+  if (typeof error === 'object' && error !== null && 'name' in error) {
+    return (error as { name?: unknown }).name === 'AbortError'
+  }
+
+  return false
 }
 
 function normalizeSearchText(value: string): string {
@@ -91,25 +127,110 @@ function formatRegionConditionLabel(
 
 export function buildRegionSearchIndex(
   regionDataSource: RegionDataSource,
-): RegionSearchResult[] {
-  const results: RegionSearchResult[] = []
-  const sidos = regionDataSource.findAllSidos()
+  context?: SelectorLoadContext,
+): MaybePromise<RegionSearchResult[]> {
+  if (isAborted(context)) {
+    return []
+  }
 
-  sidos.forEach((sido) => {
+  const results: RegionSearchResult[] = []
+  const maybeSidos = regionDataSource.findAllSidos(context)
+  if (isPromiseLike(maybeSidos)) {
+    return buildRegionSearchIndexAsync(regionDataSource, context)
+  }
+
+  for (const sido of maybeSidos) {
+    if (isAborted(context)) {
+      return []
+    }
+
     results.push(createSearchResult('sido', sido))
 
-    const sigungus = regionDataSource.findAllSigungus(sido.code)
-    sigungus.forEach((sigungu) => {
+    const maybeSigungus = regionDataSource.findAllSigungus(sido.code, context)
+    if (isPromiseLike(maybeSigungus)) {
+      return buildRegionSearchIndexAsync(regionDataSource, context)
+    }
+
+    for (const sigungu of maybeSigungus) {
+      if (isAborted(context)) {
+        return []
+      }
+
       results.push(createSearchResult('sigungu', sido, sigungu))
 
-      const eupmyeondongs = regionDataSource.findAllEupmyeondongs(sigungu.code)
-      eupmyeondongs.forEach((eupmyeondong) => {
+      const maybeEupmyeondongs = regionDataSource.findAllEupmyeondongs(
+        sigungu.code,
+        context,
+      )
+      if (isPromiseLike(maybeEupmyeondongs)) {
+        return buildRegionSearchIndexAsync(regionDataSource, context)
+      }
+
+      for (const eupmyeondong of maybeEupmyeondongs) {
+        if (isAborted(context)) {
+          return []
+        }
+
         results.push(createSearchResult('eupmyeondong', sido, sigungu, eupmyeondong))
-      })
-    })
-  })
+      }
+    }
+  }
 
   return results
+}
+
+export async function buildRegionSearchIndexAsync(
+  regionDataSource: RegionDataSource,
+  context?: SelectorLoadContext,
+): Promise<RegionSearchResult[]> {
+  if (isAborted(context)) {
+    return []
+  }
+
+  const results: RegionSearchResult[] = []
+
+  try {
+    const sidos = await Promise.resolve(regionDataSource.findAllSidos(context))
+    for (const sido of sidos) {
+      if (isAborted(context)) {
+        return []
+      }
+
+      results.push(createSearchResult('sido', sido))
+      const sigungus = await Promise.resolve(
+        regionDataSource.findAllSigungus(sido.code, context),
+      )
+
+      for (const sigungu of sigungus) {
+        if (isAborted(context)) {
+          return []
+        }
+
+        results.push(createSearchResult('sigungu', sido, sigungu))
+        const eupmyeondongs = await Promise.resolve(
+          regionDataSource.findAllEupmyeondongs(sigungu.code, context),
+        )
+
+        for (const eupmyeondong of eupmyeondongs) {
+          if (isAborted(context)) {
+            return []
+          }
+
+          results.push(
+            createSearchResult('eupmyeondong', sido, sigungu, eupmyeondong),
+          )
+        }
+      }
+    }
+
+    return results
+  } catch (error) {
+    if (isAborted(context) || isAbortError(error)) {
+      return []
+    }
+
+    throw error
+  }
 }
 
 export function filterRegionSearchResults(
@@ -154,13 +275,18 @@ export function filterRegionSearchResults(
 
 export function mapRegionSearchResultToCondition(
   result: RegionSearchResult,
+  options: MapRegionSearchResultOptions = {},
 ): MappedRegionSearchSelection {
+  const selectorId = options.selectorId ?? LEGACY_REGION_SELECTOR_ID
+
   if (result.level === 'sido') {
     const wholeSido = createWholeRegion(result.sido)
     return {
       condition: {
         id: result.sido.code,
         displayName: formatRegionConditionLabel(result.sido, wholeSido, wholeSido),
+        selectorId,
+        selectorType: 'region',
         sido: result.sido,
         sigungu: wholeSido,
         eupmyeondong: wholeSido,
@@ -183,6 +309,8 @@ export function mapRegionSearchResultToCondition(
           result.sigungu,
           wholeSigungu,
         ),
+        selectorId,
+        selectorType: 'region',
         sido: result.sido,
         sigungu: result.sigungu,
         eupmyeondong: wholeSigungu,
@@ -203,6 +331,8 @@ export function mapRegionSearchResultToCondition(
         result.sigungu,
         result.eupmyeondong,
       ),
+      selectorId,
+      selectorType: 'region',
       sido: result.sido,
       sigungu: result.sigungu,
       eupmyeondong: result.eupmyeondong,

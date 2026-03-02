@@ -1,4 +1,79 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CSSProperties, ReactNode } from 'react'
+
+export type MaybePromise<T> = T | Promise<T>
+
+export type SelectorType = string
+export type ValueChangeReason = 'add' | 'remove' | 'replace' | 'clear'
+export type ValueChangeSource = 'selector' | 'external'
+
+export interface SelectionItem {
+  id: string
+  displayName: string
+  selectorId?: string
+  selectorType?: SelectorType
+  payload?: unknown
+}
+
+export interface ValueChangeMeta {
+  reason: ValueChangeReason
+  source: ValueChangeSource
+  selectorId?: string
+  selectorType?: SelectorType
+}
+
+export interface ChangeMeta {
+  reason?: ValueChangeReason
+  source: ValueChangeSource | 'region' | 'keyword'
+  selectorId?: string
+  selectorType?: SelectorType
+}
+
+export interface SelectorLoadContext {
+  signal: AbortSignal
+}
+
+type BivariantCallback<TArgs extends unknown[], TResult = void> = {
+  bivarianceHack(...args: TArgs): TResult
+}['bivarianceHack']
+
+export interface SelectorPanelProps<
+  TProps = any,
+  TItem extends SelectionItem = SelectionItem,
+> {
+  selectorId: string
+  selectorType: SelectorType
+  props: TProps
+  selectedItems: TItem[]
+  setSelectedItems: (next: TItem[]) => void
+  closePanel: () => void
+  emitError: (error: unknown) => void
+}
+
+export interface SelectorDriverLifecycleContext<
+  TProps = any,
+  TType extends SelectorType = SelectorType,
+> {
+  selectorId: string
+  selectorType: TType
+  props: TProps
+}
+
+export interface SelectorDriver<
+  TProps = any,
+  TType extends SelectorType = SelectorType,
+  TItem extends SelectionItem = SelectionItem,
+> {
+  type: TType
+  loadItems?: BivariantCallback<
+    [context: SelectorLoadContext, props: TProps],
+    MaybePromise<readonly TItem[]>
+  >
+  getTriggerLabel: BivariantCallback<[props: TProps], string>
+  renderPanel: BivariantCallback<[props: SelectorPanelProps<TProps, TItem>], ReactNode>
+  onInit?: BivariantCallback<[context: SelectorDriverLifecycleContext<TProps, TType>]>
+  onDispose?: BivariantCallback<[context: SelectorDriverLifecycleContext<TProps, TType>]>
+}
 
 export interface Region {
   displayName: string
@@ -6,47 +81,20 @@ export interface Region {
   code: string
 }
 
-export interface SelectedCondition {
-  id: string
-  displayName: string
-}
-
-export interface SelectedRegionCondition extends SelectedCondition {
-  sido: Region
-  sigungu: Region
-  eupmyeondong: Region
-}
-
-export interface SelectedKeywordCondition extends SelectedCondition {
-  keyword: string
-  normalizedKeyword: string
-}
-
-export type RegionSelectionItem = SelectedRegionCondition
-export type SearchSelectionItem = SelectedRegionCondition | SelectedKeywordCondition
-
-/**
- * @deprecated `RegionSelectionItem`을 사용하세요.
- * 0.1.x 하위 호환을 위해 유지합니다.
- */
-export type ComposableSelectItem = SelectedCondition | SelectedRegionCondition
-
 export interface RegionDataSource {
-  findAllSidos: () => Region[]
-  findAllSigungus: (sidoCode: string) => Region[]
-  findAllEupmyeondongs: (sigunguCode: string) => Region[]
+  findAllSidos: (context?: SelectorLoadContext) => MaybePromise<Region[]>
+  findAllSigungus: (
+    sidoCode: string,
+    context?: SelectorLoadContext,
+  ) => MaybePromise<Region[]>
+  findAllEupmyeondongs: (
+    sigunguCode: string,
+    context?: SelectorLoadContext,
+  ) => MaybePromise<Region[]>
 }
-
-type BivariantCallback<TArgs extends unknown[]> = {
-  bivarianceHack(...args: TArgs): void
-}['bivarianceHack']
 
 export interface RegionSelectOptions {
   placeholder?: string
-  /**
-   * @deprecated `placeholder`를 사용하세요.
-   * 0.3.x 하위 호환을 위해 유지합니다.
-   */
   placeHolder?: string
   searchInputLabel?: string
   searchInputPlaceholder?: string
@@ -54,14 +102,17 @@ export interface RegionSelectOptions {
   searchNoResultMessage?: string
   searchResultLimit?: number
   searchInputIcon?: ReactNode
-  onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
+  onChange?: (selectedItems: SearchSelectionItem[]) => void
   onSelectedEupmyeondong?: (selected: Region) => void
   onClick?: () => void
 }
 
-export interface RegionSelectProps extends RegionDataSource {
-  type: 'region'
+export interface RegionSelectorProps extends RegionDataSource {
   options?: RegionSelectOptions
+}
+
+export interface RegionSelectProps extends RegionSelectorProps {
+  type?: 'region'
 }
 
 export type KeywordNormalizationCasePolicy = 'preserve' | 'lower'
@@ -87,10 +138,6 @@ export interface KeywordInvalidTokenContext {
 
 export interface KeywordSelectOptions {
   placeholder?: string
-  /**
-   * @deprecated `placeholder`를 사용하세요.
-   * 0.3.x 하위 호환을 위해 유지합니다.
-   */
   placeHolder?: string
   inputPlaceholder?: string
   label?: string
@@ -105,72 +152,123 @@ export interface KeywordSelectOptions {
   onClick?: () => void
 }
 
-export interface KeywordSelectProps {
-  type: 'keyword'
+export interface KeywordSelectorProps {
   options?: KeywordSelectOptions
 }
 
-export type ComposableSelectProps = RegionSelectProps | KeywordSelectProps
-export type SelectorType = ComposableSelectProps['type']
+export interface KeywordSelectProps extends KeywordSelectorProps {
+  type?: 'keyword'
+}
 
+export type SelectedCondition = SelectionItem
+
+export interface SelectedRegionCondition extends SelectedCondition {
+  selectorType?: SelectorType
+  sido: Region
+  sigungu: Region
+  eupmyeondong: Region
+}
+
+export interface SelectedKeywordCondition extends SelectedCondition {
+  selectorType?: SelectorType
+  keyword: string
+  normalizedKeyword: string
+}
+
+export type RegionSelectionItem = SelectedRegionCondition
+export type SearchSelectionItem = SelectionItem
 export type ComposableSearchValue = SearchSelectionItem[]
 
-export interface ChangeMeta {
-  source: 'region' | 'keyword' | 'external'
-  selectorType?: SelectorType
-  selectorId?: string
-}
+export type ComposableSelectProps =
+  | (RegionSelectorProps & { type: 'region' })
+  | (KeywordSelectorProps & { type: 'keyword' })
 
-interface RegionSelectorInstanceShape {
+export interface SelectorDefinition<
+  TProps = any,
+  TType extends SelectorType = SelectorType,
+  TItem extends SelectionItem = SelectionItem,
+> {
   id: string
-  type: 'region'
-  props: RegionSelectProps
+  type: TType
+  version?: string | number
+  props: TProps
+  driver: SelectorDriver<TProps, TType, TItem>
 }
 
-interface KeywordSelectorInstanceShape {
-  id: string
-  type: 'keyword'
-  props: KeywordSelectProps
-}
+export type SelectorInstance<
+  TType extends SelectorType = SelectorType,
+  TProps = any,
+  TItem extends SelectionItem = SelectionItem,
+> = SelectorDefinition<TProps, TType, TItem>
 
-type AnySelectorInstance = RegionSelectorInstanceShape | KeywordSelectorInstanceShape
-
-export type SelectorInstance<TType extends SelectorType = SelectorType> = Extract<
-  AnySelectorInstance,
-  { type: TType }
+export type RegionSelectorDriver = SelectorDriver<
+  RegionSelectorProps,
+  'region',
+  SelectionItem
 >
+
+export type KeywordSelectorDriver = SelectorDriver<
+  KeywordSelectorProps,
+  'keyword',
+  SelectionItem
+>
+
+export type RegionSelectorDefinition = SelectorDefinition<
+  RegionSelectorProps,
+  'region',
+  SelectionItem
+>
+
+export type KeywordSelectorDefinition = SelectorDefinition<
+  KeywordSelectorProps,
+  'keyword',
+  SelectionItem
+>
+
+export interface SelectorPluginLifecycleContext {
+  selector: SelectorDefinition<any, any, SelectionItem>
+}
+
+export interface SelectionChangeEvent {
+  nextValue: SearchSelectionItem[]
+  meta: ValueChangeMeta
+}
+
+export interface PanelOpenChangeEvent {
+  selectorId?: string
+  selectorType?: SelectorType
+  panelType?: SelectorType | 'none'
+  isOpen: boolean
+}
+
+export interface SelectorErrorEvent {
+  selectorId?: string
+  selectorType?: SelectorType
+  error: unknown
+}
 
 export interface SelectorPlugin<TType extends SelectorType = SelectorType> {
   id: string
-  type: TType
-  onInit?: BivariantCallback<[instance: SelectorInstance<TType>]>
-  onDispose?: BivariantCallback<[instance: SelectorInstance<TType>]>
+  type?: TType
+  version?: string | number
+  onInit?: BivariantCallback<[context: SelectorPluginLifecycleContext]>
+  onDispose?: BivariantCallback<[context: SelectorPluginLifecycleContext]>
+  onSelectionChange?: BivariantCallback<[event: SelectionChangeEvent]>
+  onPanelOpenChange?: BivariantCallback<[event: PanelOpenChangeEvent]>
+  onError?: BivariantCallback<[event: SelectorErrorEvent]>
 }
 
-export type AnySelectorPlugin =
-  | SelectorPlugin<'region'>
-  | SelectorPlugin<'keyword'>
-
+export type AnySelectorPlugin = SelectorPlugin
 export type SelectorPluginRegistry = Record<string, AnySelectorPlugin>
 
 export interface ComposableSearchProps {
+  selectors: SelectorDefinition<any, any, SelectionItem>[]
   value?: ComposableSearchValue
   defaultValue?: ComposableSearchValue
   onValueChange?: BivariantCallback<
     [nextValue: ComposableSearchValue, meta: ChangeMeta]
   >
-  selectors?: SelectorInstance[]
   plugins?: SelectorPluginRegistry
-  /**
-   * @deprecated `selectors`를 사용하세요.
-   * 0.3.x 하위 호환을 위해 유지합니다.
-   */
-  selectorsProps?: ComposableSelectProps[]
-  /**
-   * @deprecated `onValueChange`를 사용하세요.
-   * 0.3.x 하위 호환을 위해 유지합니다.
-   */
-  onChange?: BivariantCallback<[selectedItems: SearchSelectionItem[]]>
   className?: string
   style?: CSSProperties
 }

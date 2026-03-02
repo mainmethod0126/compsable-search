@@ -4,69 +4,85 @@ import type {
   SelectedRegionCondition,
 } from './types'
 
+export type SelectionItem = SearchSelectionItem
 export type InitialSelectionSource = 'value' | 'defaultValue' | 'empty'
+export type ValueChangeReason = 'add' | 'remove' | 'replace' | 'clear'
 
-export interface SplitSearchSelectionItemsResult {
+export interface SplitSelectionItemsResult {
   regionItems: SelectedRegionCondition[]
   keywordItems: SelectedKeywordCondition[]
 }
+export type SplitSearchSelectionItemsResult = SplitSelectionItemsResult
 
 export interface ResolveInitialSelectionStateOptions {
-  value?: SearchSelectionItem[]
-  defaultValue?: SearchSelectionItem[]
+  value?: SelectionItem[]
+  defaultValue?: SelectionItem[]
 }
 
 export interface ResolveInitialSelectionStateResult {
   isControlled: boolean
   source: InitialSelectionSource
-  selectedItems: SearchSelectionItem[]
-  split: SplitSearchSelectionItemsResult
+  selectedItems: SelectionItem[]
+  split: SplitSelectionItemsResult
 }
 
 export interface ResolveHybridValueUpdateOptions {
-  value?: SearchSelectionItem[]
-  uncontrolledValue: SearchSelectionItem[]
-  proposedValue: SearchSelectionItem[]
+  value?: SelectionItem[]
+  uncontrolledValue: SelectionItem[]
+  proposedValue: SelectionItem[]
+  reason?: ValueChangeReason
 }
 
 export interface HybridValueUpdateMeta {
   branch: 'controlled' | 'uncontrolled'
   sourceOfTruth: 'value' | 'internal'
   didChange: boolean
+  reason: ValueChangeReason | null
   shouldEmitOnChange: boolean
   shouldUpdateUncontrolledValue: boolean
 }
 
 export interface ResolveHybridValueUpdateResult {
   isControlled: boolean
-  currentValue: SearchSelectionItem[]
-  nextRenderedValue: SearchSelectionItem[]
-  nextUncontrolledValue: SearchSelectionItem[]
-  eventValue: SearchSelectionItem[]
+  currentValue: SelectionItem[]
+  nextRenderedValue: SelectionItem[]
+  nextUncontrolledValue: SelectionItem[]
+  eventValue: SelectionItem[]
   shouldEmitOnChange: boolean
   shouldUpdateUncontrolledValue: boolean
   split: {
-    current: SplitSearchSelectionItemsResult
-    event: SplitSearchSelectionItemsResult
-    nextRendered: SplitSearchSelectionItemsResult
+    current: SplitSelectionItemsResult
+    event: SplitSelectionItemsResult
+    nextRendered: SplitSelectionItemsResult
   }
   meta: HybridValueUpdateMeta
 }
 
-function cloneSelectionItems(items: SearchSelectionItem[]): SearchSelectionItem[] {
+function cloneSelectionItems(items: SelectionItem[]): SelectionItem[] {
   return [...items]
 }
 
-function isKeywordSelectionItem(
-  item: SearchSelectionItem,
-): item is SelectedKeywordCondition {
-  return 'normalizedKeyword' in item
+function isKeywordSelectionItem(item: SelectionItem): item is SelectedKeywordCondition {
+  return (
+    'keyword' in item &&
+    typeof item.keyword === 'string' &&
+    'normalizedKeyword' in item &&
+    typeof item.normalizedKeyword === 'string'
+  )
 }
 
-function isRegionSelectionItem(
-  item: SearchSelectionItem,
-): item is SelectedRegionCondition {
-  return !isKeywordSelectionItem(item)
+function isRegionSelectionItem(item: SelectionItem): item is SelectedRegionCondition {
+  return (
+    'sido' in item &&
+    typeof item.sido === 'object' &&
+    item.sido !== null &&
+    'sigungu' in item &&
+    typeof item.sigungu === 'object' &&
+    item.sigungu !== null &&
+    'eupmyeondong' in item &&
+    typeof item.eupmyeondong === 'object' &&
+    item.eupmyeondong !== null
+  )
 }
 
 function areRegionsEqual(
@@ -101,8 +117,8 @@ function areKeywordsEqual(
 }
 
 function areSearchSelectionItemsEqualByIndex(
-  previous: SearchSelectionItem,
-  next: SearchSelectionItem,
+  previous: SelectionItem,
+  next: SelectionItem,
 ): boolean {
   if (isKeywordSelectionItem(previous) && isKeywordSelectionItem(next)) {
     return areKeywordsEqual(previous, next)
@@ -115,9 +131,53 @@ function areSearchSelectionItemsEqualByIndex(
   return false
 }
 
-export function splitSearchSelectionItems(
-  selectedItems: SearchSelectionItem[],
-): SplitSearchSelectionItemsResult {
+function resolveSelectionItemType(item: SelectionItem): 'region' | 'keyword' {
+  return isKeywordSelectionItem(item) ? 'keyword' : 'region'
+}
+
+function toSelectionItemKey(item: SelectionItem): string {
+  return `${resolveSelectionItemType(item)}:${item.id}`
+}
+
+function inferValueChangeReason(
+  previous: SelectionItem[],
+  next: SelectionItem[],
+): ValueChangeReason {
+  if (previous.length > 0 && next.length === 0) {
+    return 'clear'
+  }
+
+  const previousKeys = new Set(previous.map(toSelectionItemKey))
+  const nextKeys = new Set(next.map(toSelectionItemKey))
+  let addedCount = 0
+  let removedCount = 0
+
+  nextKeys.forEach((key) => {
+    if (!previousKeys.has(key)) {
+      addedCount += 1
+    }
+  })
+
+  previousKeys.forEach((key) => {
+    if (!nextKeys.has(key)) {
+      removedCount += 1
+    }
+  })
+
+  if (addedCount > 0 && removedCount === 0) {
+    return 'add'
+  }
+
+  if (removedCount > 0 && addedCount === 0) {
+    return 'remove'
+  }
+
+  return 'replace'
+}
+
+export function splitSelectionItems(
+  selectedItems: SelectionItem[],
+): SplitSelectionItemsResult {
   const regionItems: SelectedRegionCondition[] = []
   const keywordItems: SelectedKeywordCondition[] = []
 
@@ -127,7 +187,9 @@ export function splitSearchSelectionItems(
       return
     }
 
-    regionItems.push(item)
+    if (isRegionSelectionItem(item)) {
+      regionItems.push(item)
+    }
   })
 
   return {
@@ -136,16 +198,20 @@ export function splitSearchSelectionItems(
   }
 }
 
-export function mergeSearchSelectionItems(
+export const splitSearchSelectionItems = splitSelectionItems
+
+export function mergeSelectionItems(
   regionItems: SelectedRegionCondition[],
   keywordItems: SelectedKeywordCondition[],
-): SearchSelectionItem[] {
+): SelectionItem[] {
   return [...regionItems, ...keywordItems]
 }
 
-export function areSearchSelectionItemsEqual(
-  previous: SearchSelectionItem[],
-  next: SearchSelectionItem[],
+export const mergeSearchSelectionItems = mergeSelectionItems
+
+export function areSelectionItemsEqual(
+  previous: SelectionItem[],
+  next: SelectionItem[],
 ): boolean {
   if (previous === next) {
     return true
@@ -165,6 +231,8 @@ export function areSearchSelectionItemsEqual(
   })
 }
 
+export const areSearchSelectionItemsEqual = areSelectionItemsEqual
+
 export function resolveInitialSelectionState(
   options: ResolveInitialSelectionStateOptions = {},
 ): ResolveInitialSelectionStateResult {
@@ -182,7 +250,7 @@ export function resolveInitialSelectionState(
     isControlled,
     source,
     selectedItems,
-    split: splitSearchSelectionItems(selectedItems),
+    split: splitSelectionItems(selectedItems),
   }
 }
 
@@ -194,13 +262,16 @@ export function resolveHybridValueUpdate(
     isControlled ? options.value ?? [] : options.uncontrolledValue,
   )
   const eventValue = cloneSelectionItems(options.proposedValue)
-  const didChange = !areSearchSelectionItemsEqual(currentValue, eventValue)
+  const didChange = !areSelectionItemsEqual(currentValue, eventValue)
   const shouldUpdateUncontrolledValue = !isControlled && didChange
   const nextUncontrolledValue = shouldUpdateUncontrolledValue
     ? eventValue
     : cloneSelectionItems(options.uncontrolledValue)
   const nextRenderedValue = isControlled ? currentValue : nextUncontrolledValue
   const shouldEmitOnChange = didChange
+  const reason = didChange
+    ? options.reason ?? inferValueChangeReason(currentValue, eventValue)
+    : null
 
   return {
     isControlled,
@@ -211,14 +282,15 @@ export function resolveHybridValueUpdate(
     shouldEmitOnChange,
     shouldUpdateUncontrolledValue,
     split: {
-      current: splitSearchSelectionItems(currentValue),
-      event: splitSearchSelectionItems(eventValue),
-      nextRendered: splitSearchSelectionItems(nextRenderedValue),
+      current: splitSelectionItems(currentValue),
+      event: splitSelectionItems(eventValue),
+      nextRendered: splitSelectionItems(nextRenderedValue),
     },
     meta: {
       branch: isControlled ? 'controlled' : 'uncontrolled',
       sourceOfTruth: isControlled ? 'value' : 'internal',
       didChange,
+      reason,
       shouldEmitOnChange,
       shouldUpdateUncontrolledValue,
     },

@@ -1,1 +1,1 @@
-export { adaptLegacySelectorsProps } from './adaptLegacySelectorsProps'
+export {}

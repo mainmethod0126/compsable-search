@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_KEYWORD_SELECTOR_ID,
   createInitialKeywordInputState,
   resolveKeywordPolicy,
   transitionKeywordInputState,
@@ -30,9 +31,33 @@ describe('keywordInputModel', () => {
     expect(state.tokens).toEqual([
       expect.objectContaining({
         id: 'keyword:react query',
+        selectorId: DEFAULT_KEYWORD_SELECTOR_ID,
+        selectorType: 'keyword',
         keyword: 'react query',
         normalizedKeyword: 'react query',
         displayName: '키워드: react query',
+      }),
+    ])
+  })
+
+  it('정책에 selectorId를 주입하면 생성 토큰에 동일한 selectorId가 반영된다', () => {
+    const policy = resolveKeywordPolicy(undefined, 'keyword-v2-main')
+    const state = [
+      { type: 'INPUT_CHANGED', value: 'React' } as const,
+      { type: 'COMMIT_INPUT' } as const,
+    ].reduce(
+      (currentState, event) =>
+        transitionKeywordInputState(currentState, event, policy),
+      createInitialKeywordInputState(),
+    )
+
+    expect(state.tokens).toEqual([
+      expect.objectContaining({
+        id: 'keyword:react',
+        selectorId: 'keyword-v2-main',
+        selectorType: 'keyword',
+        keyword: 'react',
+        normalizedKeyword: 'react',
       }),
     ])
   })

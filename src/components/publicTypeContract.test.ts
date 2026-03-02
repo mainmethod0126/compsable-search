@@ -1,19 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import type {
-  ChangeMeta,
   ComposableSearchProps,
   ComposableSearchValue,
-  ComposableSelectItem,
   KeywordSelectOptions,
-  SelectorInstance,
-  SelectorPlugin,
-  SelectorPluginRegistry,
+  MaybePromise,
+  PanelOpenChangeEvent,
   RegionDataSource,
   RegionSelectOptions,
   RegionSelectProps,
-  SearchSelectionItem,
-  RegionSelectionItem,
-  SelectedKeywordCondition,
+  SelectionChangeEvent,
+  SelectionItem,
+  SelectorDefinition,
+  SelectorDriver,
+  SelectorErrorEvent,
+  SelectorLoadContext,
+  SelectorPanelProps,
+  SelectorPlugin,
+  SelectorPluginRegistry,
+  ValueChangeMeta,
 } from './types'
 
 const regionDataSource: RegionDataSource = {
@@ -24,217 +28,231 @@ const regionDataSource: RegionDataSource = {
   ],
 }
 
-const regionSelectorInstance: SelectorInstance<'region'> = {
+const regionDriver: SelectorDriver<RegionSelectProps, 'region'> = {
+  type: 'region',
+  getTriggerLabel: (props) => props.options?.placeholder ?? '지역 선택',
+  loadItems: async (context, props) => {
+    if (context.signal.aborted) {
+      return []
+    }
+
+    const sido = await props.findAllSidos(context)
+    return sido.map((item) => ({
+      id: item.code,
+      displayName: item.displayName,
+      selectorId: 'region-selector',
+      selectorType: 'region',
+      payload: item,
+    }))
+  },
+  renderPanel: () => null,
+}
+
+const regionSelector: SelectorDefinition<RegionSelectProps, 'region'> = {
   id: 'region-selector',
   type: 'region',
   props: {
-    type: 'region',
     ...regionDataSource,
     options: {
       placeholder: '지역 선택',
     },
   },
-}
-
-const keywordSelectorInstance: SelectorInstance<'keyword'> = {
-  id: 'keyword-selector',
-  type: 'keyword',
-  props: {
-    type: 'keyword',
-    options: {
-      placeholder: '키워드 선택',
-    },
-  },
+  driver: regionDriver,
 }
 
 describe('public type contract', () => {
-  it('RegionSelectProps는 공개 데이터 소스 계약을 그대로 수용한다', () => {
-    const selector: RegionSelectProps = {
-      type: 'region',
-      ...regionDataSource,
-    }
+  it('MaybePromise는 sync/async 반환을 모두 수용한다', async () => {
+    const syncValue: MaybePromise<number> = 1
+    const asyncValue: MaybePromise<number> = Promise.resolve(2)
 
-    expect(selector.findAllSidos()).toHaveLength(1)
+    expect(syncValue).toBe(1)
+    await expect(asyncValue).resolves.toBe(2)
   })
 
-  it('RegionSelectOptions.onChange는 region + keyword 조합 payload 계약을 수용한다', () => {
-    const onChange: NonNullable<RegionSelectOptions['onChange']> = (
-      selectedItems: SearchSelectionItem[],
-    ) => {
-      expect(selectedItems).toHaveLength(2)
+  it('SelectionItem/ValueChangeMeta는 V2 reason/source 계약을 제공한다', () => {
+    const selection: SelectionItem = {
+      id: 'keyword:react',
+      displayName: '키워드: react',
+      selectorId: 'keyword-selector',
+      selectorType: 'keyword',
+      payload: {
+        keyword: 'react',
+      },
     }
 
-    onChange([
-      {
-        id: '1168010100',
-        displayName: '서울특별시>강남구>역삼동',
-        sido: { displayName: '서울특별시', name: '서울특별시', code: '11' },
-        sigungu: { displayName: '강남구', name: '강남구', code: '11680' },
-        eupmyeondong: { displayName: '역삼동', name: '역삼동', code: '1168010100' },
+    const meta: ValueChangeMeta = {
+      reason: 'add',
+      source: 'selector',
+      selectorId: 'keyword-selector',
+      selectorType: 'keyword',
+    }
+
+    const allowedReasons: ValueChangeMeta['reason'][] = [
+      'add',
+      'remove',
+      'replace',
+      'clear',
+    ]
+    const allowedSources: ValueChangeMeta['source'][] = ['selector', 'external']
+
+    expect(selection.selectorType).toBe('keyword')
+    expect(meta.reason).toBe('add')
+    expect(allowedReasons).toHaveLength(4)
+    expect(allowedSources).toEqual(['selector', 'external'])
+  })
+
+  it('RegionDataSource는 SelectorLoadContext 기반 MaybePromise 데이터 소스를 수용한다', async () => {
+    const controller = new AbortController()
+    const context: SelectorLoadContext = {
+      signal: controller.signal,
+    }
+
+    const sido = await regionDataSource.findAllSidos(context)
+    const sigungu = await regionDataSource.findAllSigungus('11', context)
+    const eupmyeondong = await regionDataSource.findAllEupmyeondongs('11680', context)
+
+    expect(sido[0]?.code).toBe('11')
+    expect(sigungu[0]?.code).toBe('11680')
+    expect(eupmyeondong[0]?.code).toBe('1168010100')
+  })
+
+  it('SelectorPanelProps는 선택값 변경/패널 제어/에러 전파 핸들러를 노출한다', () => {
+    let closed = false
+    let emittedError: unknown
+    let latestSelection: SelectionItem[] = []
+
+    const panelProps: SelectorPanelProps<RegionSelectProps> = {
+      selectorId: 'region-selector',
+      selectorType: 'region',
+      props: regionSelector.props,
+      selectedItems: [],
+      setSelectedItems: (next) => {
+        latestSelection = next
       },
+      closePanel: () => {
+        closed = true
+      },
+      emitError: (error) => {
+        emittedError = error
+      },
+    }
+
+    panelProps.setSelectedItems([
       {
-        id: 'keyword:react',
-        displayName: '키워드: react',
-        keyword: 'react',
-        normalizedKeyword: 'react',
+        id: '11',
+        displayName: '서울특별시',
+        selectorId: 'region-selector',
+        selectorType: 'region',
       },
     ])
+    panelProps.closePanel()
+    panelProps.emitError(new Error('panel-error'))
+
+    expect(latestSelection).toHaveLength(1)
+    expect(closed).toBe(true)
+    expect(emittedError).toBeInstanceOf(Error)
   })
 
-  it('ComposableSelectItem 하위 호환 타입 별칭은 0.1.x에서 계속 사용할 수 있다', () => {
-    const legacyItem: ComposableSelectItem = {
-      id: 'legacy',
-      displayName: '레거시 조건',
-    }
+  it('SelectorDriver/SelectorDefinition은 Generic Selector V2 계약을 따른다', async () => {
+    const controller = new AbortController()
+    const loaded = await regionDriver.loadItems?.(
+      { signal: controller.signal },
+      regionSelector.props,
+    )
 
-    expect(legacyItem.id).toBe('legacy')
+    expect(regionDriver.type).toBe('region')
+    expect(regionDriver.getTriggerLabel(regionSelector.props)).toBe('지역 선택')
+    expect(loaded).toHaveLength(1)
+    expect(regionSelector.id).toBe('region-selector')
   })
 
-  it('레거시 onChange 시그니처(RegionSelectionItem[])도 호환된다', () => {
-    const legacyOnChange: NonNullable<RegionSelectOptions['onChange']> = (
-      selectedItems: RegionSelectionItem[],
-    ) => {
-      expect(selectedItems).toBeDefined()
-    }
-
-    legacyOnChange([])
-  })
-
-  it('RegionSelectOptions는 placeholder + placeHolder 하위 호환 필드를 모두 지원한다', () => {
-    const options: RegionSelectOptions = {
-      placeholder: '지역 선택',
-      placeHolder: '지역 선택(레거시)',
-    }
-
-    expect(options.placeholder).toBe('지역 선택')
-    expect(options.placeHolder).toBe('지역 선택(레거시)')
-  })
-
-  it('KeywordSelectOptions는 입력 모델 설정과 유효성 콜백 계약을 제공한다', () => {
-    const onInvalidToken: NonNullable<KeywordSelectOptions['onInvalidToken']> = (
-      error,
-      context,
-    ) => {
-      expect(error).toBeDefined()
-      expect(context.maxTokens).toBeGreaterThan(0)
-    }
-    const options: KeywordSelectOptions = {
-      placeholder: '키워드 선택',
-      placeHolder: '키워드 선택',
-      label: '키워드 입력',
-      guideText: 'Enter로 확정',
-      maxTokens: 5,
-      maxTokenLength: 20,
-      normalization: {
-        casePolicy: 'lower',
-      },
-      onInvalidToken,
-    }
-
-    expect(options.placeholder).toBe('키워드 선택')
-    expect(options.maxTokens).toBe(5)
-  })
-
-  it('SelectedKeywordCondition은 SelectedCondition 기반 식별 계약을 유지한다', () => {
-    const condition: SelectedKeywordCondition = {
-      id: 'keyword:vite',
-      displayName: '키워드: vite',
-      keyword: 'vite',
-      normalizedKeyword: 'vite',
-    }
-
-    expect(condition.id).toBe('keyword:vite')
-  })
-
-  it('SelectorPluginRegistry는 selector instance 기반 plugin 계약을 수용한다', () => {
-    const regionPlugin: SelectorPlugin<'region'> = {
+  it('SelectorPlugin은 selection/panel/error 이벤트 확장 계약을 제공한다', () => {
+    const regionPlugin: SelectorPlugin = {
       id: 'region-telemetry',
-      type: 'region',
-      onInit: (instance) => {
-        expect(instance.id).toBe('region-selector')
+      version: 'v2',
+      onSelectionChange: (event: SelectionChangeEvent) => {
+        expect(event.meta.reason).toBe('replace')
       },
-      onDispose: (instance) => {
-        expect(instance.type).toBe('region')
+      onPanelOpenChange: (event: PanelOpenChangeEvent) => {
+        expect(event.isOpen).toBe(true)
+      },
+      onError: (event: SelectorErrorEvent) => {
+        expect(event.selectorType).toBe('region')
       },
     }
     const plugins: SelectorPluginRegistry = {
       regionTelemetry: regionPlugin,
     }
 
-    const regionTelemetryPlugin = plugins.regionTelemetry
-    if (regionTelemetryPlugin.type === 'region') {
-      regionTelemetryPlugin.onInit?.(regionSelectorInstance)
-      regionTelemetryPlugin.onDispose?.(regionSelectorInstance)
-    }
+    plugins.regionTelemetry.onSelectionChange?.({
+      nextValue: [],
+      meta: {
+        reason: 'replace',
+        source: 'external',
+      },
+    })
+    plugins.regionTelemetry.onPanelOpenChange?.({
+      selectorId: 'region-selector',
+      selectorType: 'region',
+      isOpen: true,
+    })
+    plugins.regionTelemetry.onError?.({
+      selectorId: 'region-selector',
+      selectorType: 'region',
+      error: new Error('plugin-error'),
+    })
+
     expect(Object.keys(plugins)).toEqual(['regionTelemetry'])
   })
 
-  it('ChangeMeta.source는 initialize 없이 region/keyword/external만 유지한다', () => {
-    const allowedSources: ChangeMeta['source'][] = [
-      'region',
-      'keyword',
-      'external',
-    ]
-
-    expect(allowedSources).toHaveLength(3)
-    expect(allowedSources).not.toContain('initialize')
-  })
-
-  it('ComposableSearchProps는 0.3 value 기반 계약을 수용한다', () => {
+  it('ComposableSearchProps는 selectors 기반 단일 공개 계약만 유지한다', () => {
     const value: ComposableSearchValue = []
-    const meta: ChangeMeta = {
-      source: 'region',
-      selectorType: 'region',
-      selectorId: regionSelectorInstance.id,
-    }
 
     const onValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
       nextValue,
-      changeMeta,
+      meta,
     ) => {
       expect(nextValue).toBe(value)
-      expect(changeMeta.source).toBe('region')
+      expect(meta.source).toBe('selector')
     }
 
     const props: ComposableSearchProps = {
+      selectors: [regionSelector],
       value,
       defaultValue: [],
       onValueChange,
-      selectors: [regionSelectorInstance, keywordSelectorInstance],
       plugins: {
         regionTelemetry: {
           id: 'region-telemetry',
-          type: 'region',
         },
       },
     }
 
-    expect(props.selectors).toHaveLength(2)
-    expect('placeholder' in props).toBe(false)
+    const meta: ValueChangeMeta = {
+      reason: 'replace',
+      source: 'selector',
+      selectorId: 'region-selector',
+      selectorType: 'region',
+    }
+
+    expect(props.selectors).toHaveLength(1)
+    expect('selectorsProps' in props).toBe(false)
+    expect('onChange' in props).toBe(false)
     props.onValueChange?.(value, meta)
   })
 
-  it('ComposableSearchProps는 레거시 selectorsProps/onChange를 유지한다', () => {
-    const props: ComposableSearchProps = {
-      onChange: (selectedItems) => {
-        expect(selectedItems).toBeDefined()
-      },
-      selectorsProps: [
-        {
-          type: 'region',
-          ...regionDataSource,
-        },
-        {
-          type: 'keyword',
-          options: {
-            placeHolder: '키워드 선택',
-          },
-        },
-      ],
+  it('RegionSelectOptions/KeywordSelectOptions는 built-in driver 공용 옵션 계약을 유지한다', () => {
+    const regionOptions: RegionSelectOptions = {
+      placeholder: '지역 선택',
+      searchInputPlaceholder: '지역명 입력',
+    }
+    const keywordOptions: KeywordSelectOptions = {
+      placeholder: '키워드 선택',
+      maxTokens: 5,
+      maxTokenLength: 20,
     }
 
-    expect(props.selectorsProps).toHaveLength(2)
-    expect('placeHolder' in props).toBe(false)
-    props.onChange?.([])
+    expect(regionOptions.placeholder).toBe('지역 선택')
+    expect(keywordOptions.maxTokens).toBe(5)
   })
 })

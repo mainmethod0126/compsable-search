@@ -7,6 +7,7 @@ import type {
 
 export const DEFAULT_MAX_KEYWORD_TOKENS = 5
 export const DEFAULT_MAX_KEYWORD_TOKEN_LENGTH = 20
+export const DEFAULT_KEYWORD_SELECTOR_ID = 'keyword-selector'
 
 export type KeywordInputStatus =
   | 'idle'
@@ -17,6 +18,7 @@ export type KeywordInputStatus =
 export interface KeywordPolicy {
   maxTokens: number
   maxTokenLength: number
+  selectorId: string
   normalization: {
     trim: boolean
     collapseWhitespace: boolean
@@ -52,6 +54,7 @@ function resolvePositiveInteger(value: number | undefined, fallback: number): nu
 
 export function resolveKeywordPolicy(
   options?: KeywordSelectOptions,
+  selectorId: string = DEFAULT_KEYWORD_SELECTOR_ID,
 ): KeywordPolicy {
   return {
     maxTokens: resolvePositiveInteger(
@@ -62,6 +65,7 @@ export function resolveKeywordPolicy(
       options?.maxTokenLength,
       DEFAULT_MAX_KEYWORD_TOKEN_LENGTH,
     ),
+    selectorId,
     normalization: {
       trim: options?.normalization?.trim ?? true,
       collapseWhitespace: options?.normalization?.collapseWhitespace ?? true,
@@ -95,10 +99,15 @@ export function normalizeKeywordInput(
   return next
 }
 
-function createKeywordCondition(normalizedKeyword: string): SelectedKeywordCondition {
+function createKeywordCondition(
+  normalizedKeyword: string,
+  policy: KeywordPolicy,
+): SelectedKeywordCondition {
   return {
     id: `keyword:${normalizedKeyword}`,
     displayName: `키워드: ${normalizedKeyword}`,
+    selectorId: policy.selectorId,
+    selectorType: 'keyword',
     keyword: normalizedKeyword,
     normalizedKeyword,
   }
@@ -176,7 +185,7 @@ function commitInput(
     }
   }
 
-  const nextTokens = [...state.tokens, createKeywordCondition(normalizedValue)]
+  const nextTokens = [...state.tokens, createKeywordCondition(normalizedValue, policy)]
   return {
     ...state,
     tokens: nextTokens,
@@ -294,6 +303,9 @@ export function hasSameKeywordTokenSequence(
   }
 
   return previousTokens.every(
-    (previousToken, index) => previousToken.id === nextTokens[index]?.id,
+    (previousToken, index) =>
+      previousToken.id === nextTokens[index]?.id &&
+      previousToken.selectorId === nextTokens[index]?.selectorId &&
+      previousToken.selectorType === nextTokens[index]?.selectorType,
   )
 }

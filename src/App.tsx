@@ -1,6 +1,16 @@
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { ComposableSearch } from './components'
-import type { Region, SearchSelectionItem } from './components'
+import { useCallback, useMemo, useState, type ChangeEvent } from 'react'
+import {
+  ComposableSearch,
+  createKeywordSelector,
+  createRegionSelector,
+} from './components'
+import type {
+  KeywordSelectorProps,
+  Region,
+  RegionSelectorProps,
+  SearchSelectionItem,
+  ValueChangeMeta,
+} from './components'
 import {
   DEMO_REGION_PROFILE_SPECS,
   createDemoRegionDataSource,
@@ -15,7 +25,7 @@ interface DemoProfileMetrics {
   panelOpenDurationMs: number | null
   firstSelectionDurationMs: number | null
   regionOnClickCount: number
-  regionOnChangeCount: number
+  regionOnValueChangeCount: number
   regionOnSelectedCount: number
 }
 
@@ -24,7 +34,7 @@ function createInitialProfileMetrics(): DemoProfileMetrics {
     panelOpenDurationMs: null,
     firstSelectionDurationMs: null,
     regionOnClickCount: 0,
-    regionOnChangeCount: 0,
+    regionOnValueChangeCount: 0,
     regionOnSelectedCount: 0,
   }
 }
@@ -40,10 +50,13 @@ function createInitialMetricsRecord(): Record<
   }
 }
 
-function formatOnChangeMessage(selectedItems: SearchSelectionItem[]): string {
+function formatOnValueChangeMessage(
+  selectedItems: SearchSelectionItem[],
+  meta: ValueChangeMeta,
+): string {
   const selectedCodes = selectedItems.map((item) => item.id).join(', ')
   const suffix = selectedCodes ? ` [${selectedCodes}]` : ''
-  return `region.onChange(count=${selectedItems.length})${suffix}`
+  return `onValueChange(reason=${meta.reason ?? 'unknown'}, source=${meta.source ?? 'unknown'}, selectorType=${meta.selectorType ?? 'unknown'}, selectorId=${meta.selectorId ?? 'unknown'}, count=${selectedItems.length})${suffix}`
 }
 
 function formatOnSelectedMessage(selected: Region): string {
@@ -75,8 +88,10 @@ function App() {
   const [activeProfile, setActiveProfile] = useState<DemoRegionSampleProfile>('small')
   const [callbackEvents, setCallbackEvents] = useState<string[]>([])
   const [metricsByProfile, setMetricsByProfile] = useState(createInitialMetricsRecord)
-  const regionPanelOpenedRef = useRef(false)
-  const firstSelectionMeasureStartedAtRef = useRef<number | null>(null)
+  const [isRegionPanelOpen, setIsRegionPanelOpen] = useState(false)
+  const [firstSelectionMeasureStartedAt, setFirstSelectionMeasureStartedAt] = useState<
+    number | null
+  >(null)
 
   const activeProfileSpec = DEMO_REGION_PROFILE_SPECS[activeProfile]
   const activeProfileMetrics = metricsByProfile[activeProfile]
@@ -103,20 +118,23 @@ function App() {
     setCallbackEvents([])
   }, [])
 
+  const handleKeywordClick = useCallback(() => {
+    appendCallbackEvent('keyword.onClick')
+  }, [appendCallbackEvent])
+
   const handleRegionClick = useCallback(() => {
     appendCallbackEvent('region.onClick')
     const clickedAt = resolveNow()
-
-    regionPanelOpenedRef.current = !regionPanelOpenedRef.current
-    const isOpeningRegionPanel = regionPanelOpenedRef.current
+    const isOpeningRegionPanel = !isRegionPanelOpen
 
     updateActiveProfileMetrics((current) => ({
       ...current,
       regionOnClickCount: current.regionOnClickCount + 1,
     }))
+    setIsRegionPanelOpen(isOpeningRegionPanel)
 
     if (isOpeningRegionPanel) {
-      firstSelectionMeasureStartedAtRef.current = clickedAt
+      setFirstSelectionMeasureStartedAt(clickedAt)
       scheduleAfterPaint(() => {
         updateActiveProfileMetrics((current) => ({
           ...current,
@@ -126,28 +144,17 @@ function App() {
       return
     }
 
-    firstSelectionMeasureStartedAtRef.current = null
-  }, [appendCallbackEvent, updateActiveProfileMetrics])
-
-  const handleRegionChange = useCallback(
-    (selectedItems: SearchSelectionItem[]) => {
-      appendCallbackEvent(formatOnChangeMessage(selectedItems))
-      updateActiveProfileMetrics((current) => ({
-        ...current,
-        regionOnChangeCount: current.regionOnChangeCount + 1,
-      }))
-    },
-    [appendCallbackEvent, updateActiveProfileMetrics],
-  )
+    setFirstSelectionMeasureStartedAt(null)
+  }, [appendCallbackEvent, isRegionPanelOpen, updateActiveProfileMetrics])
 
   const handleRegionSelected = useCallback(
     (selected: Region) => {
       appendCallbackEvent(formatOnSelectedMessage(selected))
 
-      const startedAt = firstSelectionMeasureStartedAtRef.current
+      const startedAt = firstSelectionMeasureStartedAt
       const firstSelectionDurationMs =
         startedAt === null ? null : resolveNow() - startedAt
-      firstSelectionMeasureStartedAtRef.current = null
+      setFirstSelectionMeasureStartedAt(null)
 
       updateActiveProfileMetrics((current) => ({
         ...current,
@@ -156,15 +163,62 @@ function App() {
           firstSelectionDurationMs ?? current.firstSelectionDurationMs,
       }))
     },
+    [appendCallbackEvent, firstSelectionMeasureStartedAt, updateActiveProfileMetrics],
+  )
+
+  const handleValueChange = useCallback(
+    (nextValue: SearchSelectionItem[], meta: ValueChangeMeta) => {
+      appendCallbackEvent(formatOnValueChangeMessage(nextValue, meta))
+      if (meta.selectorType !== 'region') {
+        return
+      }
+
+      updateActiveProfileMetrics((current) => ({
+        ...current,
+        regionOnValueChangeCount: current.regionOnValueChangeCount + 1,
+      }))
+    },
     [appendCallbackEvent, updateActiveProfileMetrics],
+  )
+
+  const selectors = useMemo(
+    () => {
+      const regionSelectorProps: RegionSelectorProps & { type: 'region' } = {
+        type: 'region',
+        ...activeDataSource,
+        options: {
+          placeholder: '지역 선택',
+          onClick: handleRegionClick,
+          onSelectedEupmyeondong: handleRegionSelected,
+        },
+      }
+      const keywordSelectorProps: KeywordSelectorProps & { type: 'keyword' } = {
+        type: 'keyword',
+        options: {
+          placeholder: '키워드 선택',
+          onClick: handleKeywordClick,
+        },
+      }
+
+      return [
+        createRegionSelector('demo-region-selector', regionSelectorProps),
+        createKeywordSelector('demo-keyword-selector', keywordSelectorProps),
+      ]
+    },
+    [
+      activeDataSource,
+      handleKeywordClick,
+      handleRegionClick,
+      handleRegionSelected,
+    ],
   )
 
   const handleProfileChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextProfile = event.target.value as DemoRegionSampleProfile
     setActiveProfile(nextProfile)
     setCallbackEvents([])
-    regionPanelOpenedRef.current = false
-    firstSelectionMeasureStartedAtRef.current = null
+    setIsRegionPanelOpen(false)
+    setFirstSelectionMeasureStartedAt(null)
   }
 
   return (
@@ -172,7 +226,7 @@ function App() {
       <header>
         <h1 className="demo-title">Composable Search Demo</h1>
         <p className="demo-description">
-          iteration-07 기준 대량 샘플 프로파일 전환/상호작용 회귀 검증 데모
+          V2(Generic Selector) 기준 대량 샘플 프로파일 전환/상호작용 회귀 검증 데모
         </p>
       </header>
       <section className="demo-profile-panel">
@@ -205,29 +259,8 @@ function App() {
       <div className="demo-panel">
         <ComposableSearch
           key={`demo-search-${activeProfile}`}
-          selectorsProps={[
-            {
-              type: 'region',
-              findAllSidos: activeDataSource.findAllSidos,
-              findAllSigungus: activeDataSource.findAllSigungus,
-              findAllEupmyeondongs: activeDataSource.findAllEupmyeondongs,
-              options: {
-                placeHolder: '지역 선택',
-                onChange: handleRegionChange,
-                onSelectedEupmyeondong: handleRegionSelected,
-                onClick: handleRegionClick,
-              },
-            },
-            {
-              type: 'keyword',
-              options: {
-                placeHolder: '키워드 선택',
-                onClick: () => {
-                  appendCallbackEvent('keyword.onClick')
-                },
-              },
-            },
-          ]}
+          selectors={selectors}
+          onValueChange={handleValueChange}
         />
       </div>
       <section className="demo-metrics-panel" data-testid="demo-performance-metrics">
@@ -242,7 +275,7 @@ function App() {
           region.onClick 호출: {activeProfileMetrics.regionOnClickCount}회
         </p>
         <p className="demo-metrics-item">
-          region.onChange 호출: {activeProfileMetrics.regionOnChangeCount}회
+          onValueChange(region) 호출: {activeProfileMetrics.regionOnValueChangeCount}회
         </p>
         <p className="demo-metrics-item">
           region.onSelectedEupmyeondong 호출: {activeProfileMetrics.regionOnSelectedCount}회

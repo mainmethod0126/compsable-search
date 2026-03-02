@@ -1,14 +1,14 @@
-import type {
-  ComposableSelectProps,
-  KeywordSelectProps,
-  RegionSelectProps,
-} from './publicTypes'
+import type { SelectorDefinition } from './publicTypes'
 
-export type SelectorType = ComposableSelectProps['type']
-export type SelectorOfType<TType extends SelectorType> = Extract<
-  ComposableSelectProps,
-  { type: TType }
->
+type SelectorLike<TType extends string = string> = {
+  type: TType
+}
+
+export type SelectorType = SelectorDefinition['type']
+export type SelectorOfType<
+  TType extends string,
+  TSelector extends SelectorLike = SelectorDefinition,
+> = TSelector & { type: TType }
 
 export interface DuplicateSelectorWarningMetadata {
   selectorType: SelectorType
@@ -28,8 +28,8 @@ export interface ResolveSelectorByTypeOptions {
 }
 
 export interface ResolvedSelectors {
-  regionSelector: SelectorOfType<'region'> | undefined
-  keywordSelector: SelectorOfType<'keyword'> | undefined
+  regionSelector: SelectorOfType<'region', SelectorDefinition> | undefined
+  keywordSelector: SelectorOfType<'keyword', SelectorDefinition> | undefined
 }
 
 export const DUPLICATE_SELECTOR_WARNING_PREFIX =
@@ -41,24 +41,27 @@ export function createSelectorResolutionWarningContext(): SelectorResolutionWarn
   }
 }
 
-export function isRegionSelector(
-  selector: ComposableSelectProps,
-): selector is RegionSelectProps {
+export function isRegionSelector<TSelector extends SelectorLike>(
+  selector: TSelector,
+): selector is SelectorOfType<'region', TSelector> {
   return selector.type === 'region'
 }
 
-export function isKeywordSelector(
-  selector: ComposableSelectProps,
-): selector is KeywordSelectProps {
+export function isKeywordSelector<TSelector extends SelectorLike>(
+  selector: TSelector,
+): selector is SelectorOfType<'keyword', TSelector> {
   return selector.type === 'keyword'
 }
 
-export function resolveSelectorByType<TType extends SelectorType>(
-  selectors: ComposableSelectProps[],
+export function resolveSelectorByType<
+  TSelector extends SelectorLike,
+  TType extends TSelector['type'],
+>(
+  selectors: readonly TSelector[],
   type: TType,
   options: ResolveSelectorByTypeOptions = {},
-): SelectorOfType<TType> | undefined {
-  let resolvedSelector: SelectorOfType<TType> | undefined
+): SelectorOfType<TType, TSelector> | undefined {
+  let resolvedSelector: SelectorOfType<TType, TSelector> | undefined
   let matchedCount = 0
 
   selectors.forEach((selector) => {
@@ -68,7 +71,7 @@ export function resolveSelectorByType<TType extends SelectorType>(
 
     matchedCount += 1
     if (!resolvedSelector) {
-      resolvedSelector = selector as SelectorOfType<TType>
+      resolvedSelector = selector as SelectorOfType<TType, TSelector>
     }
   })
 
@@ -89,7 +92,7 @@ export function resolveSelectorByType<TType extends SelectorType>(
 }
 
 export function resolveSelectorsWithPolicy(
-  selectors: ComposableSelectProps[],
+  selectors: readonly SelectorDefinition[],
   options: ResolveSelectorByTypeOptions = {},
 ): ResolvedSelectors {
   const warningContext =
@@ -108,23 +111,17 @@ export function resolveSelectorsWithPolicy(
 }
 
 export function validateSelectorTypeUniqueness(
-  selectors: ComposableSelectProps[],
+  selectors: readonly SelectorLike[],
 ): DuplicateSelectorWarningMetadata[] {
-  const selectorTypeCounts = selectors.reduce<Record<SelectorType, number>>(
+  const selectorTypeCounts = selectors.reduce<Map<SelectorType, number>>(
     (counts, selector) => {
-      counts[selector.type] += 1
+      counts.set(selector.type, (counts.get(selector.type) ?? 0) + 1)
       return counts
     },
-    {
-      region: 0,
-      keyword: 0,
-    },
+    new Map<SelectorType, number>(),
   )
 
-  return (Object.entries(selectorTypeCounts) as [SelectorType, number][])
+  return Array.from(selectorTypeCounts.entries())
     .filter(([, count]) => count > 1)
-    .map(([selectorType, count]) => ({
-      selectorType,
-      count,
-    }))
+    .map(([selectorType, count]) => ({ selectorType, count }))
 }

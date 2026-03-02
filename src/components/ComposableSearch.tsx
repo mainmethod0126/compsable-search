@@ -1,26 +1,17 @@
-import type { KeyboardEventHandler } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
-  dispatchComposableOnChange,
   dispatchComposableOnValueChange,
   dispatchKeywordOnClick,
-  dispatchKeywordOnInvalidToken,
   dispatchPluginOnDispose,
+  dispatchPluginOnError,
   dispatchPluginOnInit,
+  dispatchPluginOnPanelOpenChange,
+  dispatchPluginOnSelectionChange,
   dispatchRegionOnClick,
   dispatchRegionOnSelectedEupmyeondong,
 } from './callbackPipeline'
-import { KeywordDetailPanel } from './KeywordDetailPanel'
-import {
-  createInitialKeywordInputState,
-  hasSameKeywordTokenSequence,
-  normalizeKeywordInput,
-  resolveKeywordInputErrorMessage,
-  resolveKeywordPolicy,
-  transitionKeywordInputState,
-  type KeywordInputEvent,
-} from './keywordInputModel'
-import { RegionDetailPanel } from './RegionDetailPanel'
+import { createSelectorPluginBindingKey } from './plugins'
+import type { AnySelectorPlugin } from './plugins'
 import { RegionSearchInput } from './RegionSearchInput'
 import {
   buildRegionSearchIndex,
@@ -29,118 +20,187 @@ import {
   mapRegionSearchResultToCondition,
   type RegionSearchResult,
 } from './regionSearchModel'
-import {
-  createSelectorResolutionWarningContext,
-  resolveSelectorsWithPolicy,
-} from './selectorTypeUtils'
 import { SelectedConditionBasket } from './SelectedConditionBasket'
 import { toggleRegionCondition } from './selectionPolicy'
 import type {
-  AnySelectorPlugin,
-  ChangeMeta,
   ComposableSearchProps,
-  ComposableSelectProps,
-  Region,
+  KeywordSelectorProps,
   RegionDataSource,
+  RegionSelectProps,
   SearchSelectionItem,
+  SelectionItem,
   SelectedKeywordCondition,
   SelectedRegionCondition,
   SelectorInstance,
+  SelectorType,
+  ValueChangeMeta,
 } from './types'
 import {
-  mergeSearchSelectionItems,
   resolveHybridValueUpdate,
   resolveInitialSelectionState,
-  splitSearchSelectionItems,
 } from './valueStateCore'
 import './ComposableSearch.css'
 
 const DETAILED_CONDITION_PLACEHOLDER = '상세 조건을 선택해 주세요.'
-const REGION_PLACEHOLDER = '지역 선택'
 const REGION_SEARCH_LABEL = '지역 검색'
 const REGION_SEARCH_PLACEHOLDER = '지역명 입력'
-const KEYWORD_PLACEHOLDER = '키워드 선택'
-const KEYWORD_INPUT_LABEL = '키워드 입력'
-const KEYWORD_INPUT_GUIDE_TEXT =
-  'Enter로 키워드 확정, 입력이 비었을 때 Backspace로 마지막 키워드 삭제'
-const KEYWORD_INPUT_PLACEHOLDER = '키워드를 입력해 주세요.'
-const LEGACY_REGION_SELECTOR_ID = 'legacy-region-selector'
-const LEGACY_KEYWORD_SELECTOR_ID = 'legacy-keyword-selector'
 
-type DetailPanelMode = 'none' | 'region' | 'keyword'
-type SelectorType = ComposableSelectProps['type']
 type InitializedPluginBinding = {
+  bindingKey: string
   plugin: AnySelectorPlugin
   selectorInstance: SelectorInstance
+}
+
+type OpenPanelType = SelectorType | 'none'
+
+type ApplySelectionChangeOptions = {
+  proposedValue: SearchSelectionItem[]
+  source: ValueChangeMeta['source']
+  selector?: SelectorInstance
+  reason?: ValueChangeMeta['reason']
 }
 
 function resolveClassName(className?: string): string {
   return ['cs-composable-search', className].filter(Boolean).join(' ')
 }
 
-function buildCombinedSelectionPayload(
-  selectedRegionConditions: SelectedRegionCondition[],
-  selectedKeywordConditions: SelectedKeywordCondition[],
-): SearchSelectionItem[] {
-  return mergeSearchSelectionItems(selectedRegionConditions, selectedKeywordConditions)
-}
-
 function isSelectedKeywordCondition(
-  condition: SearchSelectionItem | undefined,
+  condition: SearchSelectionItem,
 ): condition is SelectedKeywordCondition {
-  return Boolean(condition && 'normalizedKeyword' in condition)
+  return 'normalizedKeyword' in condition
 }
 
-function createLegacySelectorInstances(
-  selectorsProps: ComposableSelectProps[],
-): SelectorInstance[] {
-  return selectorsProps.map((selectorProps, index) => {
-    if (selectorProps.type === 'region') {
-      return {
-        id: `legacy-region-${index}`,
-        type: 'region',
-        props: selectorProps,
-      }
-    }
-
-    return {
-      id: `legacy-keyword-${index}`,
-      type: 'keyword',
-      props: selectorProps,
-    }
-  })
+function resolveSelectionItemSelectorId(
+  item: SearchSelectionItem,
+): string | undefined {
+  const selectorId = (item as Partial<SearchSelectionItem>).selectorId
+  return typeof selectorId === 'string' && selectorId.length > 0
+    ? selectorId
+    : undefined
 }
 
-function resolveSelectorIdsByType(
-  selectorInstances: SelectorInstance[],
-): Partial<Record<SelectorType, string>> {
-  const selectorIdsByType: Partial<Record<SelectorType, string>> = {}
-  selectorInstances.forEach((selectorInstance) => {
-    if (!selectorIdsByType[selectorInstance.type]) {
-      selectorIdsByType[selectorInstance.type] = selectorInstance.id
-    }
-  })
-  return selectorIdsByType
+function resolveSelectionItemSelectorType(
+  item: SearchSelectionItem,
+): SelectorType | undefined {
+  const selectorType = (item as Partial<SearchSelectionItem>).selectorType
+  return typeof selectorType === 'string' && selectorType.length > 0
+    ? selectorType
+    : undefined
 }
 
-function resolveFirstSelectorInstanceByType(
-  selectorInstances: SelectorInstance[],
-): Partial<Record<SelectorType, SelectorInstance>> {
-  const selectorInstancesByType: Partial<Record<SelectorType, SelectorInstance>> =
-    {}
-  selectorInstances.forEach((selectorInstance) => {
-    if (!selectorInstancesByType[selectorInstance.type]) {
-      selectorInstancesByType[selectorInstance.type] = selectorInstance
-    }
-  })
-  return selectorInstancesByType
+function isSelectionItemOwnedBySelector(
+  item: SearchSelectionItem,
+  selector: SelectorInstance,
+): boolean {
+  const itemSelectorId = resolveSelectionItemSelectorId(item)
+  if (itemSelectorId) {
+    return itemSelectorId === selector.id
+  }
+
+  const itemSelectorType = resolveSelectionItemSelectorType(item)
+  if (itemSelectorType) {
+    return itemSelectorType === selector.type
+  }
+
+  if (selector.type === 'keyword') {
+    return isSelectedKeywordCondition(item)
+  }
+
+  if (selector.type === 'region') {
+    return !isSelectedKeywordCondition(item)
+  }
+
+  return false
 }
 
-function resolveSelectorOptionLabel(
-  options: { placeholder?: string; placeHolder?: string } | undefined,
-  fallback: string,
-): string {
-  return options?.placeholder ?? options?.placeHolder ?? fallback
+function selectItemsBySelector(
+  selectedItems: SearchSelectionItem[],
+  selector: SelectorInstance,
+): SearchSelectionItem[] {
+  return selectedItems.filter((item) => isSelectionItemOwnedBySelector(item, selector))
+}
+
+function normalizeSelectorSelectionItems(
+  selectedItems: SearchSelectionItem[],
+  selector: SelectorInstance,
+): SearchSelectionItem[] {
+  return selectedItems.map((item) => ({
+    ...item,
+    selectorId: resolveSelectionItemSelectorId(item) ?? selector.id,
+    selectorType: resolveSelectionItemSelectorType(item) ?? selector.type,
+  }))
+}
+
+function replaceSelectorSelectionItems(
+  selectedItems: SearchSelectionItem[],
+  selector: SelectorInstance,
+  nextSelectorItems: SearchSelectionItem[],
+): SearchSelectionItem[] {
+  const retainedItems = selectedItems.filter(
+    (item) => !isSelectionItemOwnedBySelector(item, selector),
+  )
+
+  return [
+    ...retainedItems,
+    ...normalizeSelectorSelectionItems(nextSelectorItems, selector),
+  ]
+}
+
+function resolveSelectorForSelectionItem(
+  item: SearchSelectionItem,
+  selectors: SelectorInstance[],
+): SelectorInstance | undefined {
+  return selectors.find((selector) => isSelectionItemOwnedBySelector(item, selector))
+}
+
+function resolveSelectorSelectionChangeReason(
+  previousSelectorItems: SearchSelectionItem[],
+  nextSelectorItems: SearchSelectionItem[],
+): ValueChangeMeta['reason'] {
+  if (nextSelectorItems.length > previousSelectorItems.length) {
+    return 'add'
+  }
+
+  if (nextSelectorItems.length < previousSelectorItems.length) {
+    return 'remove'
+  }
+
+  return 'replace'
+}
+
+function resolveFirstSelectorByType(
+  selectors: SelectorInstance[],
+): Map<SelectorType, SelectorInstance> {
+  return selectors.reduce<Map<SelectorType, SelectorInstance>>((map, selector) => {
+    if (!map.has(selector.type)) {
+      map.set(selector.type, selector)
+    }
+
+    return map
+  }, new Map())
+}
+
+function isRegionSelectorInstance(
+  selector: SelectorInstance | null,
+): selector is SelectorInstance<'region', RegionSelectProps, SelectionItem> {
+  return selector?.type === 'region'
+}
+
+function resolveSelectorTriggerIcon(selectorType: SelectorType): string {
+  if (selectorType === 'region') {
+    return 'R'
+  }
+
+  if (selectorType === 'keyword') {
+    return 'K'
+  }
+
+  const normalizedType = selectorType.trim()
+  if (!normalizedType) {
+    return '?'
+  }
+
+  return normalizedType.slice(0, 1).toUpperCase()
 }
 
 const regionSearchIndexCache = new WeakMap<
@@ -180,6 +240,9 @@ function resolveRegionSearchIndexWithCache(
     findAllSigungus,
     findAllEupmyeondongs,
   })
+  if (!Array.isArray(nextIndex)) {
+    return []
+  }
   eupmyeondongCacheBySigungu.set(findAllEupmyeondongs, nextIndex)
   return nextIndex
 }
@@ -187,124 +250,140 @@ function resolveRegionSearchIndexWithCache(
 export function ComposableSearch({
   selectors,
   plugins,
-  selectorsProps = [],
   value,
   defaultValue,
   onValueChange,
-  onChange,
   className,
   style,
 }: ComposableSearchProps) {
   const detailedPanelId = useId()
-  const [activePanelMode, setActivePanelMode] = useState<DetailPanelMode>('none')
+  const [activeSelectorId, setActiveSelectorId] = useState<string | null>(null)
   const [regionSearchQuery, setRegionSearchQuery] = useState('')
   const [uncontrolledSelectedItems, setUncontrolledSelectedItems] = useState(() =>
     resolveInitialSelectionState({ value, defaultValue }).selectedItems,
   )
-  const [keywordInputState, setKeywordInputState] = useState(() => {
-    const initialSelectionState = resolveInitialSelectionState({ value, defaultValue })
-    return {
-      ...createInitialKeywordInputState(),
-      tokens: initialSelectionState.split.keywordItems,
-    }
-  })
 
-  const selectorInstances = useMemo(
-    () => selectors ?? createLegacySelectorInstances(selectorsProps),
-    [selectors, selectorsProps],
-  )
-  const internalSelectorProps = useMemo(
-    () => selectorInstances.map((selectorInstance) => selectorInstance.props),
-    [selectorInstances],
-  )
-  const selectorIdsByType = useMemo(
-    () => resolveSelectorIdsByType(selectorInstances),
-    [selectorInstances],
-  )
-  const firstSelectorInstanceByType = useMemo(
-    () => resolveFirstSelectorInstanceByType(selectorInstances),
-    [selectorInstances],
-  )
-  const runtimePluginEntries = useMemo(
-    () => Object.entries(plugins ?? {}),
-    [plugins],
-  )
-  const { regionSelector, keywordSelector } = useMemo(
-    () =>
-      resolveSelectorsWithPolicy(internalSelectorProps, {
-        warningContext: createSelectorResolutionWarningContext(),
-      }),
-    [internalSelectorProps],
-  )
   const selectedItems = useMemo(
     () => (value !== undefined ? value : uncontrolledSelectedItems),
     [uncontrolledSelectedItems, value],
   )
-  const selectedItemsByType = useMemo(
-    () => splitSearchSelectionItems(selectedItems),
-    [selectedItems],
+  const uncontrolledSelectedItemsRef = useRef(uncontrolledSelectedItems)
+  const initializedPluginBindingsRef = useRef<Map<string, InitializedPluginBinding>>(
+    new Map(),
   )
-  const selectedRegionConditions = selectedItemsByType.regionItems
-  const selectedKeywordConditions = selectedItemsByType.keywordItems
-  const keywordPolicy = useMemo(
-    () => resolveKeywordPolicy(keywordSelector?.options),
-    [keywordSelector?.options],
+  const previousPanelStateRef = useRef<{
+    panelType: OpenPanelType
+    isOpen: boolean
+  } | null>(null)
+
+  const activeSelector = useMemo(
+    () =>
+      activeSelectorId
+        ? selectors.find((selector) => selector.id === activeSelectorId) ?? null
+        : null,
+    [activeSelectorId, selectors],
   )
+  const openedRegionSelector = useMemo(
+    () => (isRegionSelectorInstance(activeSelector) ? activeSelector : null),
+    [activeSelector],
+  )
+  const selectedRegionConditions = useMemo(
+    () =>
+      openedRegionSelector
+        ? selectItemsBySelector(selectedItems, openedRegionSelector).filter(
+            (item): item is SelectedRegionCondition => !isSelectedKeywordCondition(item),
+          )
+        : [],
+    [openedRegionSelector, selectedItems],
+  )
+  const firstSelectorByType = useMemo(
+    () => resolveFirstSelectorByType(selectors),
+    [selectors],
+  )
+  const runtimePlugins = useMemo(() => Object.values(plugins ?? {}), [plugins])
+  const normalizedRuntimePlugins = useMemo(() => {
+    const seenBindingKey = new Set<string>()
+    const deduplicatedPlugins: Array<{ bindingKey: string; plugin: AnySelectorPlugin }> =
+      []
+
+    runtimePlugins.forEach((plugin) => {
+      const bindingKey = createSelectorPluginBindingKey({
+        id: plugin.id,
+        version: plugin.version,
+      })
+      if (seenBindingKey.has(bindingKey)) {
+        return
+      }
+
+      seenBindingKey.add(bindingKey)
+      deduplicatedPlugins.push({ bindingKey, plugin })
+    })
+
+    return deduplicatedPlugins
+  }, [runtimePlugins])
+
   const regionSearchIndex = useMemo(
     () =>
-      regionSelector
-        ? resolveRegionSearchIndexWithCache(regionSelector)
+      openedRegionSelector
+        ? resolveRegionSearchIndexWithCache(openedRegionSelector.props)
         : [],
-    [regionSelector],
+    [openedRegionSelector],
   )
   const regionSearchResults = useMemo(
     () =>
       filterRegionSearchResults(regionSearchIndex, regionSearchQuery, {
         limit:
-          regionSelector?.options?.searchResultLimit ??
+          openedRegionSelector?.props.options?.searchResultLimit ??
           DEFAULT_REGION_SEARCH_RESULT_LIMIT,
       }),
-    [regionSearchIndex, regionSearchQuery, regionSelector?.options?.searchResultLimit],
+    [
+      openedRegionSelector?.props.options?.searchResultLimit,
+      regionSearchIndex,
+      regionSearchQuery,
+    ],
   )
-
-  const selectedRegionConditionsRef = useRef(selectedRegionConditions)
-  const keywordConditionRef = useRef<SelectedKeywordCondition[]>(
-    selectedKeywordConditions,
-  )
-  const uncontrolledSelectedItemsRef = useRef(uncontrolledSelectedItems)
-  const initializedPluginBindingsRef = useRef<
-    Map<string, InitializedPluginBinding>
-  >(new Map())
-
-  useEffect(() => {
-    selectedRegionConditionsRef.current = selectedRegionConditions
-  }, [selectedRegionConditions])
-
-  useEffect(() => {
-    keywordConditionRef.current = selectedKeywordConditions
-  }, [selectedKeywordConditions])
 
   useEffect(() => {
     uncontrolledSelectedItemsRef.current = uncontrolledSelectedItems
   }, [uncontrolledSelectedItems])
 
   useEffect(() => {
+    if (!activeSelectorId) {
+      return
+    }
+
+    if (activeSelector) {
+      return
+    }
+
+    setActiveSelectorId(null)
+  }, [activeSelector, activeSelectorId])
+
+  useEffect(() => {
+    setRegionSearchQuery('')
+  }, [activeSelectorId])
+
+  useEffect(() => {
     const previousBindings = initializedPluginBindingsRef.current
     const nextBindings = new Map<string, InitializedPluginBinding>()
 
-    runtimePluginEntries.forEach(([pluginKey, plugin]) => {
-      const selectorInstance = firstSelectorInstanceByType[plugin.type]
+    normalizedRuntimePlugins.forEach(({ bindingKey, plugin }) => {
+      if (!plugin.type) {
+        return
+      }
+
+      const selectorInstance = firstSelectorByType.get(plugin.type)
       if (!selectorInstance) {
         return
       }
 
-      const previousBinding = previousBindings.get(pluginKey)
-      const hasSameBinding =
-        previousBinding?.plugin === plugin &&
-        previousBinding.selectorInstance === selectorInstance
-
-      if (hasSameBinding) {
-        nextBindings.set(pluginKey, previousBinding)
+      const previousBinding = previousBindings.get(bindingKey)
+      if (previousBinding?.selectorInstance === selectorInstance) {
+        nextBindings.set(bindingKey, {
+          bindingKey,
+          plugin,
+          selectorInstance,
+        })
         return
       }
 
@@ -316,17 +395,21 @@ export function ComposableSearch({
       }
 
       dispatchPluginOnInit(plugin, selectorInstance)
-      nextBindings.set(pluginKey, { plugin, selectorInstance })
+      nextBindings.set(bindingKey, {
+        bindingKey,
+        plugin,
+        selectorInstance,
+      })
     })
 
-    previousBindings.forEach((binding, pluginKey) => {
-      if (!nextBindings.has(pluginKey)) {
+    previousBindings.forEach((binding, bindingKey) => {
+      if (!nextBindings.has(bindingKey)) {
         dispatchPluginOnDispose(binding.plugin, binding.selectorInstance)
       }
     })
 
     initializedPluginBindingsRef.current = nextBindings
-  }, [firstSelectorInstanceByType, runtimePluginEntries])
+  }, [firstSelectorByType, normalizedRuntimePlugins])
 
   useEffect(() => {
     return () => {
@@ -337,29 +420,70 @@ export function ComposableSearch({
     }
   }, [])
 
-  const resolveSelectorId = (selectorType: SelectorType): string =>
-    selectorIdsByType[selectorType] ??
-    (selectorType === 'region'
-      ? LEGACY_REGION_SELECTOR_ID
-      : LEGACY_KEYWORD_SELECTOR_ID)
+  useEffect(() => {
+    const nextPanelState = {
+      panelType: (activeSelector?.type ?? 'none') as OpenPanelType,
+      isOpen: Boolean(activeSelector),
+    }
+    const previousPanelState = previousPanelStateRef.current
 
-  const resolveChangeMeta = (
-    source: ChangeMeta['source'],
-    selectorType: SelectorType,
-  ): ChangeMeta => ({
-    source,
-    selectorType,
-    selectorId: resolveSelectorId(selectorType),
-  })
+    if (!previousPanelState) {
+      previousPanelStateRef.current = nextPanelState
+      return
+    }
 
-  const applySelectionChange = (
-    proposedValue: SearchSelectionItem[],
-    meta: ChangeMeta,
+    if (
+      previousPanelState.panelType === nextPanelState.panelType &&
+      previousPanelState.isOpen === nextPanelState.isOpen
+    ) {
+      return
+    }
+
+    initializedPluginBindingsRef.current.forEach((binding) => {
+      const isBindingPanelOpen =
+        nextPanelState.isOpen &&
+        binding.selectorInstance.type === activeSelector?.type
+
+      dispatchPluginOnPanelOpenChange(
+        binding.plugin,
+        binding.selectorInstance,
+        isBindingPanelOpen ? binding.selectorInstance.type : 'none',
+        isBindingPanelOpen,
+      )
+    })
+
+    previousPanelStateRef.current = nextPanelState
+  }, [activeSelector])
+
+  const dispatchSelectorPluginError = (
+    selector: SelectorInstance,
+    error: unknown,
   ) => {
+    initializedPluginBindingsRef.current.forEach((binding) => {
+      if (binding.selectorInstance.type !== selector.type) {
+        return
+      }
+
+      dispatchPluginOnError(
+        binding.plugin,
+        binding.selectorInstance,
+        'onSelectionChange',
+        error,
+      )
+    })
+  }
+
+  const applySelectionChange = ({
+    proposedValue,
+    source,
+    selector,
+    reason,
+  }: ApplySelectionChangeOptions) => {
     const hybridValueResult = resolveHybridValueUpdate({
       value,
       uncontrolledValue: uncontrolledSelectedItemsRef.current,
       proposedValue,
+      reason,
     })
 
     if (hybridValueResult.shouldUpdateUncontrolledValue) {
@@ -367,259 +491,187 @@ export function ComposableSearch({
     }
 
     if (hybridValueResult.shouldEmitOnChange) {
-      dispatchComposableOnValueChange(
-        onValueChange,
-        hybridValueResult.eventValue,
-        meta,
-      )
-      dispatchComposableOnChange(
-        onChange,
-        regionSelector?.options,
-        hybridValueResult.eventValue,
-      )
+      const meta: ValueChangeMeta = {
+        reason: hybridValueResult.meta.reason ?? reason ?? 'replace',
+        source,
+        selectorType: selector?.type,
+        selectorId: selector?.id,
+      }
+
+      dispatchComposableOnValueChange(onValueChange, hybridValueResult.eventValue, meta)
+
+      initializedPluginBindingsRef.current.forEach((binding) => {
+        if (selector && binding.selectorInstance.type !== selector.type) {
+          return
+        }
+
+        dispatchPluginOnSelectionChange(
+          binding.plugin,
+          binding.selectorInstance,
+          hybridValueResult.eventValue,
+          meta,
+        )
+      })
     }
 
     return hybridValueResult
   }
 
-  const handleToggleRegionTrigger = () => {
-    setActivePanelMode((previous) => (previous === 'region' ? 'none' : 'region'))
-    dispatchRegionOnClick(regionSelector?.options)
-  }
-
-  const handleToggleKeywordTrigger = () => {
-    setActivePanelMode((previous) => (previous === 'keyword' ? 'none' : 'keyword'))
-    dispatchKeywordOnClick(keywordSelector?.options)
-  }
-
-  const applyKeywordInputEvent = (event: KeywordInputEvent) => {
-    setKeywordInputState((previous) => {
-      const keywordInputStateBase = hasSameKeywordTokenSequence(
-        previous.tokens,
-        keywordConditionRef.current,
-      )
-        ? previous
-        : {
-            ...previous,
-            tokens: keywordConditionRef.current,
-          }
-      const next = transitionKeywordInputState(
-        keywordInputStateBase,
-        event,
-        keywordPolicy,
-      )
-
-      if (next.errorCode && next.errorCode !== previous.errorCode) {
-        dispatchKeywordOnInvalidToken(keywordSelector?.options, next.errorCode, {
-          inputValue: previous.inputValue,
-          normalizedValue: normalizeKeywordInput(previous.inputValue, keywordPolicy),
-          maxTokens: keywordPolicy.maxTokens,
-          maxTokenLength: keywordPolicy.maxTokenLength,
-        })
-      }
-
-      if (!hasSameKeywordTokenSequence(previous.tokens, next.tokens)) {
-        const hybridValueResult = applySelectionChange(
-          buildCombinedSelectionPayload(selectedRegionConditionsRef.current, next.tokens),
-          resolveChangeMeta('keyword', 'keyword'),
-        )
-
-        return {
-          ...next,
-          tokens: hybridValueResult.split.nextRendered.keywordItems,
-        }
-      }
-
-      return next
-    })
-  }
-
-  const handleToggleRegionCondition = (
-    nextCondition: SelectedRegionCondition,
-    selectedRegion: Region,
-  ) => {
-    const previousRegionConditions = selectedRegionConditionsRef.current
-    const wasSelected = previousRegionConditions.some(
-      (condition) => condition.id === nextCondition.id,
-    )
-    const nextRegionConditions = toggleRegionCondition(
-      previousRegionConditions,
-      nextCondition,
-    )
-    const hybridValueResult = applySelectionChange(
-      buildCombinedSelectionPayload(nextRegionConditions, keywordConditionRef.current),
-      resolveChangeMeta('region', 'region'),
+  const handleToggleSelectorTrigger = (selector: SelectorInstance) => {
+    setActiveSelectorId((previous) =>
+      previous === selector.id ? null : selector.id,
     )
 
-    if (!wasSelected && hybridValueResult.meta.didChange) {
-      dispatchRegionOnSelectedEupmyeondong(regionSelector?.options, selectedRegion)
+    if (selector.type === 'region') {
+      dispatchRegionOnClick((selector.props as RegionSelectProps).options)
+      return
+    }
+
+    if (selector.type === 'keyword') {
+      dispatchKeywordOnClick((selector.props as KeywordSelectorProps).options)
     }
   }
 
   const handleSelectRegionSearchResult = (result: RegionSearchResult) => {
-    if (!regionSelector) {
+    if (!openedRegionSelector) {
       return
     }
 
-    const { condition, selectedRegion } = mapRegionSearchResultToCondition(result)
-    handleToggleRegionCondition(condition, selectedRegion)
+    const { condition, selectedRegion } = mapRegionSearchResultToCondition(result, {
+      selectorId: openedRegionSelector.id,
+    })
+    const wasSelected = selectedRegionConditions.some(
+      (selectedCondition) => selectedCondition.id === condition.id,
+    )
+    const nextRegionConditions = toggleRegionCondition(
+      selectedRegionConditions,
+      condition,
+    )
+    const reason = resolveSelectorSelectionChangeReason(
+      selectedRegionConditions,
+      nextRegionConditions,
+    )
+    const nextValue = replaceSelectorSelectionItems(
+      selectedItems,
+      openedRegionSelector,
+      nextRegionConditions,
+    )
+    const hybridValueResult = applySelectionChange({
+      proposedValue: nextValue,
+      source: 'selector',
+      selector: openedRegionSelector,
+      reason,
+    })
+
+    if (!wasSelected && hybridValueResult.meta.didChange) {
+      dispatchRegionOnSelectedEupmyeondong(
+        openedRegionSelector.props.options,
+        selectedRegion,
+      )
+    }
+
     setRegionSearchQuery('')
   }
 
   const handleRemoveCondition = (conditionId: string) => {
-    const selectedKeywordCondition = keywordConditionRef.current.find(
-      (condition) => condition.id === conditionId,
-    )
-    if (isSelectedKeywordCondition(selectedKeywordCondition)) {
-      applyKeywordInputEvent({ type: 'REMOVE_TOKEN', tokenId: conditionId })
+    const currentItems = selectedItems
+    const targetCondition = currentItems.find((condition) => condition.id === conditionId)
+    if (!targetCondition) {
       return
     }
 
-    const nextRegionConditions = selectedRegionConditionsRef.current.filter(
-      (condition) => condition.id !== conditionId,
-    )
-    applySelectionChange(
-      buildCombinedSelectionPayload(nextRegionConditions, keywordConditionRef.current),
-      resolveChangeMeta('region', 'region'),
-    )
+    const nextValue = currentItems.filter((condition) => condition.id !== conditionId)
+    const selector = resolveSelectorForSelectionItem(targetCondition, selectors)
+
+    applySelectionChange({
+      proposedValue: nextValue,
+      source: 'external',
+      selector,
+      reason: 'remove',
+    })
+
+    setActiveSelectorId(null)
   }
 
   const handleClearAllConditions = () => {
-    const clearSourceSelectorType: SelectorType = regionSelector
-      ? 'region'
-      : keywordSelector
-        ? 'keyword'
-        : 'region'
-    const hybridValueResult = applySelectionChange(
-      [],
-      resolveChangeMeta('external', clearSourceSelectorType),
-    )
+    const clearSourceSelector =
+      selectors.find((selector) => selector.type === 'region') ??
+      selectors.find((selector) => selector.type === 'keyword') ??
+      selectors[0]
 
-    setKeywordInputState((previous) => {
-      const clearedKeywordInputState = transitionKeywordInputState(
-        previous,
-        { type: 'CLEAR_ALL' },
-        keywordPolicy,
-      )
-      return {
-        ...clearedKeywordInputState,
-        tokens: hybridValueResult.split.nextRendered.keywordItems,
-      }
+    applySelectionChange({
+      proposedValue: [],
+      source: 'external',
+      selector: clearSourceSelector,
+      reason: 'clear',
     })
   }
 
-  const keywordErrorMessage = resolveKeywordInputErrorMessage(
-    keywordInputState.errorCode,
-    keywordPolicy,
-  )
-
-  const handleKeywordInputKeyDown: KeyboardEventHandler<HTMLInputElement> = (
-    event,
-  ) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      applyKeywordInputEvent({ type: 'COMMIT_INPUT' })
-      return
-    }
-
-    if (event.key === 'Backspace' && keywordInputState.inputValue.length === 0) {
-      event.preventDefault()
-      applyKeywordInputEvent({ type: 'BACKSPACE' })
-    }
-  }
-
-  const selectedConditions = selectedItems
-  const openedRegionSelector =
-    activePanelMode === 'region' ? regionSelector : undefined
-  const openedKeywordSelector =
-    activePanelMode === 'keyword' ? keywordSelector : undefined
-  const isRegionPanelOpen = Boolean(openedRegionSelector)
-  const isKeywordPanelOpen = Boolean(openedKeywordSelector)
-  const isDetailedPanelOpen = isRegionPanelOpen || isKeywordPanelOpen
+  const isDetailedPanelOpen = Boolean(activeSelector)
   const shouldShowRegionSearchNoResultMessage =
-    isRegionPanelOpen &&
+    Boolean(openedRegionSelector) &&
     regionSearchQuery.trim().length > 0 &&
     regionSearchResults.length === 0 &&
-    Boolean(openedRegionSelector?.options?.searchNoResultMessage)
+    Boolean(openedRegionSelector?.props.options?.searchNoResultMessage)
 
-  const detailedContent =
-    openedKeywordSelector ? (
-      <KeywordDetailPanel
-        errorMessage={keywordErrorMessage}
-        guideText={
-          openedKeywordSelector.options?.guideText ?? KEYWORD_INPUT_GUIDE_TEXT
+  const detailedContent = activeSelector ? (
+    // eslint-disable-next-line react-hooks/refs
+    activeSelector.driver.renderPanel({
+      selectorId: activeSelector.id,
+      selectorType: activeSelector.type,
+      props: activeSelector.props,
+      selectedItems: selectItemsBySelector(selectedItems, activeSelector),
+      setSelectedItems: (nextSelectorItems) => {
+        try {
+          const previousSelectorItems = selectItemsBySelector(
+            selectedItems,
+            activeSelector,
+          )
+          const reason = resolveSelectorSelectionChangeReason(
+            previousSelectorItems,
+            nextSelectorItems,
+          )
+          const nextValue = replaceSelectorSelectionItems(
+            selectedItems,
+            activeSelector,
+            nextSelectorItems,
+          )
+          applySelectionChange({
+            proposedValue: nextValue,
+            source: 'selector',
+            selector: activeSelector,
+            reason,
+          })
+        } catch (error) {
+          dispatchSelectorPluginError(activeSelector, error)
         }
-        inputPlaceholder={
-          openedKeywordSelector.options?.inputPlaceholder ??
-          KEYWORD_INPUT_PLACEHOLDER
-        }
-        inputValue={keywordInputState.inputValue}
-        label={openedKeywordSelector.options?.label ?? KEYWORD_INPUT_LABEL}
-        maxTokens={keywordPolicy.maxTokens}
-        tokenCount={keywordInputState.tokens.length}
-        onInputBlur={() => applyKeywordInputEvent({ type: 'BLUR' })}
-        onInputChange={(inputValue) =>
-          applyKeywordInputEvent({ type: 'INPUT_CHANGED', value: inputValue })
-        }
-        onInputFocus={() => applyKeywordInputEvent({ type: 'FOCUS' })}
-        onInputKeyDown={handleKeywordInputKeyDown}
-      />
-    ) : openedRegionSelector ? (
-      <RegionDetailPanel
-        selector={openedRegionSelector}
-        selectedConditions={selectedRegionConditions}
-        onToggleRegionCondition={handleToggleRegionCondition}
-      />
-    ) : (
-      <p className="cs-detailed-placeholder">{DETAILED_CONDITION_PLACEHOLDER}</p>
-    )
+      },
+      closePanel: () => setActiveSelectorId(null),
+      emitError: (error) => dispatchSelectorPluginError(activeSelector, error),
+    } as Parameters<SelectorInstance['driver']['renderPanel']>[0])
+  ) : (
+    <p className="cs-detailed-placeholder">{DETAILED_CONDITION_PLACEHOLDER}</p>
+  )
 
   return (
     <section className={resolveClassName(className)} style={style}>
       <div className="cs-selector-area" data-testid="cs-selector-area">
-        {selectorInstances.map((selectorInstance, index) => {
-          const selector = selectorInstance.props
-          if (selector.type === 'region') {
-            const buttonLabel = resolveSelectorOptionLabel(
-              selector.options,
-              REGION_PLACEHOLDER,
-            )
-
-            return (
-              <button
-                key={`selector-region-${selectorInstance.id}-${index}`}
-                className="cs-selector-trigger"
-                aria-controls={detailedPanelId}
-                aria-expanded={isRegionPanelOpen}
-                type="button"
-                onClick={handleToggleRegionTrigger}
-              >
-                <span aria-hidden="true" className="cs-selector-icon">
-                  R
-                </span>
-                <span>{buttonLabel}</span>
-              </button>
-            )
-          }
-
-          const buttonLabel = resolveSelectorOptionLabel(
-            selector.options,
-            KEYWORD_PLACEHOLDER,
-          )
+        {selectors.map((selector, index) => {
+          const isPanelOpen = activeSelector?.id === selector.id
 
           return (
             <button
-              key={`selector-keyword-${selectorInstance.id}-${index}`}
+              key={`selector-trigger-${selector.id}-${index}`}
               className="cs-selector-trigger"
               aria-controls={detailedPanelId}
-              aria-expanded={isKeywordPanelOpen}
+              aria-expanded={isPanelOpen}
               type="button"
-              onClick={handleToggleKeywordTrigger}
+              onClick={() => handleToggleSelectorTrigger(selector)}
             >
               <span aria-hidden="true" className="cs-selector-icon">
-                K
+                {resolveSelectorTriggerIcon(selector.type)}
               </span>
-              <span>{buttonLabel}</span>
+              <span>{selector.driver.getTriggerLabel(selector.props)}</span>
             </button>
           )
         })}
@@ -631,13 +683,14 @@ export function ComposableSearch({
         {openedRegionSelector ? (
           <div className="cs-region-search-area" data-testid="cs-region-search-area">
             <RegionSearchInput
-              icon={openedRegionSelector.options?.searchInputIcon}
-              idleMessage={openedRegionSelector.options?.searchIdleMessage}
+              icon={openedRegionSelector.props.options?.searchInputIcon}
+              idleMessage={openedRegionSelector.props.options?.searchIdleMessage}
               label={
-                openedRegionSelector.options?.searchInputLabel ?? REGION_SEARCH_LABEL
+                openedRegionSelector.props.options?.searchInputLabel ??
+                REGION_SEARCH_LABEL
               }
               placeholder={
-                openedRegionSelector.options?.searchInputPlaceholder ??
+                openedRegionSelector.props.options?.searchInputPlaceholder ??
                 REGION_SEARCH_PLACEHOLDER
               }
               results={regionSearchResults}
@@ -647,7 +700,7 @@ export function ComposableSearch({
             />
             {shouldShowRegionSearchNoResultMessage ? (
               <p className="cs-region-search-message">
-                {openedRegionSelector.options?.searchNoResultMessage}
+                {openedRegionSelector.props.options?.searchNoResultMessage}
               </p>
             ) : null}
           </div>
@@ -664,7 +717,7 @@ export function ComposableSearch({
       </div>
       <div className="cs-selected-area" data-testid="cs-selected-area">
         <SelectedConditionBasket
-          selectedConditions={selectedConditions}
+          selectedConditions={selectedItems}
           onRemoveCondition={handleRemoveCondition}
           onClearAllConditions={handleClearAllConditions}
         />

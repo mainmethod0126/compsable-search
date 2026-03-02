@@ -1,29 +1,26 @@
-import type { KeywordSelectProps, SelectorInstance } from '../types'
+import type {
+  KeywordSelectorDefinition,
+  KeywordSelectorDriver,
+  KeywordSelectorProps,
+} from '../types'
+import { DEFAULT_KEYWORD_SELECTOR_DRIVER } from '../drivers/keywordDriver'
+import { createSelector } from './createSelector'
 
-export type CreateKeywordSelectorProps =
-  | KeywordSelectProps
-  | Omit<KeywordSelectProps, 'type'>
-
-function normalizeKeywordSelectorProps(
-  props: CreateKeywordSelectorProps,
-): KeywordSelectProps {
-  if ('type' in props) {
-    return props
-  }
-
-  return {
-    ...props,
-    type: 'keyword',
-  }
+export interface CreateKeywordSelectorOptions {
+  driver?: KeywordSelectorDriver
+  version?: string | number
 }
 
 export function createKeywordSelector(
   id: string,
-  props: CreateKeywordSelectorProps,
-): SelectorInstance<'keyword'> {
-  return {
+  props: KeywordSelectorProps,
+  options: CreateKeywordSelectorOptions = {},
+): KeywordSelectorDefinition {
+  return createSelector({
     id,
     type: 'keyword',
-    props: normalizeKeywordSelectorProps(props),
-  }
+    version: options.version,
+    props,
+    driver: options.driver ?? DEFAULT_KEYWORD_SELECTOR_DRIVER,
+  })
 }

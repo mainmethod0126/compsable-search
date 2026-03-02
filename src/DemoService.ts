@@ -1,6 +1,12 @@
-import type { Region, RegionDataSource } from './components'
+import type {
+  MaybePromise,
+  Region,
+  RegionDataSource,
+  SelectorLoadContext,
+} from './components'
 
 export type DemoRegionSampleProfile = 'small' | 'medium' | 'large'
+export type DemoRegionDataSourceMode = 'sync' | 'async'
 
 export interface DemoRegionProfileSpec {
   description: string
@@ -15,6 +21,10 @@ interface DemoRegionDataset {
   sidos: Region[]
   sigungusBySidoCode: Record<string, Region[]>
   eupmyeondongsBySigunguCode: Record<string, Region[]>
+}
+
+export interface DemoRegionDataSourceOptions {
+  mode?: DemoRegionDataSourceMode
 }
 
 const SIDO_CODE_POOL = [
@@ -171,12 +181,41 @@ function createDemoRegionDataset(spec: DemoRegionProfileSpec): DemoRegionDataset
 }
 
 function createDataSourceFromDataset(dataset: DemoRegionDataset): RegionDataSource {
+  const mode = 'sync'
+
+  return createDataSourceFromDatasetByMode(dataset, mode)
+}
+
+function createDataSourceFromDatasetByMode(
+  dataset: DemoRegionDataset,
+  mode: DemoRegionDataSourceMode,
+): RegionDataSource {
+  const resolveRegions = (
+    regions: Region[],
+    context?: SelectorLoadContext,
+  ): MaybePromise<Region[]> => {
+    if (context?.signal.aborted) {
+      return mode === 'async' ? Promise.resolve([]) : []
+    }
+
+    if (mode === 'sync') {
+      return cloneRegions(regions)
+    }
+
+    return Promise.resolve().then(() =>
+      context?.signal.aborted ? [] : cloneRegions(regions),
+    )
+  }
+
   return {
-    findAllSidos: () => cloneRegions(dataset.sidos),
-    findAllSigungus: (sidoCode: string) =>
-      cloneRegions(dataset.sigungusBySidoCode[sidoCode] ?? []),
-    findAllEupmyeondongs: (sigunguCode: string) =>
-      cloneRegions(dataset.eupmyeondongsBySigunguCode[sigunguCode] ?? []),
+    findAllSidos: (context?: SelectorLoadContext) =>
+      resolveRegions(dataset.sidos, context),
+    findAllSigungus: (sidoCode: string, context?: SelectorLoadContext) =>
+      resolveRegions(dataset.sigungusBySidoCode[sidoCode] ?? [], context),
+    findAllEupmyeondongs: (
+      sigunguCode: string,
+      context?: SelectorLoadContext,
+    ) => resolveRegions(dataset.eupmyeondongsBySigunguCode[sigunguCode] ?? [], context),
   }
 }
 
@@ -186,7 +225,10 @@ const DEMO_REGION_DATASETS: Record<DemoRegionSampleProfile, DemoRegionDataset> =
   large: createDemoRegionDataset(DEMO_REGION_PROFILE_SPECS.large),
 }
 
-const DEMO_REGION_DATA_SOURCES: Record<DemoRegionSampleProfile, RegionDataSource> = {
+const DEMO_REGION_SYNC_DATA_SOURCES: Record<
+  DemoRegionSampleProfile,
+  RegionDataSource
+> = {
   small: createDataSourceFromDataset(DEMO_REGION_DATASETS.small),
   medium: createDataSourceFromDataset(DEMO_REGION_DATASETS.medium),
   large: createDataSourceFromDataset(DEMO_REGION_DATASETS.large),
@@ -194,19 +236,37 @@ const DEMO_REGION_DATA_SOURCES: Record<DemoRegionSampleProfile, RegionDataSource
 
 export function createDemoRegionDataSource(
   profile: DemoRegionSampleProfile,
+  options: DemoRegionDataSourceOptions = {},
 ): RegionDataSource {
-  return DEMO_REGION_DATA_SOURCES[profile]
+  const mode = options.mode ?? 'sync'
+
+  if (mode === 'sync') {
+    return DEMO_REGION_SYNC_DATA_SOURCES[profile]
+  }
+
+  return createDataSourceFromDatasetByMode(DEMO_REGION_DATASETS[profile], mode)
 }
 
-export function findAllSidos(): Region[] {
-  return createDemoRegionDataSource('small').findAllSidos()
+export function findAllSidos(
+  context?: SelectorLoadContext,
+): MaybePromise<Region[]> {
+  return createDemoRegionDataSource('small').findAllSidos(context)
 }
 
-export function findAllSigungus(sidoCode: string): Region[] {
-  return createDemoRegionDataSource('small').findAllSigungus(sidoCode)
+export function findAllSigungus(
+  sidoCode: string,
+  context?: SelectorLoadContext,
+): MaybePromise<Region[]> {
+  return createDemoRegionDataSource('small').findAllSigungus(sidoCode, context)
 }
 
-export function findAllEupmyeondongs(sigunguCode: string): Region[] {
-  return createDemoRegionDataSource('small').findAllEupmyeondongs(sigunguCode)
+export function findAllEupmyeondongs(
+  sigunguCode: string,
+  context?: SelectorLoadContext,
+): MaybePromise<Region[]> {
+  return createDemoRegionDataSource('small').findAllEupmyeondongs(
+    sigunguCode,
+    context,
+  )
 }
 

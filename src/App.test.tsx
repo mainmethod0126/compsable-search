@@ -37,7 +37,7 @@ describe('App consumer integration sample', () => {
       within(eventLog).getByText(/region\.onSelectedEupmyeondong\(/),
     ).toBeInTheDocument()
     expect(
-      within(eventLog).getByText(/region\.onChange\(count=1\)/),
+      within(eventLog).getByText(/onValueChange\(.*selectorType=region.*count=1\)/),
     ).toBeInTheDocument()
     expect(within(eventLog).getByText('keyword.onClick')).toBeInTheDocument()
     expect(clearLogButton).toBeEnabled()
@@ -90,6 +90,9 @@ describe('App consumer integration sample', () => {
 
     expect(
       within(metricPanel).getByText(/region\.onClick 호출: 1회/),
+    ).toBeInTheDocument()
+    expect(
+      within(metricPanel).getByText(/onValueChange\(region\) 호출: 1회/),
     ).toBeInTheDocument()
     expect(
       within(metricPanel).getByText(/region\.onSelectedEupmyeondong 호출: 1회/),

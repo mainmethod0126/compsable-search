@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { SelectorPlugin } from './SelectorPlugin'
+import {
+  createSelectorPluginBindingKey,
+  type SelectorPlugin,
+} from './SelectorPlugin'
 import {
   createSelectorPluginRegistry,
   getAllSelectorPlugins,
@@ -9,8 +12,9 @@ import {
 import { SELECTOR_PLUGIN_VALIDATION_CODE } from './pluginValidation'
 
 type SelectorPluginType = SelectorPlugin['type']
+type ConcreteSelectorPluginType = Exclude<SelectorPluginType, undefined>
 
-function createPlugin<TType extends SelectorPluginType>(
+function createPlugin<TType extends ConcreteSelectorPluginType>(
   id: string,
   type: TType,
   hooks: Pick<SelectorPlugin<TType>, 'onInit' | 'onDispose'> = {},
@@ -23,6 +27,24 @@ function createPlugin<TType extends SelectorPluginType>(
 }
 
 describe('SelectorPluginRegistry', () => {
+  it('plugin 바인딩 키는 id+version 조합으로 안정적으로 계산된다', () => {
+    expect(createSelectorPluginBindingKey({ id: 'region-telemetry' })).toBe(
+      'region-telemetry@0',
+    )
+    expect(
+      createSelectorPluginBindingKey({
+        id: 'region-telemetry',
+        version: 'v2',
+      }),
+    ).toBe('region-telemetry@v2')
+    expect(
+      createSelectorPluginBindingKey({
+        id: 'region-telemetry',
+        version: 3,
+      }),
+    ).toBe('region-telemetry@3')
+  })
+
   it('create/get/getAll 유틸로 플러그인을 조회한다', () => {
     const regionPlugin = createPlugin('region', 'region')
     const keywordPlugin = createPlugin('keyword', 'keyword')
@@ -127,6 +149,26 @@ describe('SelectorPluginRegistry', () => {
         code: SELECTOR_PLUGIN_VALIDATION_CODE.MISSING_REQUIRED_HOOK,
         pluginId: 'region',
         hookName: 'onInit',
+      }),
+    )
+  })
+
+  it('V2 이벤트 훅도 requiredHooks 검증 대상으로 동작한다', () => {
+    const regionPlugin = createPlugin('region', 'region', {
+      onInit: () => undefined,
+    })
+    const registry = createSelectorPluginRegistry([regionPlugin])
+
+    const validationResult = validateSelectorPluginRegistry(registry, {
+      requiredHooks: ['onSelectionChange'],
+    })
+
+    expect(validationResult.isValid).toBe(false)
+    expect(validationResult.issues).toContainEqual(
+      expect.objectContaining({
+        code: SELECTOR_PLUGIN_VALIDATION_CODE.MISSING_REQUIRED_HOOK,
+        pluginId: 'region',
+        hookName: 'onSelectionChange',
       }),
     )
   })

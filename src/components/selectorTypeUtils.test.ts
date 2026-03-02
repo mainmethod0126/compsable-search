@@ -1,9 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type {
-  ComposableSelectProps,
-  KeywordSelectProps,
-  RegionSelectProps,
-} from './types'
+import type { SelectorDefinition } from './publicTypes'
 import {
   createSelectorResolutionWarningContext,
   isKeywordSelector,
@@ -13,21 +9,24 @@ import {
   type SelectorOfType,
 } from './selectorTypeUtils'
 
-const regionSelector: RegionSelectProps = {
-  type: 'region',
-  findAllSidos: () => [{ displayName: '서울특별시', name: '서울특별시', code: '11' }],
-  findAllSigungus: () => [{ displayName: '강남구', name: '강남구', code: '11680' }],
-  findAllEupmyeondongs: () => [
-    { displayName: '역삼동', name: '역삼동', code: '1168010100' },
-  ],
+function createSelectorDefinition<TType extends string>(
+  id: string,
+  type: TType,
+): SelectorDefinition<unknown, TType> {
+  return {
+    id,
+    type,
+    props: { id, type },
+    driver: {
+      type,
+      getTriggerLabel: () => `${type} selector`,
+      renderPanel: () => null,
+    },
+  }
 }
 
-const keywordSelector: KeywordSelectProps = {
-  type: 'keyword',
-  options: {
-    placeHolder: '키워드 선택',
-  },
-}
+const regionSelector = createSelectorDefinition('region-main', 'region')
+const keywordSelector = createSelectorDefinition('keyword-main', 'keyword')
 
 describe('selectorTypeUtils', () => {
   afterEach(() => {
@@ -35,7 +34,7 @@ describe('selectorTypeUtils', () => {
   })
 
   it('selector type literal로 원하는 selector를 조회한다', () => {
-    const selectors: ComposableSelectProps[] = [keywordSelector, regionSelector]
+    const selectors: SelectorDefinition[] = [keywordSelector, regionSelector]
 
     const resolvedRegion = resolveSelectorByType(selectors, 'region')
     const resolvedKeyword = resolveSelectorByType(selectors, 'keyword')
@@ -45,7 +44,7 @@ describe('selectorTypeUtils', () => {
   })
 
   it('region/keyword type guard가 런타임 분기를 명확하게 보장한다', () => {
-    const selectors: ComposableSelectProps[] = [regionSelector, keywordSelector]
+    const selectors: SelectorDefinition[] = [regionSelector, keywordSelector]
 
     const onlyRegion = selectors.filter(isRegionSelector)
     const onlyKeyword = selectors.filter(isKeywordSelector)
@@ -54,7 +53,7 @@ describe('selectorTypeUtils', () => {
     expect(onlyKeyword).toEqual([keywordSelector])
   })
 
-  it('SelectorOfType 공통 유틸 타입이 공개 계약 타입을 그대로 보존한다', () => {
+  it('SelectorOfType 공통 유틸 타입이 V2 selector 계약을 보존한다', () => {
     const expectsRegionSelectorType: SelectorOfType<'region'> = regionSelector
     const expectsKeywordSelectorType: SelectorOfType<'keyword'> = keywordSelector
 
@@ -66,18 +65,14 @@ describe('selectorTypeUtils', () => {
     const consoleWarnSpy = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => undefined)
-    const primaryRegionSelector: RegionSelectProps = {
-      ...regionSelector,
-      options: {
-        placeHolder: '지역 선택 A',
-      },
-    }
-    const secondaryRegionSelector: RegionSelectProps = {
-      ...regionSelector,
-      options: {
-        placeHolder: '지역 선택 B',
-      },
-    }
+    const primaryRegionSelector = createSelectorDefinition(
+      'region-primary',
+      'region',
+    )
+    const secondaryRegionSelector = createSelectorDefinition(
+      'region-secondary',
+      'region',
+    )
 
     const resolved = resolveSelectorByType(
       [primaryRegionSelector, secondaryRegionSelector],
@@ -94,14 +89,9 @@ describe('selectorTypeUtils', () => {
       .spyOn(console, 'warn')
       .mockImplementation(() => undefined)
 
-    const duplicatedRegionSelectors: ComposableSelectProps[] = [
+    const duplicatedRegionSelectors: SelectorDefinition[] = [
       regionSelector,
-      {
-        ...regionSelector,
-        options: {
-          placeHolder: '중복 지역 선택기',
-        },
-      },
+      createSelectorDefinition('region-duplicate', 'region'),
     ]
 
     resolveSelectorByType(duplicatedRegionSelectors, 'region', {
@@ -118,18 +108,18 @@ describe('selectorTypeUtils', () => {
     )
   })
 
-  it('selector type 중복 검증 유틸은 중복 type/count 메타데이터를 반환한다', () => {
+  it('selector type 중복 검증 유틸은 V2 임의 type까지 중복 메타데이터를 반환한다', () => {
     const duplicates = validateSelectorTypeUniqueness([
       regionSelector,
-      {
-        ...regionSelector,
-        options: {
-          placeHolder: '중복 지역 선택기',
-        },
-      },
+      createSelectorDefinition('region-duplicate', 'region'),
       keywordSelector,
+      createSelectorDefinition('custom-a', 'custom'),
+      createSelectorDefinition('custom-b', 'custom'),
     ])
 
-    expect(duplicates).toEqual([{ selectorType: 'region', count: 2 }])
+    expect(duplicates).toEqual([
+      { selectorType: 'region', count: 2 },
+      { selectorType: 'custom', count: 2 },
+    ])
   })
 })

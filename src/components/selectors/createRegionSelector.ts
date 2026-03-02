@@ -1,29 +1,30 @@
-import type { RegionSelectProps, SelectorInstance } from '../types'
+import type {
+  RegionSelectorDefinition,
+  RegionSelectorDriver,
+  RegionSelectorProps,
+} from '../types'
+import { createRegionDriver } from '../drivers/regionDriver'
+import { createSelector } from './createSelector'
 
-export type CreateRegionSelectorProps =
-  | RegionSelectProps
-  | Omit<RegionSelectProps, 'type'>
-
-function normalizeRegionSelectorProps(
-  props: CreateRegionSelectorProps,
-): RegionSelectProps {
-  if ('type' in props) {
-    return props
-  }
-
-  return {
-    ...props,
-    type: 'region',
-  }
+export interface CreateRegionSelectorOptions {
+  driver?: RegionSelectorDriver
+  version?: string | number
 }
 
 export function createRegionSelector(
   id: string,
-  props: CreateRegionSelectorProps,
-): SelectorInstance<'region'> {
-  return {
+  props: RegionSelectorProps,
+  options: CreateRegionSelectorOptions = {},
+): RegionSelectorDefinition {
+  const defaultDriver: RegionSelectorDriver = createRegionDriver({
+    selectorId: id,
+  })
+
+  return createSelector({
     id,
     type: 'region',
-    props: normalizeRegionSelectorProps(props),
-  }
+    version: options.version,
+    props,
+    driver: options.driver ?? defaultDriver,
+  })
 }

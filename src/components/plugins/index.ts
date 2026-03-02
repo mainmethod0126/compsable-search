@@ -1,5 +1,15 @@
+export { createSelectorPluginBindingKey } from './SelectorPlugin'
 export type {
   AnySelectorPlugin,
+  SelectorPluginBindingKeyInput,
+  SelectorPluginErrorEvent,
+  SelectorPluginErrorSourceHookName,
+  SelectorPluginEventHookName,
+  SelectorPluginHookName,
+  SelectorPluginPanelOpenChangeEvent,
+  SelectorPluginSelectionChangeMeta,
+  SelectorPluginSelectionChangeEvent,
+  SelectorPluginVersion,
   SelectorPlugin,
   SelectorPluginLifecycleHookName,
 } from './SelectorPlugin'

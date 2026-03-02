@@ -1,6 +1,6 @@
 import type {
   AnySelectorPlugin,
-  SelectorPluginLifecycleHookName,
+  SelectorPluginHookName,
 } from './SelectorPlugin'
 
 export const SELECTOR_PLUGIN_VALIDATION_CODE = {
@@ -15,7 +15,7 @@ export type SelectorPluginValidationCode =
 export interface SelectorPluginValidationIssue {
   code: SelectorPluginValidationCode
   pluginId: string
-  hookName?: SelectorPluginLifecycleHookName
+  hookName?: SelectorPluginHookName
   message: string
 }
 
@@ -26,7 +26,7 @@ export interface SelectorPluginValidationResult {
 
 export interface ValidateSelectorPluginsOptions {
   enabledPluginIds?: readonly string[]
-  requiredHooks?: readonly SelectorPluginLifecycleHookName[]
+  requiredHooks?: readonly SelectorPluginHookName[]
 }
 
 function collectDuplicatePluginIds(plugins: readonly AnySelectorPlugin[]): string[] {

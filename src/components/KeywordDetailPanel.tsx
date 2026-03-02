@@ -1,4 +1,5 @@
 import { useId, type KeyboardEventHandler } from 'react'
+import type { SelectedKeywordCondition } from './types'
 
 interface KeywordDetailPanelProps {
   label: string
@@ -7,11 +8,14 @@ interface KeywordDetailPanelProps {
   inputValue: string
   tokenCount: number
   maxTokens: number
+  tokens?: SelectedKeywordCondition[]
   errorMessage: string | null
   onInputChange: (value: string) => void
   onInputFocus: () => void
   onInputBlur: () => void
   onInputKeyDown: KeyboardEventHandler<HTMLInputElement>
+  onRemoveToken?: (tokenId: string) => void
+  onClearAllTokens?: () => void
 }
 
 export function KeywordDetailPanel({
@@ -21,11 +25,14 @@ export function KeywordDetailPanel({
   inputValue,
   tokenCount,
   maxTokens,
+  tokens = [],
   errorMessage,
   onInputChange,
   onInputFocus,
   onInputBlur,
   onInputKeyDown,
+  onRemoveToken,
+  onClearAllTokens,
 }: KeywordDetailPanelProps) {
   const instanceId = useId()
   const inputId = `cs-keyword-input-${instanceId}`
@@ -60,6 +67,36 @@ export function KeywordDetailPanel({
         <p className="cs-keyword-error" id={errorId} role="alert">
           {errorMessage}
         </p>
+      ) : null}
+      {tokens.length > 0 ? (
+        <div className="cs-keyword-token-area">
+          <ul className="cs-keyword-token-list" aria-label="선택된 키워드">
+            {tokens.map((token) => (
+              <li key={token.id} className="cs-keyword-token-item">
+                {onRemoveToken ? (
+                  <button
+                    type="button"
+                    className="cs-keyword-token-button"
+                    onClick={() => onRemoveToken(token.id)}
+                  >
+                    {token.displayName}
+                  </button>
+                ) : (
+                  <span className="cs-keyword-token-label">{token.displayName}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {onClearAllTokens ? (
+            <button
+              type="button"
+              className="cs-keyword-clear-all"
+              onClick={onClearAllTokens}
+            >
+              전체 삭제
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </section>
   )
