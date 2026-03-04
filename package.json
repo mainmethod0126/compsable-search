@@ -29,13 +29,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:large": "vitest run src/DemoService.test.ts src/App.test.tsx src/components/ComposableSearch.test.tsx",
+    "validate:contracts": "node scripts/validate-contracts.mjs",
     "verify:esm-consumer": "node scripts/verify-esm-consumer.mjs",
     "verify:cjs-consumer": "node scripts/verify-cjs-consumer.mjs",
     "verify:package": "node scripts/verify-package.mjs"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^18.3 || ^19",
+    "react-dom": "^18.3 || ^19"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

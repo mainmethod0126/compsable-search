@@ -1,10 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { SelectorDefinition } from './publicTypes'
 import {
-  createSelectorResolutionWarningContext,
+  COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE,
+  ComposableSearchConfigurationError,
+} from './configurationValidation'
+import {
   isKeywordSelector,
   isRegionSelector,
   resolveSelectorByType,
+  resolveSelectorsWithPolicy,
   validateSelectorTypeUniqueness,
   type SelectorOfType,
 } from './selectorTypeUtils'
@@ -29,10 +33,6 @@ const regionSelector = createSelectorDefinition('region-main', 'region')
 const keywordSelector = createSelectorDefinition('keyword-main', 'keyword')
 
 describe('selectorTypeUtils', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
   it('selector type literal로 원하는 selector를 조회한다', () => {
     const selectors: SelectorDefinition[] = [keywordSelector, regionSelector]
 
@@ -61,10 +61,7 @@ describe('selectorTypeUtils', () => {
     expect(expectsKeywordSelectorType.type).toBe('keyword')
   })
 
-  it('동일 type selector가 여러 개면 first-wins 정책으로 첫 selector를 선택한다', () => {
-    const consoleWarnSpy = vi
-      .spyOn(console, 'warn')
-      .mockImplementation(() => undefined)
+  it('동일 type selector가 여러 개면 strict 정책으로 DUPLICATE_SELECTOR_TYPE 예외를 던진다', () => {
     const primaryRegionSelector = createSelectorDefinition(
       'region-primary',
       'region',
@@ -74,38 +71,50 @@ describe('selectorTypeUtils', () => {
       'region',
     )
 
-    const resolved = resolveSelectorByType(
-      [primaryRegionSelector, secondaryRegionSelector],
-      'region',
-    )
+    expect(() =>
+      resolveSelectorByType([primaryRegionSelector, secondaryRegionSelector], 'region'),
+    ).toThrowError(ComposableSearchConfigurationError)
 
-    expect(resolved).toBe(primaryRegionSelector)
-    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
+    try {
+      resolveSelectorByType([primaryRegionSelector, secondaryRegionSelector], 'region')
+    } catch (error) {
+      const configurationError = error as ComposableSearchConfigurationError
+      expect(configurationError.code).toBe(
+        COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE.DUPLICATE_SELECTOR_TYPE,
+      )
+      expect(configurationError.causeContext).toEqual(
+        expect.objectContaining({
+          selectorType: 'region',
+          selectorIds: ['region-primary', 'region-secondary'],
+          duplicateCount: 2,
+        }),
+      )
+    }
   })
 
-  it('동일 렌더 컨텍스트에서는 중복 selector 경고를 type별 1회로 제한한다', () => {
-    const warningContext = createSelectorResolutionWarningContext()
-    const consoleWarnSpy = vi
-      .spyOn(console, 'warn')
-      .mockImplementation(() => undefined)
+  it('resolveSelectorsWithPolicy는 strict 구성 검증(assert) 이후 selector를 해석한다', () => {
+    const resolved = resolveSelectorsWithPolicy([
+      createSelectorDefinition('region-primary', 'region'),
+      createSelectorDefinition('keyword-primary', 'keyword'),
+    ])
 
-    const duplicatedRegionSelectors: SelectorDefinition[] = [
-      regionSelector,
-      createSelectorDefinition('region-duplicate', 'region'),
-    ]
+    expect(resolved.regionSelector?.id).toBe('region-primary')
+    expect(resolved.keywordSelector?.id).toBe('keyword-primary')
+  })
 
-    resolveSelectorByType(duplicatedRegionSelectors, 'region', {
-      warningContext,
-    })
-    resolveSelectorByType(duplicatedRegionSelectors, 'region', {
-      warningContext,
-    })
-
-    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[ComposableSearch] duplicate selector type detected'),
-      expect.objectContaining({ selectorType: 'region', count: 2 }),
+  it('resolveSelectorsWithPolicy는 selectors가 비어 있으면 EMPTY_SELECTORS 예외를 던진다', () => {
+    expect(() => resolveSelectorsWithPolicy([])).toThrowError(
+      ComposableSearchConfigurationError,
     )
+
+    try {
+      resolveSelectorsWithPolicy([])
+    } catch (error) {
+      const configurationError = error as ComposableSearchConfigurationError
+      expect(configurationError.code).toBe(
+        COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE.EMPTY_SELECTORS,
+      )
+    }
   })
 
   it('selector type 중복 검증 유틸은 V2 임의 type까지 중복 메타데이터를 반환한다', () => {

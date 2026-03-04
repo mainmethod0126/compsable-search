@@ -1,4 +1,10 @@
 import type { SelectorDefinition } from './publicTypes'
+import {
+  COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE,
+  ComposableSearchConfigurationError,
+  assertComposableSearchConfiguration,
+} from './configurationValidation'
+import type { ComposableSearchConfigurationIssue } from './publicTypes'
 
 type SelectorLike<TType extends string = string> = {
   type: TType
@@ -61,52 +67,43 @@ export function resolveSelectorByType<
   type: TType,
   options: ResolveSelectorByTypeOptions = {},
 ): SelectorOfType<TType, TSelector> | undefined {
-  let resolvedSelector: SelectorOfType<TType, TSelector> | undefined
-  let matchedCount = 0
+  void options
 
-  selectors.forEach((selector) => {
-    if (selector.type !== type) {
-      return
-    }
+  const matchedSelectors = selectors.filter(
+    (selector) => selector.type === type,
+  ) as SelectorOfType<TType, TSelector>[]
 
-    matchedCount += 1
-    if (!resolvedSelector) {
-      resolvedSelector = selector as SelectorOfType<TType, TSelector>
-    }
-  })
-
-  if (matchedCount > 1) {
-    const warningContext = options.warningContext
-    const wasWarned = warningContext?.warnedTypes.has(type) ?? false
-    if (!wasWarned) {
-      warningContext?.warnedTypes.add(type)
-      const warn = options.warn ?? console.warn
-      warn(DUPLICATE_SELECTOR_WARNING_PREFIX, {
+  if (matchedSelectors.length > 1) {
+    const issue: ComposableSearchConfigurationIssue = {
+      code: COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE.DUPLICATE_SELECTOR_TYPE,
+      message: `중복 selector type이 감지되었습니다: "${type}"`,
+      cause: {
         selectorType: type,
-        count: matchedCount,
-      })
+        selectorIds: matchedSelectors.map((selector, index) => {
+          const maybeWithId = selector as { id?: unknown }
+          return typeof maybeWithId.id === 'string' && maybeWithId.id.length > 0
+            ? maybeWithId.id
+            : `${type}#${index + 1}`
+        }),
+        duplicateCount: matchedSelectors.length,
+      },
     }
+
+    throw new ComposableSearchConfigurationError(issue)
   }
 
-  return resolvedSelector
+  return matchedSelectors[0]
 }
 
 export function resolveSelectorsWithPolicy(
   selectors: readonly SelectorDefinition[],
   options: ResolveSelectorByTypeOptions = {},
 ): ResolvedSelectors {
-  const warningContext =
-    options.warningContext ?? createSelectorResolutionWarningContext()
+  assertComposableSearchConfiguration({ selectors })
 
   return {
-    regionSelector: resolveSelectorByType(selectors, 'region', {
-      ...options,
-      warningContext,
-    }),
-    keywordSelector: resolveSelectorByType(selectors, 'keyword', {
-      ...options,
-      warningContext,
-    }),
+    regionSelector: resolveSelectorByType(selectors, 'region', options),
+    keywordSelector: resolveSelectorByType(selectors, 'keyword', options),
   }
 }
 

@@ -24,7 +24,7 @@ export interface ValueChangeMeta {
 
 export interface ChangeMeta {
   reason?: ValueChangeReason
-  source: ValueChangeSource | 'region' | 'keyword'
+  source: ValueChangeSource
   selectorId?: string
   selectorType?: SelectorType
 }
@@ -95,11 +95,11 @@ export interface RegionDataSource {
 
 export interface RegionSelectOptions {
   placeholder?: string
-  placeHolder?: string
   searchInputLabel?: string
   searchInputPlaceholder?: string
   searchIdleMessage?: string
   searchNoResultMessage?: string
+  searchErrorMessage?: string
   searchResultLimit?: number
   searchInputIcon?: ReactNode
   onChange?: (selectedItems: SearchSelectionItem[]) => void
@@ -138,7 +138,6 @@ export interface KeywordInvalidTokenContext {
 
 export interface KeywordSelectOptions {
   placeholder?: string
-  placeHolder?: string
   inputPlaceholder?: string
   label?: string
   guideText?: string
@@ -271,4 +270,59 @@ export interface ComposableSearchProps {
   plugins?: SelectorPluginRegistry
   className?: string
   style?: CSSProperties
+}
+
+export type ComposableSearchConfigurationErrorCode =
+  | 'MISSING_SELECTORS'
+  | 'EMPTY_SELECTORS'
+  | 'DUPLICATE_SELECTOR_TYPE'
+  | 'PLUGIN_SELECTOR_TYPE_MISMATCH'
+
+export interface MissingSelectorsIssueCause {
+  selectors: undefined
+}
+
+export interface EmptySelectorsIssueCause {
+  selectorsLength: 0
+}
+
+export interface DuplicateSelectorTypeIssueCause {
+  selectorType: SelectorType
+  selectorIds: string[]
+  duplicateCount: number
+}
+
+export interface PluginSelectorTypeMismatchIssueCause {
+  pluginId: string
+  pluginType: SelectorType
+  availableSelectorTypes: SelectorType[]
+}
+
+export type ComposableSearchConfigurationIssueCause =
+  | MissingSelectorsIssueCause
+  | EmptySelectorsIssueCause
+  | DuplicateSelectorTypeIssueCause
+  | PluginSelectorTypeMismatchIssueCause
+
+export interface ComposableSearchConfigurationIssue {
+  code: ComposableSearchConfigurationErrorCode
+  message: string
+  cause: ComposableSearchConfigurationIssueCause
+}
+
+export interface ComposableSearchConfigurationValidationResult {
+  isValid: boolean
+  issues: ComposableSearchConfigurationIssue[]
+}
+
+export interface ValidateComposableSearchConfigurationInput {
+  selectors?: readonly SelectorDefinition<any, any, SelectionItem>[]
+  plugins?: SelectorPluginRegistry
+}
+
+export interface ComposableSearchConfigurationRuntimeError extends Error {
+  name: 'ComposableSearchConfigurationError'
+  code: ComposableSearchConfigurationErrorCode
+  causeContext: ComposableSearchConfigurationIssueCause
+  guide: string
 }

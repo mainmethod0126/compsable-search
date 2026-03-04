@@ -1,68 +1,85 @@
-# 공개 API 하위 호환 규칙 (0.3.x)
+# 공개 API 호환 규칙 (0.5)
 
-## 메타
+문서 버전 `v0.5` · 적용 범위 `0.5.x` · 마지막 갱신 `2026-03-04`
 
-- 문서 버전: `v0.3`
-- 적용 범위: `0.3.x`
-- 마지막 갱신: `2026-02-28`
+## 1. 설치
 
-## 1. 기본 원칙
+```bash
+npm install compsable-search react react-dom
+```
 
-- `0.3.x`의 표준 공개 계약은 `value/defaultValue/onValueChange + selectors` 조합이다.
-- `ComposableSearchProps.placeholder`/`ComposableSearchProps.placeHolder`는 공개 API에서 제거되었다.
-- 기존 소비자 코드의 점진 전환을 위해 deprecated API(`selectorsProps`, `onChange`, selector 옵션의 `placeHolder`)를 유지한다.
-- deprecated API는 대체 경로를 문서에 항상 함께 제공한다.
-- 런타임 동작 변경이 필요한 경우, 동일 major 내에서는 additive 변경을 우선한다.
+- React peer dependency 계약: `react`, `react-dom` = `^18.3.0 || ^19.0.0`
+- 스타일 엔트리 계약: `import 'compsable-search/style.css'` 1회 import
 
-## 2. 안정 계약 (0.3 표준)
+## 2. 최소 예제 계약
 
-- 상태/이벤트
-  - `ComposableSearchProps.value?: ComposableSearchValue`
-  - `ComposableSearchProps.defaultValue?: ComposableSearchValue`
-  - `ComposableSearchProps.onValueChange?: (nextValue, meta) => void`
-  - `ChangeMeta.source: 'region' | 'keyword' | 'external'` (`initialize` 제거)
-- selector 구성
-  - `ComposableSearchProps.selectors?: SelectorInstance[]`
-  - `createRegionSelector(id, props)`
-  - `createKeywordSelector(id, props)`
-- 레거시 변환 유틸
-  - `adaptLegacySelectorsProps(selectorsProps): SelectorInstance[]`
-- placeholder 표준
-  - `RegionSelectOptions.placeholder`
-  - `KeywordSelectOptions.placeholder`
+- `ComposableSearchProps.selectors`는 required다.
+- `selectors`는 최소 1개 이상이어야 한다.
+- 상태/이벤트 계약은 `value/defaultValue/onValueChange` 조합이다.
+- `ChangeMeta.source` 허용값은 `selector | external`만 유지한다.
+- selector 옵션 표준 키는 `placeholder`다.
+- deprecated 필드(`selectorsProps`, `onChange`, `placeHolder`)는 0.5 공개 API에서 제거되었으며 재도입 금지다.
 
-## 3. deprecated 계약 (0.3.x 유지)
+```tsx
+<ComposableSearch
+  selectors={selectors}
+  value={value}
+  onValueChange={(nextValue, meta) => {
+    // meta.source: selector | external
+  }}
+/>
+```
 
-- `ComposableSearchProps.selectorsProps`
-- `ComposableSearchProps.onChange`
-- `RegionSelectOptions.placeHolder`
-- `KeywordSelectOptions.placeHolder`
+## 3. 검증 API 및 즉시 오류 정책
 
-규칙:
+### 3.1 공개 검증 API
 
-- 신규 문서/예제는 deprecated API를 기본 경로로 제시하지 않는다.
-- deprecated API를 설명할 때는 반드시 대체 필드를 바로 옆에 명시한다.
+- `validateComposableSearchConfiguration(config)`:
+  - 결과: `{ isValid, issues }`
+- `assertComposableSearchConfiguration(config)`:
+  - 첫 이슈를 `ComposableSearchConfigurationError`로 throw
 
-## 4. 허용/금지 변경 규칙
+### 3.2 런타임 정책
+
+- `ComposableSearch`는 렌더 시작 시 `assertComposableSearchConfiguration`을 수행한다.
+- 아래 케이스는 경고가 아니라 즉시 오류다.
+  - `selectors` 누락
+  - `selectors` 빈 배열
+  - duplicate `selector.type`
+  - `plugin.type`과 selector type 불일치
+
+### 3.3 에러 코드 4종 및 해결 가이드
+
+| 코드 | 의미 | 해결 가이드 |
+| --- | --- | --- |
+| `MISSING_SELECTORS` | `selectors`가 전달되지 않음 | `selectors` 필드를 필수로 전달하고 최소 1개의 selector를 등록 |
+| `EMPTY_SELECTORS` | `selectors` 길이가 0 | `region`, `keyword` 또는 커스텀 selector를 1개 이상 등록 |
+| `DUPLICATE_SELECTOR_TYPE` | 동일 `selector.type`이 2개 이상 | 중복 type selector를 제거하거나 type을 분리 |
+| `PLUGIN_SELECTOR_TYPE_MISMATCH` | `plugin.type`에 대응되는 selector type 없음 | plugin type 또는 selector 구성을 일치 |
+
+## 4. 마이그레이션 및 호환성 규칙
+
+### 4.1 0.4.x -> 0.5 전환 기준
+
+| 항목 | 0.4.x | 0.5 |
+| --- | --- | --- |
+| selector 전달 | `selectors` 권장 | `selectors` 필수 |
+| 이벤트 핸들러 | `onValueChange` 중심 | `onValueChange`만 사용 |
+| 옵션 키 | `placeholder` 중심 | `placeholder`만 사용 |
+| duplicate selector type | 우회 가능 정책 존재 | 즉시 오류(`DUPLICATE_SELECTOR_TYPE`) |
+| plugin type mismatch | 우회 가능 정책 존재 | 즉시 오류(`PLUGIN_SELECTOR_TYPE_MISMATCH`) |
+
+### 4.2 0.5.x에서의 허용/금지 변경
 
 | 구분 | 허용 | 금지 |
 | --- | --- | --- |
-| 타입 필드 | optional 필드 추가, 신규 타입 export 추가 | 기존 필드 삭제/이름 변경, optional -> required 변경 |
-| 상태/이벤트 | `onValueChange` 메타 확장(additive, 단 `source`는 `'region' \| 'keyword' \| 'external'` 유지) | `onValueChange` 호출 누락, `nextValue` 의미 변경, `source`에 `initialize` 재도입 |
-| selector API | `selectors` 관련 보조 유틸 추가 | `createRegionSelector`/`createKeywordSelector` 시그니처 파괴 |
-| 레거시 변환 | `adaptLegacySelectorsProps` 비파괴 개선 | 동일 입력에서 비결정적 id/타입 결과 반환 |
-| placeholder | `placeholder` 우선 정책 유지 | `placeHolder`를 `placeholder`보다 우선 처리 |
-| 중복 selector 처리 | first-wins + 개발 경고 유지 | first-wins 제거 또는 무경고 회귀 |
+| 타입 필드 | additive 확장(새 optional 필드/타입 export) | `selectors`를 optional로 되돌리는 변경 |
+| 이벤트 계약 | `onValueChange` 메타의 additive 확장 | `meta.source`에 `selector | external` 외 값 추가 |
+| 구성 검증 | 검증 유틸 추가 | 4개 에러 코드 의미/동작 변경 |
+| 런타임 정책 | 오류 메시지/가이드 개선 | duplicate type, plugin mismatch를 경고로 낮추는 변경 |
+| 레거시 필드 | 문서상 제거 상태 유지 | `selectorsProps`, `onChange`, `placeHolder` 재노출/재지원 |
 
-## 5. compat 제거 정책
-
-- `selectorsProps`, `onChange`, selector 옵션의 `placeHolder` 제거 목표 버전: **TBD**
-- 제거 전 조건:
-1. 최소 한 개 minor 릴리스 이상 deprecation 안내 유지
-2. 마이그레이션 문서(`docs/migration-notes/0.3.0-migration.md`) 최신화
-3. 코드 매핑표 및 자동 치환 가능한 예시 제공
-
-## 6. 검증 게이트
+### 4.3 검증 게이트
 
 - 타입/계약 회귀: `npm test`
 - 정적 검증: `npm run lint`

@@ -1,13 +1,18 @@
 import { useId, type ChangeEventHandler, type ReactNode } from 'react'
 import type { RegionSearchResult } from './regionSearchModel'
 
+type RegionSearchInputStatus = 'idle' | 'loading' | 'ready' | 'error'
+
 interface RegionSearchInputProps {
   value: string
   results: RegionSearchResult[]
+  status: RegionSearchInputStatus
   icon?: ReactNode
   label: string
   placeholder: string
   idleMessage?: string
+  loadingMessage?: string
+  errorMessage?: string
   onChange: (value: string) => void
   onSelectResult: (result: RegionSearchResult) => void
 }
@@ -31,23 +36,34 @@ function DefaultRegionSearchIcon() {
 export function RegionSearchInput({
   value,
   results,
+  status,
   icon,
   label,
   placeholder,
   idleMessage,
+  loadingMessage,
+  errorMessage,
   onChange,
   onSelectResult,
 }: RegionSearchInputProps) {
   const inputId = useId()
   const normalizedQuery = value.trim()
   const hasQuery = normalizedQuery.length > 0
+  const shouldShowResults = status === 'ready' && hasQuery && results.length > 0
+  const shouldShowLoadingState = status === 'loading'
+  const shouldShowErrorState = status === 'error' && Boolean(errorMessage)
+  const shouldShowIdleMessage =
+    status !== 'loading' &&
+    status !== 'error' &&
+    !hasQuery &&
+    Boolean(idleMessage)
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
     onChange(event.target.value)
   }
 
   return (
-    <section className="cs-region-search-input">
+    <section className="cs-region-search-input" data-status={status}>
       <div className="cs-region-search-field">
         <span aria-hidden="true" className="cs-region-search-icon">
           {icon ?? <DefaultRegionSearchIcon />}
@@ -63,23 +79,36 @@ export function RegionSearchInput({
           onChange={handleChange}
         />
       </div>
-      {hasQuery ? (
-        results.length > 0 ? (
-          <ul className="cs-region-search-preview-list">
-            {results.map((result) => (
-              <li key={`${result.level}-${result.id}`}>
-                <button
-                  className="cs-region-search-preview-item"
-                  type="button"
-                  onClick={() => onSelectResult(result)}
-                >
-                  {result.pathLabel}
-                </button>
+      {shouldShowErrorState ? (
+        <p className="cs-region-search-message cs-region-search-message-error" role="alert">
+          {errorMessage}
+        </p>
+      ) : shouldShowLoadingState ? (
+        <div className="cs-region-search-loading" role="status" aria-live="polite">
+          {loadingMessage ? <p className="cs-region-search-message">{loadingMessage}</p> : null}
+          <ul className="cs-region-search-skeleton-list" aria-hidden="true">
+            {Array.from({ length: 3 }, (_, index) => (
+              <li key={`region-search-skeleton-${index}`}>
+                <span className="cs-region-search-skeleton-item" />
               </li>
             ))}
           </ul>
-        ) : null
-      ) : idleMessage ? (
+        </div>
+      ) : shouldShowResults ? (
+        <ul className="cs-region-search-preview-list">
+          {results.map((result) => (
+            <li key={`${result.level}-${result.id}`}>
+              <button
+                className="cs-region-search-preview-item"
+                type="button"
+                onClick={() => onSelectResult(result)}
+              >
+                {result.pathLabel}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : shouldShowIdleMessage ? (
         <p className="cs-region-search-message">{idleMessage}</p>
       ) : null}
     </section>

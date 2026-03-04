@@ -1,8 +1,18 @@
 export { ComposableSearch } from './components/ComposableSearch'
 export {
+  COMPOSABLE_SEARCH_CONFIGURATION_ERROR_CODE,
+  ComposableSearchConfigurationError,
+  ComposableSearchConfigurationError as ComposableSearchConfigError,
+  assertComposableSearchConfiguration,
+  validateComposableSearchConfiguration,
+} from './components/configurationValidation'
+export {
+  createSelectorResolutionWarningContext,
   isKeywordSelector,
   isRegionSelector,
   resolveSelectorByType,
+  resolveSelectorsWithPolicy,
+  validateSelectorTypeUniqueness,
 } from './components/selectorTypeUtils'
 export {
   createSelector,
@@ -19,6 +29,13 @@ export {
 } from './components/plugins'
 export type {
   AnySelectorPlugin,
+  ChangeMeta,
+  ComposableSearchConfigurationErrorCode,
+  ComposableSearchConfigurationErrorCode as ComposableSearchConfigErrorCode,
+  ComposableSearchConfigurationIssue,
+  ComposableSearchConfigurationIssueCause,
+  ComposableSearchConfigurationRuntimeError,
+  ComposableSearchConfigurationValidationResult,
   ComposableSearchProps,
   ComposableSearchValue,
   KeywordInputErrorCode,
@@ -56,6 +73,9 @@ export type {
   SelectorPlugin,
   SelectorPluginLifecycleContext,
   SelectorPluginRegistry,
+  ValidateComposableSearchConfigurationInput,
+  ValueChangeReason,
+  ValueChangeSource,
   ValueChangeMeta,
 } from './components/publicTypes'
 export type { SelectorOfType, SelectorType } from './components/selectorTypeUtils'

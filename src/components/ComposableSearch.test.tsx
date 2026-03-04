@@ -95,6 +95,10 @@ function createRuntimeKeywordSelectorInstance(
 }
 
 describe('ComposableSearch V2 contract', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('selector/detailed/selected 영역을 순서대로 렌더링하고 selectors 순서를 보존한다', () => {
     render(
       <ComposableSearch
@@ -192,6 +196,34 @@ describe('ComposableSearch V2 contract', () => {
       expect.objectContaining({
         reason: 'clear',
         source: 'external',
+        selectorType: 'region',
+        selectorId: 'region-main',
+      } satisfies Partial<ValueChangeMeta>),
+    )
+  })
+
+  it('selector에서 동일 조건을 해제하면 onValueChange meta는 reason=remove/source=selector를 유지한다', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+
+    render(
+      <ComposableSearch
+        selectors={[createRuntimeRegionSelectorInstance('region-main')]}
+        onValueChange={onValueChange}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '지역 선택' }))
+    await user.click(screen.getByRole('button', { name: '서울특별시' }))
+    await user.click(screen.getByRole('button', { name: '강남구' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+    await user.click(screen.getByRole('checkbox', { name: '역삼동' }))
+
+    expect(onValueChange).toHaveBeenLastCalledWith(
+      [],
+      expect.objectContaining({
+        reason: 'remove',
+        source: 'selector',
         selectorType: 'region',
         selectorId: 'region-main',
       } satisfies Partial<ValueChangeMeta>),

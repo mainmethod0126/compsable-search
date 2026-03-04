@@ -19,7 +19,11 @@ await Promise.all(
   }),
 )
 
-const verifyScripts = ['scripts/verify-esm-consumer.mjs', 'scripts/verify-cjs-consumer.mjs']
+const verifyScripts = [
+  'scripts/validate-contracts.mjs',
+  'scripts/verify-esm-consumer.mjs',
+  'scripts/verify-cjs-consumer.mjs',
+]
 
 for (const relativeScriptPath of verifyScripts) {
   const scriptPath = path.join(rootDir, relativeScriptPath)
@@ -35,4 +39,4 @@ for (const relativeScriptPath of verifyScripts) {
 }
 
 assert.equal(requiredDistFiles.length, 4)
-console.log('패키지 검증 통과: dist 산출물 + ESM/CJS smoke')
+console.log('패키지 검증 통과: dist 산출물 + 계약 검증 + ESM/CJS smoke')

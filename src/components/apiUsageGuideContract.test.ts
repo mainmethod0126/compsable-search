@@ -1,83 +1,108 @@
 import { describe, expect, it } from 'vitest'
-import { createKeywordSelector, createRegionSelector } from './selectors'
+import * as componentsPublicApi from './index'
+import { createSelector } from './selectors'
 import type {
   ComposableSearchProps,
   ComposableSearchValue,
-  Region,
-  SelectorPluginRegistry,
+  SelectionItem,
+  SelectorDriver,
   ValueChangeMeta,
 } from './types'
 
-const SIDOS: Region[] = [{ displayName: '서울특별시', name: '서울특별시', code: '11' }]
-const SIGUNGUS: Record<string, Region[]> = {
-  '11': [{ displayName: '강남구', name: '강남구', code: '11680' }],
-}
-const EUPMYEONDONGS: Record<string, Region[]> = {
-  '11680': [{ displayName: '역삼동', name: '역삼동', code: '1168010100' }],
-}
-
-function createGuideExampleProps(): ComposableSearchProps {
-  const regionSelector = createRegionSelector('region-main', {
-    findAllSidos: () => [...SIDOS],
-    findAllSigungus: (sidoCode) => [...(SIGUNGUS[sidoCode] ?? [])],
-    findAllEupmyeondongs: (sigunguCode) => [...(EUPMYEONDONGS[sigunguCode] ?? [])],
-    options: {
-      placeholder: '지역 선택',
-      onClick: () => undefined,
-      onSelectedEupmyeondong: (selected: Region) => selected,
-    },
-  })
-
-  const keywordSelector = createKeywordSelector('keyword-main', {
-    options: {
-      placeholder: '키워드 선택',
-      label: '키워드 입력',
-      inputPlaceholder: '키워드를 입력하세요',
-      guideText: 'Enter로 키워드 확정',
-      maxTokens: 5,
-      maxTokenLength: 20,
-      normalization: {
-        casePolicy: 'lower',
-      },
-      onInvalidToken: () => undefined,
-      onClick: () => undefined,
-    },
-  })
-
-  const plugins: SelectorPluginRegistry = {
-    regionTelemetry: {
-      id: 'region-telemetry',
-      type: 'region',
-      onSelectionChange: (event) => event,
-      onPanelOpenChange: (event) => event,
-      onError: (event) => event,
-    },
+interface DemoSelectorProps {
+  options?: {
+    placeholder?: string
+    searchErrorMessage?: string
   }
+  items: Array<{ id: string; label: string }>
+}
 
-  const onValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
-    nextValue: ComposableSearchValue,
-    meta: ValueChangeMeta,
-  ) => ({ nextValue, meta })
+type IsRequiredKey<T, K extends keyof T> = Pick<T, K> extends Required<Pick<T, K>>
+  ? true
+  : false
+
+const regionDriver: SelectorDriver<DemoSelectorProps, 'region', SelectionItem> = {
+  type: 'region',
+  getTriggerLabel: (props) => props.options?.placeholder ?? '지역 선택',
+  loadItems: async (_context, props) =>
+    props.items.map((item) => ({
+      id: item.id,
+      displayName: item.label,
+      selectorId: 'region-main',
+      selectorType: 'region',
+    })),
+  renderPanel: () => null,
+}
+
+const keywordDriver: SelectorDriver<DemoSelectorProps, 'keyword', SelectionItem> = {
+  type: 'keyword',
+  getTriggerLabel: (props) => props.options?.placeholder ?? '키워드 선택',
+  loadItems: (_context, props) =>
+    props.items.map((item) => ({
+      id: item.id,
+      displayName: item.label,
+      selectorId: 'keyword-main',
+      selectorType: 'keyword',
+    })),
+  renderPanel: () => null,
+}
+
+const noopOnValueChange: NonNullable<ComposableSearchProps['onValueChange']> = () => undefined
+
+function createGuideExampleProps(
+  onValueChange: NonNullable<ComposableSearchProps['onValueChange']> = noopOnValueChange,
+): ComposableSearchProps {
+  const selectors = [
+    createSelector<DemoSelectorProps, 'region', SelectionItem>({
+      id: 'region-main',
+      type: 'region',
+      props: {
+        options: {
+          placeholder: '지역 선택',
+          searchErrorMessage: '검색 중 오류가 발생했습니다.',
+        },
+        items: [{ id: '11', label: '서울특별시' }],
+      },
+      driver: regionDriver,
+    }),
+    createSelector<DemoSelectorProps, 'keyword', SelectionItem>({
+      id: 'keyword-main',
+      type: 'keyword',
+      props: {
+        options: { placeholder: '키워드 선택' },
+        items: [{ id: 'kw:원룸', label: '원룸' }],
+      },
+      driver: keywordDriver,
+    }),
+  ] satisfies ComposableSearchProps['selectors']
 
   return {
+    value: [],
     defaultValue: [],
     onValueChange,
-    selectors: [regionSelector, keywordSelector],
-    plugins,
-  }
+    selectors,
+  } satisfies ComposableSearchProps
 }
 
-describe('API usage guide contract (V2)', () => {
-  it('가이드 예제는 selectors + onValueChange 중심 공개 계약으로 구성된다', () => {
+describe('API usage guide contract (V2 Generic Selector)', () => {
+  it('가이드 기본 예제는 createSelector 흐름으로 캐스팅 없이 타입 계약을 만족한다', () => {
     const props = createGuideExampleProps()
+    const selectorsRequired: IsRequiredKey<ComposableSearchProps, 'selectors'> = true
+    const hasSelectorsProps: (
+      'selectorsProps' extends keyof ComposableSearchProps ? true : false
+    ) = false
+    const hasOnChange: ('onChange' extends keyof ComposableSearchProps ? true : false) =
+      false
 
+    expect(selectorsRequired).toBe(true)
+    expect(hasSelectorsProps).toBe(false)
+    expect(hasOnChange).toBe(false)
     expect(props.selectors).toHaveLength(2)
+    expect(props.value).toEqual([])
+    expect(props.defaultValue).toEqual([])
     expect(props.onValueChange).toBeDefined()
-    expect(props.plugins).toBeDefined()
     expect('selectorsProps' in props).toBe(false)
     expect('onChange' in props).toBe(false)
-    expect('placeholder' in props).toBe(false)
-    expect('placeHolder' in props).toBe(false)
   })
 
   it('가이드 예제 selector 옵션은 placeholder 표준 필드만 사용한다', () => {
@@ -86,47 +111,72 @@ describe('API usage guide contract (V2)', () => {
     const keywordSelector = props.selectors.find((selector) => selector.type === 'keyword')
 
     expect(regionSelector?.props.options?.placeholder).toBe('지역 선택')
+    expect(regionSelector?.props.options?.searchErrorMessage).toBe(
+      '검색 중 오류가 발생했습니다.',
+    )
     expect(keywordSelector?.props.options?.placeholder).toBe('키워드 선택')
     expect('placeHolder' in (regionSelector?.props.options ?? {})).toBe(false)
     expect('placeHolder' in (keywordSelector?.props.options ?? {})).toBe(false)
   })
 
-  it('가이드 예제의 onValueChange meta 시그니처는 ValueChangeMeta(reason/source)를 따른다', () => {
-    const props = createGuideExampleProps()
-    const meta: ValueChangeMeta = {
+  it('가이드 예제의 onValueChange meta.source는 selector | external 기준을 따른다', () => {
+    const observedSources: ValueChangeMeta['source'][] = []
+    const props = createGuideExampleProps((_nextValue, meta) => {
+      observedSources.push(meta.source)
+    })
+    const value: ComposableSearchValue = []
+    const selectorMeta: ValueChangeMeta = {
       reason: 'add',
       source: 'selector',
       selectorType: 'region',
       selectorId: 'region-main',
     }
-    const value: ComposableSearchValue = []
+    const externalMeta: ValueChangeMeta = {
+      reason: 'replace',
+      source: 'external',
+    }
+    const allowedSources: ValueChangeMeta['source'][] = ['selector', 'external']
 
     expect(props.onValueChange).toBeDefined()
-    props.onValueChange?.(value, meta)
+    props.onValueChange?.(value, selectorMeta)
+    props.onValueChange?.(value, externalMeta)
+    expect(observedSources).toEqual(allowedSources)
+    expect(allowedSources).toEqual(['selector', 'external'])
   })
 
-  it('가이드 예제의 plugin 훅 시그니처는 V2 이벤트를 지원한다', () => {
+  it('가이드 예제는 validateComposableSearchConfiguration으로 렌더 전 구성을 검증한다', () => {
+    const hasValidateComposableSearchConfiguration: (
+      'validateComposableSearchConfiguration' extends keyof typeof componentsPublicApi
+        ? true
+        : false
+    ) = true
+    const validateComposableSearchConfiguration =
+      componentsPublicApi.validateComposableSearchConfiguration
     const props = createGuideExampleProps()
-    const plugin = props.plugins?.regionTelemetry
 
-    plugin?.onSelectionChange?.({
-      nextValue: [],
-      meta: {
-        reason: 'replace',
-        source: 'external',
-      },
-    })
-    plugin?.onPanelOpenChange?.({
-      selectorId: 'region-main',
-      selectorType: 'region',
-      isOpen: true,
-    })
-    plugin?.onError?.({
-      selectorId: 'region-main',
-      selectorType: 'region',
-      error: new Error('guide-plugin-error'),
-    })
+    expect(hasValidateComposableSearchConfiguration).toBe(true)
+    expect(typeof validateComposableSearchConfiguration).toBe('function')
 
-    expect(plugin).toBeDefined()
+    if (!validateComposableSearchConfiguration) {
+      return
+    }
+
+    const validResult = validateComposableSearchConfiguration({
+      selectors: props.selectors,
+    })
+    const missingSelectorsResult = validateComposableSearchConfiguration({})
+
+    expect(validResult).toEqual({
+      isValid: true,
+      issues: [],
+    })
+    expect(missingSelectorsResult.isValid).toBe(false)
+    expect(missingSelectorsResult.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'MISSING_SELECTORS',
+        }),
+      ]),
+    )
   })
 })

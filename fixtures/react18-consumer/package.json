@@ -1,0 +1,9 @@
+{
+  "name": "react18-consumer-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}

@@ -13,6 +13,7 @@ import {
 import { createSelectorPluginBindingKey } from './plugins'
 import type { AnySelectorPlugin } from './plugins'
 import { RegionSearchInput } from './RegionSearchInput'
+import { assertComposableSearchConfiguration } from './configurationValidation'
 import {
   buildRegionSearchIndex,
   DEFAULT_REGION_SEARCH_RESULT_LIMIT,
@@ -44,6 +45,9 @@ import './ComposableSearch.css'
 const DETAILED_CONDITION_PLACEHOLDER = '상세 조건을 선택해 주세요.'
 const REGION_SEARCH_LABEL = '지역 검색'
 const REGION_SEARCH_PLACEHOLDER = '지역명 입력'
+const DEFAULT_REGION_SEARCH_LOADING_MESSAGE = '지역 데이터를 불러오는 중입니다.'
+const DEFAULT_REGION_SEARCH_ERROR_MESSAGE =
+  '지역 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
 
 type InitializedPluginBinding = {
   bindingKey: string
@@ -60,8 +64,25 @@ type ApplySelectionChangeOptions = {
   reason?: ValueChangeMeta['reason']
 }
 
+type RegionSearchIndexLoadStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+type RegionSearchIndexState = {
+  status: RegionSearchIndexLoadStatus
+  index: RegionSearchResult[]
+}
+
 function resolveClassName(className?: string): string {
   return ['cs-composable-search', className].filter(Boolean).join(' ')
+}
+
+function resolveRegionSearchErrorMessage(
+  options: RegionSelectProps['options'] | undefined,
+): string {
+  const configuredMessage = options?.searchErrorMessage
+
+  return typeof configuredMessage === 'string' && configuredMessage.trim().length > 0
+    ? configuredMessage
+    : DEFAULT_REGION_SEARCH_ERROR_MESSAGE
 }
 
 function isSelectedKeywordCondition(
@@ -207,7 +228,7 @@ const regionSearchIndexCache = new WeakMap<
   RegionDataSource['findAllSidos'],
   WeakMap<
     RegionDataSource['findAllSigungus'],
-    WeakMap<RegionDataSource['findAllEupmyeondongs'], RegionSearchResult[]>
+    WeakMap<RegionDataSource['findAllEupmyeondongs'], Promise<RegionSearchResult[]>>
   >
 >()
 
@@ -216,7 +237,7 @@ function resolveRegionSearchIndexWithCache(
     RegionDataSource,
     'findAllSidos' | 'findAllSigungus' | 'findAllEupmyeondongs'
   >,
-): RegionSearchResult[] {
+): Promise<RegionSearchResult[]> {
   const { findAllSidos, findAllSigungus, findAllEupmyeondongs } = regionDataSource
   let sigunguCacheBySido = regionSearchIndexCache.get(findAllSidos)
   if (!sigunguCacheBySido) {
@@ -235,30 +256,47 @@ function resolveRegionSearchIndexWithCache(
     return cachedIndex
   }
 
-  const nextIndex = buildRegionSearchIndex({
-    findAllSidos,
-    findAllSigungus,
-    findAllEupmyeondongs,
+  const nextIndexPromise = Promise.resolve(
+    buildRegionSearchIndex({
+      findAllSidos,
+      findAllSigungus,
+      findAllEupmyeondongs,
+    }),
+  ).catch((error) => {
+    if (eupmyeondongCacheBySigungu.get(findAllEupmyeondongs) === nextIndexPromise) {
+      eupmyeondongCacheBySigungu.delete(findAllEupmyeondongs)
+    }
+
+    throw error
   })
-  if (!Array.isArray(nextIndex)) {
-    return []
-  }
-  eupmyeondongCacheBySigungu.set(findAllEupmyeondongs, nextIndex)
-  return nextIndex
+  eupmyeondongCacheBySigungu.set(findAllEupmyeondongs, nextIndexPromise)
+  return nextIndexPromise
 }
 
-export function ComposableSearch({
-  selectors,
-  plugins,
-  value,
-  defaultValue,
-  onValueChange,
-  className,
-  style,
-}: ComposableSearchProps) {
+export function ComposableSearch(props: ComposableSearchProps) {
+  const {
+    selectors: receivedSelectors,
+    plugins,
+    value,
+    defaultValue,
+    onValueChange,
+    className,
+    style,
+  } = props
+
+  assertComposableSearchConfiguration({
+    selectors: receivedSelectors,
+    plugins,
+  })
+
   const detailedPanelId = useId()
   const [activeSelectorId, setActiveSelectorId] = useState<string | null>(null)
   const [regionSearchQuery, setRegionSearchQuery] = useState('')
+  const [regionSearchIndexState, setRegionSearchIndexState] =
+    useState<RegionSearchIndexState>({
+      status: 'idle',
+      index: [],
+    })
   const [uncontrolledSelectedItems, setUncontrolledSelectedItems] = useState(() =>
     resolveInitialSelectionState({ value, defaultValue }).selectedItems,
   )
@@ -275,6 +313,8 @@ export function ComposableSearch({
     panelType: OpenPanelType
     isOpen: boolean
   } | null>(null)
+  const regionSearchIndexRequestSequenceRef = useRef(0)
+  const selectors = receivedSelectors
 
   const activeSelector = useMemo(
     () =>
@@ -322,23 +362,76 @@ export function ComposableSearch({
     return deduplicatedPlugins
   }, [runtimePlugins])
 
-  const regionSearchIndex = useMemo(
-    () =>
-      openedRegionSelector
-        ? resolveRegionSearchIndexWithCache(openedRegionSelector.props)
-        : [],
-    [openedRegionSelector],
-  )
+  useEffect(() => {
+    regionSearchIndexRequestSequenceRef.current += 1
+    const requestSequence = regionSearchIndexRequestSequenceRef.current
+    const abortController = new AbortController()
+
+    if (!openedRegionSelector) {
+      setRegionSearchIndexState((previousState) => {
+        if (previousState.status === 'idle' && previousState.index.length === 0) {
+          return previousState
+        }
+
+        return {
+          status: 'idle',
+          index: [],
+        }
+      })
+
+      return () => {
+        abortController.abort()
+      }
+    }
+
+    setRegionSearchIndexState({
+      status: 'loading',
+      index: [],
+    })
+
+    resolveRegionSearchIndexWithCache(openedRegionSelector.props)
+      .then((nextIndex) => {
+        if (
+          abortController.signal.aborted ||
+          regionSearchIndexRequestSequenceRef.current !== requestSequence
+        ) {
+          return
+        }
+
+        setRegionSearchIndexState({
+          status: 'ready',
+          index: nextIndex,
+        })
+      })
+      .catch(() => {
+        if (
+          abortController.signal.aborted ||
+          regionSearchIndexRequestSequenceRef.current !== requestSequence
+        ) {
+          return
+        }
+
+        setRegionSearchIndexState({
+          status: 'error',
+          index: [],
+        })
+      })
+
+    return () => {
+      abortController.abort()
+    }
+  }, [openedRegionSelector])
+
   const regionSearchResults = useMemo(
     () =>
-      filterRegionSearchResults(regionSearchIndex, regionSearchQuery, {
+      filterRegionSearchResults(regionSearchIndexState.index, regionSearchQuery, {
         limit:
           openedRegionSelector?.props.options?.searchResultLimit ??
           DEFAULT_REGION_SEARCH_RESULT_LIMIT,
       }),
     [
       openedRegionSelector?.props.options?.searchResultLimit,
-      regionSearchIndex,
+      regionSearchIndexState.index,
       regionSearchQuery,
     ],
   )
@@ -608,9 +701,13 @@ export function ComposableSearch({
   }
 
   const isDetailedPanelOpen = Boolean(activeSelector)
+  const regionSearchErrorMessage = resolveRegionSearchErrorMessage(
+    openedRegionSelector?.props.options,
+  )
   const shouldShowRegionSearchNoResultMessage =
     Boolean(openedRegionSelector) &&
     regionSearchQuery.trim().length > 0 &&
+    regionSearchIndexState.status === 'ready' &&
     regionSearchResults.length === 0 &&
     Boolean(openedRegionSelector?.props.options?.searchNoResultMessage)
 
@@ -684,6 +781,9 @@ export function ComposableSearch({
           <div className="cs-region-search-area" data-testid="cs-region-search-area">
             <RegionSearchInput
               icon={openedRegionSelector.props.options?.searchInputIcon}
+              status={regionSearchIndexState.status}
+              loadingMessage={DEFAULT_REGION_SEARCH_LOADING_MESSAGE}
+              errorMessage={regionSearchErrorMessage}
               idleMessage={openedRegionSelector.props.options?.searchIdleMessage}
               label={
                 openedRegionSelector.props.options?.searchInputLabel ??

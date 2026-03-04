@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import * as componentsPublicApi from './index'
 import type {
+  ChangeMeta,
   ComposableSearchProps,
   ComposableSearchValue,
   KeywordSelectOptions,
@@ -60,6 +62,10 @@ const regionSelector: SelectorDefinition<RegionSelectProps, 'region'> = {
   driver: regionDriver,
 }
 
+type IsRequiredKey<T, K extends keyof T> = Pick<T, K> extends Required<Pick<T, K>>
+  ? true
+  : false
+
 describe('public type contract', () => {
   it('MaybePromise는 sync/async 반환을 모두 수용한다', async () => {
     const syncValue: MaybePromise<number> = 1
@@ -69,7 +75,7 @@ describe('public type contract', () => {
     await expect(asyncValue).resolves.toBe(2)
   })
 
-  it('SelectionItem/ValueChangeMeta는 V2 reason/source 계약을 제공한다', () => {
+  it('SelectionItem/ValueChangeMeta/ChangeMeta는 reason/source 계약을 제공한다', () => {
     const selection: SelectionItem = {
       id: 'keyword:react',
       displayName: '키워드: react',
@@ -80,9 +86,14 @@ describe('public type contract', () => {
       },
     }
 
-    const meta: ValueChangeMeta = {
+    const valueMeta: ValueChangeMeta = {
       reason: 'add',
       source: 'selector',
+      selectorId: 'keyword-selector',
+      selectorType: 'keyword',
+    }
+    const changeMeta: ChangeMeta = {
+      source: 'external',
       selectorId: 'keyword-selector',
       selectorType: 'keyword',
     }
@@ -93,12 +104,15 @@ describe('public type contract', () => {
       'replace',
       'clear',
     ]
-    const allowedSources: ValueChangeMeta['source'][] = ['selector', 'external']
+    const allowedValueSources: ValueChangeMeta['source'][] = ['selector', 'external']
+    const allowedChangeSources: ChangeMeta['source'][] = ['selector', 'external']
 
     expect(selection.selectorType).toBe('keyword')
-    expect(meta.reason).toBe('add')
+    expect(valueMeta.reason).toBe('add')
+    expect(changeMeta.source).toBe('external')
     expect(allowedReasons).toHaveLength(4)
-    expect(allowedSources).toEqual(['selector', 'external'])
+    expect(allowedValueSources).toEqual(['selector', 'external'])
+    expect(allowedChangeSources).toEqual(['selector', 'external'])
   })
 
   it('RegionDataSource는 SelectorLoadContext 기반 MaybePromise 데이터 소스를 수용한다', async () => {
@@ -205,8 +219,49 @@ describe('public type contract', () => {
     expect(Object.keys(plugins)).toEqual(['regionTelemetry'])
   })
 
-  it('ComposableSearchProps는 selectors 기반 단일 공개 계약만 유지한다', () => {
+  it('validateComposableSearchConfiguration 공개 계약은 isValid/issues 결과 포맷을 제공한다', () => {
+    const hasValidateComposableSearchConfiguration: (
+      'validateComposableSearchConfiguration' extends keyof typeof componentsPublicApi
+        ? true
+        : false
+    ) = true
+    const validateComposableSearchConfiguration =
+      componentsPublicApi.validateComposableSearchConfiguration
+
+    expect(hasValidateComposableSearchConfiguration).toBe(true)
+    expect(typeof validateComposableSearchConfiguration).toBe('function')
+
+    if (!validateComposableSearchConfiguration) {
+      return
+    }
+
+    const invalidResult = validateComposableSearchConfiguration({})
+    const validResult = validateComposableSearchConfiguration({
+      selectors: [regionSelector],
+    })
+
+    expect(invalidResult.isValid).toBe(false)
+    expect(invalidResult.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'MISSING_SELECTORS',
+        }),
+      ]),
+    )
+    expect(validResult).toEqual({
+      isValid: true,
+      issues: [],
+    })
+  })
+
+  it('ComposableSearchProps는 selectors 필수 계약과 onValueChange 시그니처를 유지한다', () => {
     const value: ComposableSearchValue = []
+    const selectorsRequired: IsRequiredKey<ComposableSearchProps, 'selectors'> = true
+    const hasSelectorsProps: (
+      'selectorsProps' extends keyof ComposableSearchProps ? true : false
+    ) = false
+    const hasOnChange: ('onChange' extends keyof ComposableSearchProps ? true : false) =
+      false
 
     const onValueChange: NonNullable<ComposableSearchProps['onValueChange']> = (
       nextValue,
@@ -235,16 +290,30 @@ describe('public type contract', () => {
       selectorType: 'region',
     }
 
+    expect(selectorsRequired).toBe(true)
+    expect(hasSelectorsProps).toBe(false)
+    expect(hasOnChange).toBe(false)
     expect(props.selectors).toHaveLength(1)
     expect('selectorsProps' in props).toBe(false)
     expect('onChange' in props).toBe(false)
     props.onValueChange?.(value, meta)
   })
 
-  it('RegionSelectOptions/KeywordSelectOptions는 built-in driver 공용 옵션 계약을 유지한다', () => {
+  it('RegionSelectOptions/KeywordSelectOptions는 0.5 옵션 계약(searchErrorMessage/placeholder)을 따른다', () => {
+    const hasRegionPlaceHolder: (
+      'placeHolder' extends keyof RegionSelectOptions ? true : false
+    ) = false
+    const hasKeywordPlaceHolder: (
+      'placeHolder' extends keyof KeywordSelectOptions ? true : false
+    ) = false
+    const hasSearchErrorMessage: (
+      'searchErrorMessage' extends keyof RegionSelectOptions ? true : false
+    ) = true
+
     const regionOptions: RegionSelectOptions = {
       placeholder: '지역 선택',
       searchInputPlaceholder: '지역명 입력',
+      searchErrorMessage: '검색 중 오류가 발생했습니다.',
     }
     const keywordOptions: KeywordSelectOptions = {
       placeholder: '키워드 선택',
@@ -252,7 +321,11 @@ describe('public type contract', () => {
       maxTokenLength: 20,
     }
 
+    expect(hasRegionPlaceHolder).toBe(false)
+    expect(hasKeywordPlaceHolder).toBe(false)
+    expect(hasSearchErrorMessage).toBe(true)
     expect(regionOptions.placeholder).toBe('지역 선택')
+    expect(regionOptions.searchErrorMessage).toBe('검색 중 오류가 발생했습니다.')
     expect(keywordOptions.maxTokens).toBe(5)
   })
 })
