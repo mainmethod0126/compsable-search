@@ -1,2 +1,242 @@
-@import "../../../src/index.css";
-@import "../../../src/components/ComposableSearch.css";
+:root {
+  --cs-shell-gap: 1rem;
+  --cs-shell-radius: 1rem;
+  --cs-shell-border-color: color-mix(in srgb, #0f172a 14%, white);
+  --cs-shell-surface: #ffffff;
+  --cs-shell-surface-muted: #f8fafc;
+  --cs-shell-surface-accent: #eff6ff;
+  --cs-shell-text-primary: #0f172a;
+  --cs-shell-text-secondary: #475569;
+  --cs-shell-text-muted: #64748b;
+  --cs-shell-accent: #0f766e;
+  --cs-shell-accent-strong: #115e59;
+  --cs-shell-danger: #b91c1c;
+  --cs-shell-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.cs-shell {
+  display: grid;
+  gap: var(--cs-shell-gap);
+  grid-template-columns: minmax(0, 1fr);
+  color: var(--cs-shell-text-primary);
+}
+
+.cs-shell[data-shell-state='focus'],
+.cs-shell[data-shell-state='focus-open'],
+.cs-shell[data-shell-state='keyboard-focus'],
+.cs-shell[data-shell-state='keyboard-open'] {
+  outline: 2px solid color-mix(in srgb, var(--cs-shell-accent) 35%, white);
+  outline-offset: 4px;
+}
+
+.cs-shell__trigger-area,
+.cs-shell__panel-host,
+.cs-shell__selected-basket {
+  border: 1px solid var(--cs-shell-border-color);
+  border-radius: var(--cs-shell-radius);
+  background: var(--cs-shell-surface);
+  box-shadow: var(--cs-shell-shadow);
+}
+
+.cs-shell__trigger-area {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 45%),
+    var(--cs-shell-surface);
+}
+
+.cs-shell__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.875rem;
+  background: var(--cs-shell-surface-muted);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.cs-shell__trigger:hover {
+  border-color: color-mix(in srgb, var(--cs-shell-accent) 35%, white);
+  background: var(--cs-shell-surface-accent);
+  transform: translateY(-1px);
+}
+
+.cs-shell__trigger:focus-visible,
+.cs-shell__clear-button:focus-visible,
+.cs-shell__selected-remove:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cs-shell-accent) 35%, white);
+  outline-offset: 2px;
+}
+
+.cs-shell__trigger[data-shell-state='active'] {
+  border-color: color-mix(in srgb, var(--cs-shell-accent) 45%, white);
+  background: color-mix(in srgb, var(--cs-shell-accent) 10%, white);
+}
+
+.cs-shell__trigger-label {
+  font-weight: 600;
+}
+
+.cs-shell__trigger-count {
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: white;
+  color: var(--cs-shell-text-secondary);
+}
+
+.cs-shell__trigger[data-selection-state='selected'] .cs-shell__trigger-count,
+.cs-shell__trigger-count[data-selection-state='selected'] {
+  background: color-mix(in srgb, var(--cs-shell-accent) 12%, white);
+  color: var(--cs-shell-accent-strong);
+}
+
+.cs-shell__trigger-indicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: var(--cs-shell-accent);
+}
+
+.cs-shell__panel-host,
+.cs-shell__selected-basket {
+  padding: 1rem;
+}
+
+.cs-shell__panel-host[data-panel-state='closed'] {
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, 0.04), rgba(255, 255, 255, 0.96)),
+    var(--cs-shell-surface);
+}
+
+.cs-shell__panel-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.cs-shell__panel-header {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, #0f172a 10%, white);
+}
+
+.cs-shell__panel-title,
+.cs-shell__selected-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cs-shell__panel-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.cs-shell__panel-empty {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 10rem;
+  align-content: center;
+  justify-items: start;
+  padding: 0.5rem;
+}
+
+.cs-shell__panel-empty-title,
+.cs-shell__panel-empty-description,
+.cs-shell__selected-empty {
+  margin: 0;
+}
+
+.cs-shell__panel-empty-description,
+.cs-shell__selected-empty {
+  color: var(--cs-shell-text-secondary);
+}
+
+.cs-shell__selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.cs-shell__clear-button,
+.cs-shell__selected-remove {
+  border: 1px solid color-mix(in srgb, #0f172a 12%, white);
+  border-radius: 999px;
+  background: white;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cs-shell__clear-button {
+  padding: 0.5rem 0.875rem;
+}
+
+.cs-shell__clear-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.cs-shell__selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cs-shell__selected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 999px;
+  background: var(--cs-shell-surface-muted);
+}
+
+.cs-shell__selected-basket[data-selection-state='selected'] .cs-shell__selected-item {
+  background: color-mix(in srgb, var(--cs-shell-accent) 8%, white);
+}
+
+.cs-shell__selected-label {
+  font-size: 0.9375rem;
+}
+
+.cs-shell__selected-remove {
+  padding: 0.25rem 0.625rem;
+  color: var(--cs-shell-danger);
+}
+
+@media (min-width: 720px) {
+  .cs-shell {
+    grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .cs-shell__selected-basket {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1080px) {
+  .cs-shell {
+    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr) minmax(18rem, 22rem);
+  }
+
+  .cs-shell__selected-basket {
+    grid-column: auto;
+  }
+}

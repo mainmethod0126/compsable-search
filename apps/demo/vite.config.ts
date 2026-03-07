@@ -23,6 +23,10 @@ export default defineConfig({
         replacement: resolveWorkspacePath('packages/react/src/index.ts'),
       },
       {
+        find: '@compsable-search/core',
+        replacement: resolveWorkspacePath('packages/core/src/index.ts'),
+      },
+      {
         find: '@compsable-search/selector-region',
         replacement: resolveWorkspacePath('packages/selector-region/src/index.ts'),
       },

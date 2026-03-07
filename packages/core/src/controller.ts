@@ -1,6 +1,7 @@
 import type {
   CreateHeadlessCoreControllerOptions,
   HeadlessCoreController,
+  HeadlessCoreControllerState,
   SelectionChangeEvent,
   SelectorPluginErrorEvent,
   SelectionItem,
@@ -46,27 +47,45 @@ export function createHeadlessCoreController<
   })
   const panel = createPanelStateController()
   const bindings = resolveSelectorPluginBindings(selectors, options.plugins ?? [])
+  const listeners = new Set<() => void>()
+  let state: HeadlessCoreControllerState<TSelectionItem>
 
   const reportError = (event: SelectorPluginErrorEvent) => {
     onError?.(event)
+  }
+  const syncState = () => {
+    const storeSnapshot = store.getSnapshot()
+    const panelSnapshot = panel.getSnapshot()
+
+    state = {
+      selectors,
+      plugins: bindings,
+      value: storeSnapshot.value,
+      isControlled: storeSnapshot.isControlled,
+      activeSelectorId: panelSnapshot.activeSelectorId,
+      isPanelOpen: panelSnapshot.isOpen,
+    }
+  }
+  const notifyListeners = () => {
+    listeners.forEach((listener) => {
+      listener()
+    })
   }
 
   bindings.forEach((binding) => {
     dispatchPluginLifecycle(binding, 'onInit', reportError)
   })
+  syncState()
 
   return {
     getState() {
-      const storeSnapshot = store.getSnapshot()
-      const panelSnapshot = panel.getSnapshot()
+      return state
+    },
+    subscribe(listener) {
+      listeners.add(listener)
 
-      return {
-        selectors,
-        plugins: bindings,
-        value: storeSnapshot.value,
-        isControlled: storeSnapshot.isControlled,
-        activeSelectorId: panelSnapshot.activeSelectorId,
-        isPanelOpen: panelSnapshot.isOpen,
+      return () => {
+        listeners.delete(listener)
       }
     },
     syncExternalValue(nextValue) {
@@ -78,6 +97,8 @@ export function createHeadlessCoreController<
 
       options.onSelectionChange?.(event)
       dispatchPluginSelectionChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     replaceSelection(selectorId, nextItems, source = 'selector') {
@@ -89,6 +110,8 @@ export function createHeadlessCoreController<
 
       options.onSelectionChange?.(event)
       dispatchPluginSelectionChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     removeSelection(selectorId, itemIds, source = 'external') {
@@ -100,6 +123,8 @@ export function createHeadlessCoreController<
 
       options.onSelectionChange?.(event)
       dispatchPluginSelectionChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     clearSelection(selectorId, source = 'external') {
@@ -111,6 +136,8 @@ export function createHeadlessCoreController<
 
       options.onSelectionChange?.(event)
       dispatchPluginSelectionChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     openPanel(selectorId, source = 'selector') {
@@ -121,6 +148,8 @@ export function createHeadlessCoreController<
 
       options.onPanelOpenChange?.(event)
       dispatchPluginPanelOpenChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     closePanel(source = 'external') {
@@ -131,6 +160,8 @@ export function createHeadlessCoreController<
 
       options.onPanelOpenChange?.(event)
       dispatchPluginPanelOpenChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     togglePanel(selectorId, source = 'selector') {
@@ -141,12 +172,15 @@ export function createHeadlessCoreController<
 
       options.onPanelOpenChange?.(event)
       dispatchPluginPanelOpenChange(bindings, event, reportError)
+      syncState()
+      notifyListeners()
       return event
     },
     destroy() {
       bindings.forEach((binding) => {
         dispatchPluginLifecycle(binding, 'onDispose', reportError)
       })
+      listeners.clear()
     },
   }
 }

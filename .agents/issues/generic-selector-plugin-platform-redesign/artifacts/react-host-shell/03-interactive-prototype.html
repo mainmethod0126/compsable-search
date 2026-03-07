@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>T-023 React Host Shell Prototype</title>
+    <style>
+      :root {
+        --cs-shell-gap: 16px;
+        --cs-shell-radius: 16px;
+        --cs-shell-border-color: #d8e0ea;
+        --cs-shell-surface: #ffffff;
+        --cs-shell-surface-muted: #f8fafc;
+        --cs-shell-surface-accent: #eff6ff;
+        --cs-shell-text-primary: #0f172a;
+        --cs-shell-text-secondary: #475569;
+        --cs-shell-accent: #0f766e;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Pretendard", "Noto Sans KR", sans-serif;
+        color: var(--cs-shell-text-primary);
+        background:
+          radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 28%),
+          #f3f6fb;
+      }
+
+      .page {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      .cs-shell {
+        display: grid;
+        gap: var(--cs-shell-gap);
+      }
+
+      .card {
+        border: 1px solid var(--cs-shell-border-color);
+        border-radius: var(--cs-shell-radius);
+        background: var(--cs-shell-surface);
+        padding: 16px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      .cs-shell__trigger-area {
+        display: grid;
+        gap: 12px;
+      }
+
+      .cs-shell__trigger {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        background: var(--cs-shell-surface-muted);
+        cursor: pointer;
+      }
+
+      .cs-shell__trigger[data-active="true"] {
+        border-color: rgba(15, 118, 110, 0.4);
+        background: var(--cs-shell-surface-accent);
+      }
+
+      .cs-shell__panel-body {
+        display: grid;
+        gap: 12px;
+      }
+
+      .action-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        border: 1px solid var(--cs-shell-border-color);
+        border-radius: 999px;
+        background: white;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--cs-shell-surface-muted);
+        border-radius: 999px;
+        padding: 8px 12px;
+      }
+
+      .empty {
+        color: var(--cs-shell-text-secondary);
+      }
+
+      @media (min-width: 720px) {
+        .cs-shell {
+          grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+        }
+
+        .basket {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (min-width: 1080px) {
+        .cs-shell {
+          grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr) minmax(18rem, 22rem);
+        }
+
+        .basket {
+          grid-column: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>T-023 Interactive Prototype</h1>
+      <p>trigger area, panel host, selected basket 흐름을 설계 단계에서 확인하기 위한 단일 파일 mock입니다.</p>
+
+      <section class="cs-shell" data-shell-state="idle">
+        <section class="card cs-shell__trigger-area">
+          <button class="cs-shell__trigger" data-selector="region" data-active="false">
+            <span>지역 선택</span>
+            <span>0</span>
+          </button>
+          <button class="cs-shell__trigger" data-selector="keyword" data-active="false">
+            <span>키워드 선택</span>
+            <span>0</span>
+          </button>
+          <button class="cs-shell__trigger" data-selector="custom" data-active="false">
+            <span>커스텀 선택</span>
+            <span>0</span>
+          </button>
+        </section>
+
+        <section class="card">
+          <h2 id="panel-title">선택할 조건을 고르세요</h2>
+          <div class="cs-shell__panel-body" id="panel-body">
+            <p class="empty">trigger area에서 selector를 열면 panel host에 selector 전용 UI가 표시됩니다.</p>
+          </div>
+        </section>
+
+        <section class="card basket">
+          <div class="action-row" style="justify-content:space-between">
+            <h2 style="margin:0">선택된 항목</h2>
+            <button class="button" id="clear-all">전체 삭제</button>
+          </div>
+          <ul class="chips" id="basket-list"></ul>
+          <p class="empty" id="basket-empty">선택된 항목이 없습니다.</p>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        activeSelector: null,
+        selections: [],
+      };
+
+      const triggerButtons = [...document.querySelectorAll('.cs-shell__trigger')];
+      const panelTitle = document.getElementById('panel-title');
+      const panelBody = document.getElementById('panel-body');
+      const basketList = document.getElementById('basket-list');
+      const basketEmpty = document.getElementById('basket-empty');
+      const clearAllButton = document.getElementById('clear-all');
+
+      const panelConfigs = {
+        region: { title: '지역 선택', label: '서울' },
+        keyword: { title: '키워드 선택', label: 'React' },
+        custom: { title: '커스텀 선택', label: '맞춤 조건' },
+      };
+
+      function render() {
+        triggerButtons.forEach((button) => {
+          const selector = button.dataset.selector;
+          const count = state.selections.filter((item) => item.selector === selector).length;
+          button.dataset.active = String(state.activeSelector === selector);
+          button.querySelector('span:last-child').textContent = String(count);
+        });
+
+        if (!state.activeSelector) {
+          panelTitle.textContent = '선택할 조건을 고르세요';
+          panelBody.innerHTML = '<p class="empty">trigger area에서 selector를 열면 panel host에 selector 전용 UI가 표시됩니다.</p>';
+        } else {
+          const config = panelConfigs[state.activeSelector];
+          panelTitle.textContent = config.title;
+          panelBody.innerHTML = `
+            <p>${config.title} 패널 mock</p>
+            <div class="action-row">
+              <button class="button" id="add-selection">항목 추가</button>
+              <button class="button" id="close-panel">패널 닫기</button>
+            </div>
+          `;
+
+          document.getElementById('add-selection').addEventListener('click', () => {
+            state.selections = [
+              ...state.selections.filter((item) => item.selector !== state.activeSelector),
+              { selector: state.activeSelector, label: config.label },
+            ];
+            render();
+          });
+
+          document.getElementById('close-panel').addEventListener('click', () => {
+            state.activeSelector = null;
+            render();
+          });
+        }
+
+        basketList.innerHTML = '';
+        state.selections.forEach((item, index) => {
+          const li = document.createElement('li');
+          li.className = 'chip';
+          li.innerHTML = `
+            <span>${item.label}</span>
+            <button class="button" data-remove-index="${index}">삭제</button>
+          `;
+          basketList.appendChild(li);
+        });
+
+        basketEmpty.hidden = state.selections.length > 0;
+
+        document.querySelectorAll('[data-remove-index]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const index = Number(button.getAttribute('data-remove-index'));
+            state.selections.splice(index, 1);
+            render();
+          });
+        });
+      }
+
+      triggerButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const selector = button.dataset.selector;
+          state.activeSelector = state.activeSelector === selector ? null : selector;
+          render();
+        });
+      });
+
+      clearAllButton.addEventListener('click', () => {
+        state.selections = [];
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

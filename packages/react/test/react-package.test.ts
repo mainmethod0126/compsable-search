@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ComposableSearch } from '../src/index'
+import * as reactPackage from '../src/index'
 
 describe('@compsable-search/react facade', () => {
-  it('exports the React host component', () => {
-    expect(typeof ComposableSearch).toBe('function')
+  it('runtime export를 ComposableSearch로 제한한다', () => {
+    expect(Object.keys(reactPackage)).toEqual(['ComposableSearch'])
+    expect(typeof reactPackage.ComposableSearch).toBe('function')
   })
 })

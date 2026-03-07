@@ -10,8 +10,12 @@
     "outDir": "./dist/types",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["react", "react-dom", "node", "vite/client"]
+    "types": ["react", "react-dom", "node", "vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@compsable-search/core": ["../core/src/index.ts"]
+    }
   },
-  "include": ["src/**/*", "../../src/components/**/*"],
-  "exclude": ["test/**/*", "../../src/**/*.test.ts", "../../src/**/*.test.tsx"]
+  "include": ["src/**/*"],
+  "exclude": ["test/**/*"]
 }

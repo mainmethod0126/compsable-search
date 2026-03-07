@@ -7,6 +7,14 @@ const packageDir = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [
+      {
+        find: '@compsable-search/core',
+        replacement: path.resolve(packageDir, '../core/src/index.ts'),
+      },
+    ],
+  },
   build: {
     outDir: 'dist',
     lib: {
@@ -16,7 +24,7 @@ export default defineConfig({
       cssFileName: 'style',
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: ['@compsable-search/core', 'react', 'react-dom', 'react/jsx-runtime'],
     },
   },
 })

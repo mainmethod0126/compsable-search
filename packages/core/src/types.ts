@@ -259,6 +259,7 @@ export interface HeadlessCoreController<
   TSelectionItem extends SelectionItem = SelectionItem,
 > {
   getState(): HeadlessCoreControllerState<TSelectionItem>
+  subscribe(listener: () => void): () => void
   syncExternalValue(nextValue: readonly TSelectionItem[]): SelectionChangeEvent<TSelectionItem> | null
   replaceSelection(
     selectorId: SelectorId,

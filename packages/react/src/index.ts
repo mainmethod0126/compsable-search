@@ -1,15 +1,29 @@
-export { ComposableSearch } from '../../../src/components/ComposableSearch'
+export { ComposableSearch } from './ComposableSearch'
 export type {
-  ChangeMeta,
+  ComposableSearchLabels,
   ComposableSearchProps,
+  ComposableSearchShellProps,
   ComposableSearchValue,
+  PanelContainerProps,
+  ReactHostSelectorDefinition,
+  ReactHostSelectorDriver,
+  ReactPanelOpenChangeEvent,
+  ReactValueChangeMeta,
+  SelectedBasketItem,
+  SelectedBasketProps,
+  SelectorErrorEvent,
+  SelectorPanelProps,
+  TriggerListItem,
+  TriggerListProps,
+} from './types'
+export type {
   PanelOpenChangeEvent,
-  SearchSelectionItem,
   SelectionChangeEvent,
   SelectionItem,
-  SelectorDefinition,
-  SelectorErrorEvent,
-  SelectorInstance,
-  SelectorPanelProps,
+  SelectorPlugin,
+  SelectorPluginErrorEvent,
+  SelectorType,
+  SelectorVersion,
   ValueChangeMeta,
-} from '../../../src/components/publicTypes'
+} from '@compsable-search/core'
+

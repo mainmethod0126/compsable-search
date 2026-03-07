@@ -21,6 +21,7 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
+      "@compsable-search/core": ["../../packages/core/src/index.ts"],
       "@compsable-search/react": ["../../packages/react/src/index.ts"],
       "@compsable-search/react/style.css": ["../../packages/react/src/style.css"],
       "@compsable-search/selector-region": ["../../packages/selector-region/src/index.ts"],
