@@ -1,5 +1,5 @@
-export { KeywordDetailPanel } from '../../../src/components/KeywordDetailPanel'
-export { createKeywordSelector } from '../../../src/components/selectors/createKeywordSelector'
+export { KeywordDetailPanel } from './KeywordDetailPanel'
+export { createKeywordSelector } from './selectors/createKeywordSelector'
 export {
   DEFAULT_KEYWORD_SELECTOR_ID,
   DEFAULT_MAX_KEYWORD_TOKENS,
@@ -10,7 +10,7 @@ export {
   resolveKeywordInputErrorMessage,
   resolveKeywordPolicy,
   transitionKeywordInputState,
-} from '../../../src/components/keywordInputModel'
+} from './keywordInputModel'
 export type {
   KeywordInputErrorCode,
   KeywordInvalidTokenContext,
@@ -25,10 +25,10 @@ export type {
   SelectedKeywordCondition,
   SelectionItem,
   SelectorPanelProps,
-} from '../../../src/components/publicTypes'
+} from './types'
 export type {
   KeywordInputEvent,
   KeywordInputState,
   KeywordInputStatus,
   KeywordPolicy,
-} from '../../../src/components/keywordInputModel'
+} from './keywordInputModel'

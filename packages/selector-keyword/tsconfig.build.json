@@ -12,6 +12,6 @@
     "noUnusedParameters": false,
     "types": ["react", "node", "vite/client"]
   },
-  "include": ["src/**/*", "../../src/components/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["test/**/*", "../../src/**/*.test.ts", "../../src/**/*.test.tsx"]
 }

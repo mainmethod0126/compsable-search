@@ -37,8 +37,6 @@ const DEFAULT_LABELS: Required<ComposableSearchLabels> = {
   removeSelectionAriaLabel: (itemDisplayName) => `${itemDisplayName} 삭제`,
 }
 
-type AnyReactHostSelectorDefinition = ReactHostSelectorDefinition<unknown, string, any>
-
 interface ControllerSnapshotRef<TSelectionItem extends SelectionItem> {
   controller: HeadlessCoreController<TSelectionItem>
   snapshot: HeadlessCoreControllerState<TSelectionItem>
@@ -68,9 +66,16 @@ function resolveShellState(
   return isPanelOpen ? 'open' : 'idle'
 }
 
-function createSelectorLookup(
-  selectors: readonly AnyReactHostSelectorDefinition[],
-): Map<string, AnyReactHostSelectorDefinition> {
+function createSelectorLookup<TSelectionItem extends SelectionItem>(
+  selectors: readonly ReactHostSelectorDefinition<
+    unknown,
+    string,
+    TSelectionItem
+  >[],
+): Map<
+  string,
+  ReactHostSelectorDefinition<unknown, string, TSelectionItem>
+> {
   return new Map(selectors.map((selector) => [selector.id, selector]))
 }
 
@@ -87,9 +92,10 @@ function selectItemsBySelectorId<TSelectionItem extends SelectionItem>(
 
 function resolveValueMeta<
   TSelectionItem extends SelectionItem,
+  TSelector extends { type: string },
 >(
   event: SelectionChangeEvent<TSelectionItem>,
-  selectorLookup: Map<string, AnyReactHostSelectorDefinition>,
+  selectorLookup: ReadonlyMap<string, TSelector>,
 ): ReactValueChangeMeta {
   const selectorType = event.meta.selectorId
     ? selectorLookup.get(event.meta.selectorId)?.type
@@ -101,9 +107,9 @@ function resolveValueMeta<
   }
 }
 
-function resolvePanelEvent(
+function resolvePanelEvent<TSelector extends { type: string }>(
   event: CorePanelOpenChangeEvent,
-  selectorLookup: Map<string, AnyReactHostSelectorDefinition>,
+  selectorLookup: ReadonlyMap<string, TSelector>,
 ): ReactPanelOpenChangeEvent {
   return {
     ...event,

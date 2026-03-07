@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState, type ChangeEvent } from 'react'
-import { ComposableSearch } from '@compsable-search/react'
+import {
+  ComposableSearch,
+  type ReactPanelOpenChangeEvent,
+} from '@compsable-search/react'
 import { createKeywordSelector } from '@compsable-search/selector-keyword'
 import { createRegionSelector } from '@compsable-search/selector-region'
 import {
@@ -91,7 +94,6 @@ function App() {
   const [activeProfile, setActiveProfile] = useState<DemoRegionSampleProfile>('small')
   const [callbackEvents, setCallbackEvents] = useState<string[]>([])
   const [metricsByProfile, setMetricsByProfile] = useState(createInitialMetricsRecord)
-  const [isRegionPanelOpen, setIsRegionPanelOpen] = useState(false)
   const [firstSelectionMeasureStartedAt, setFirstSelectionMeasureStartedAt] = useState<
     number | null
   >(null)
@@ -121,35 +123,6 @@ function App() {
     setCallbackEvents([])
   }, [])
 
-  const handleKeywordClick = useCallback(() => {
-    appendCallbackEvent('keyword.onClick')
-  }, [appendCallbackEvent])
-
-  const handleRegionClick = useCallback(() => {
-    appendCallbackEvent('region.onClick')
-    const clickedAt = resolveNow()
-    const isOpeningRegionPanel = !isRegionPanelOpen
-
-    updateActiveProfileMetrics((current) => ({
-      ...current,
-      regionOnClickCount: current.regionOnClickCount + 1,
-    }))
-    setIsRegionPanelOpen(isOpeningRegionPanel)
-
-    if (isOpeningRegionPanel) {
-      setFirstSelectionMeasureStartedAt(clickedAt)
-      scheduleAfterPaint(() => {
-        updateActiveProfileMetrics((current) => ({
-          ...current,
-          panelOpenDurationMs: resolveNow() - clickedAt,
-        }))
-      })
-      return
-    }
-
-    setFirstSelectionMeasureStartedAt(null)
-  }, [appendCallbackEvent, isRegionPanelOpen, updateActiveProfileMetrics])
-
   const handleRegionSelected = useCallback(
     (selected: DemoRegion) => {
       appendCallbackEvent(formatOnSelectedMessage(selected))
@@ -167,6 +140,63 @@ function App() {
       }))
     },
     [appendCallbackEvent, firstSelectionMeasureStartedAt, updateActiveProfileMetrics],
+  )
+
+  const handlePanelOpenChange = useCallback(
+    (event: ReactPanelOpenChangeEvent) => {
+      const isSelectorDriven = event.source === 'selector'
+
+      if (
+        isSelectorDriven &&
+        event.currentSelectorType === 'keyword' &&
+        event.isOpen
+      ) {
+        appendCallbackEvent('keyword.onClick')
+      }
+
+      const openedRegionPanel =
+        isSelectorDriven &&
+        event.currentSelectorType === 'region' &&
+        event.isOpen
+      const closedRegionPanel =
+        isSelectorDriven &&
+        event.previousSelectorType === 'region' &&
+        !event.isOpen &&
+        event.currentSelectorType === undefined
+
+      if (!openedRegionPanel && !closedRegionPanel) {
+        if (
+          !event.isOpen &&
+          event.previousSelectorType === 'region' &&
+          event.currentSelectorType !== 'region'
+        ) {
+          setFirstSelectionMeasureStartedAt(null)
+        }
+
+        return
+      }
+
+      appendCallbackEvent('region.onClick')
+      updateActiveProfileMetrics((current) => ({
+        ...current,
+        regionOnClickCount: current.regionOnClickCount + 1,
+      }))
+
+      if (openedRegionPanel) {
+        const clickedAt = resolveNow()
+        setFirstSelectionMeasureStartedAt(clickedAt)
+        scheduleAfterPaint(() => {
+          updateActiveProfileMetrics((current) => ({
+            ...current,
+            panelOpenDurationMs: resolveNow() - clickedAt,
+          }))
+        })
+        return
+      }
+
+      setFirstSelectionMeasureStartedAt(null)
+    },
+    [appendCallbackEvent, updateActiveProfileMetrics],
   )
 
   const handleValueChange = useCallback(
@@ -190,25 +220,22 @@ function App() {
         ...activeDataSource,
         options: {
           placeholder: '지역 선택',
-          onClick: handleRegionClick,
           onSelectedEupmyeondong: handleRegionSelected,
         },
       }),
       createKeywordSelector('demo-keyword-selector', {
         options: {
           placeholder: '키워드 선택',
-          onClick: handleKeywordClick,
         },
       }),
     ],
-    [activeDataSource, handleKeywordClick, handleRegionClick, handleRegionSelected],
+    [activeDataSource, handleRegionSelected],
   )
 
   const handleProfileChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextProfile = event.target.value as DemoRegionSampleProfile
     setActiveProfile(nextProfile)
     setCallbackEvents([])
-    setIsRegionPanelOpen(false)
     setFirstSelectionMeasureStartedAt(null)
   }
 
@@ -252,6 +279,7 @@ function App() {
         <ComposableSearch
           key={`demo-search-${activeProfile}`}
           selectors={selectors}
+          onPanelOpenChange={handlePanelOpenChange}
           onValueChange={handleValueChange}
         />
       </div>
