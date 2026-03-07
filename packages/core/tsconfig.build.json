@@ -10,8 +10,8 @@
     "outDir": "./dist/types",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["react", "node", "vite/client"]
+    "types": ["node"]
   },
-  "include": ["src/**/*", "../../src/components/**/*"],
-  "exclude": ["test/**/*", "../../src/**/*.test.ts", "../../src/**/*.test.tsx"]
+  "include": ["src/**/*"],
+  "exclude": ["test/**/*"]
 }
