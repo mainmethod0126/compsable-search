@@ -1,42 +1,23 @@
 {
-  "name": "compsable-search",
-  "private": false,
+  "name": "@compsable-search/workspace",
+  "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.js"
-    },
-    "./style.css": "./dist/style.css",
-    "./package.json": "./package.json"
-  },
-  "sideEffects": [
-    "**/*.css"
+  "workspaces": [
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:lib": "vite build --config vite.lib.config.ts && npm run build:types",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:large": "vitest run src/DemoService.test.ts src/App.test.tsx src/components/ComposableSearch.test.tsx",
-    "validate:contracts": "node scripts/validate-contracts.mjs",
-    "verify:esm-consumer": "node scripts/verify-esm-consumer.mjs",
-    "verify:cjs-consumer": "node scripts/verify-cjs-consumer.mjs",
-    "verify:package": "node scripts/verify-package.mjs"
-  },
-  "peerDependencies": {
-    "react": "^18.3 || ^19",
-    "react-dom": "^18.3 || ^19"
+    "dev": "npm run dev --workspace @compsable-search/demo",
+    "lint:root": "eslint \"scripts/**/*.{js,mjs}\" \"*.config.{js,ts}\" --max-warnings=0",
+    "lint": "npm run lint:root && node ./scripts/run-workspaces.mjs lint",
+    "test": "node ./scripts/run-workspaces.mjs test",
+    "typecheck": "node ./scripts/run-workspaces.mjs typecheck",
+    "build": "node ./scripts/run-workspaces.mjs build",
+    "validate:contracts": "node ./scripts/validate-contracts.mjs",
+    "verify:exports": "npm run validate:contracts && node ./scripts/verify-package.mjs",
+    "pack": "npm run build && npm run verify:exports && node ./scripts/pack-workspaces.mjs",
+    "ci:workspace": "npm run lint && npm run test && npm run typecheck && npm run pack"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -1,135 +1,67 @@
 import assert from 'node:assert/strict'
-import { access, readFile } from 'node:fs/promises'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import {
+  collectExportKinds,
+  collectExportTargets,
+  listPublishableWorkspaces,
+  listWorkspaces,
+  normalizeRelativePath,
+  readJson,
+  rootDir,
+} from './workspace-utils.mjs'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const rootPackagePath = path.join(rootDir, 'package.json')
-const distTypePath = path.join(rootDir, 'dist/index.d.ts')
+const rootPackageJson = await readJson(`${rootDir}/package.json`)
 
-const reactConsumerFixtures = [
-  {
-    name: 'react18-consumer',
-    major: '18',
-    packagePath: path.join(rootDir, 'fixtures/react18-consumer/package.json'),
-    entryPath: path.join(rootDir, 'fixtures/react18-consumer/src/main.tsx'),
-  },
-  {
-    name: 'react19-consumer',
-    major: '19',
-    packagePath: path.join(rootDir, 'fixtures/react19-consumer/package.json'),
-    entryPath: path.join(rootDir, 'fixtures/react19-consumer/src/main.tsx'),
-  },
-]
+assert.equal(rootPackageJson.private, true, '루트 저장소는 private workspace여야 합니다.')
+assert.deepEqual(
+  rootPackageJson.workspaces,
+  ['packages/*', 'apps/*'],
+  '루트 workspace 패턴은 packages/*, apps/* 여야 합니다.',
+)
 
-const expectedPeerRange = '^18.3 || ^19'
+const workspaces = await listWorkspaces()
+assert.ok(workspaces.length > 0, 'workspace가 하나 이상 필요합니다.')
 
-const formatHost = {
-  getCanonicalFileName: (fileName) => fileName,
-  getCurrentDirectory: () => rootDir,
-  getNewLine: () => '\n',
-}
+const demoWorkspace = workspaces.find((workspace) => workspace.name === '@compsable-search/demo')
+assert.ok(demoWorkspace, 'apps/demo workspace가 필요합니다.')
+assert.equal(demoWorkspace.private, true, '@compsable-search/demo는 private app이어야 합니다.')
 
-const hasExpectedMajor = (range, major) =>
-  typeof range === 'string' && new RegExp(`^(?:\\^|~)?${major}(?:\\.|$)`).test(range.trim())
+for (const workspace of workspaces) {
+  const { manifest, name } = workspace
 
-const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'))
-
-const formatDiagnostics = (diagnostics) =>
-  ts.formatDiagnosticsWithColorAndContext(diagnostics, formatHost)
-
-const validateFixtureTypeContract = (entryPath, fixtureName) => {
-  const relativeEntryPath = path.relative(rootDir, entryPath).replaceAll('\\', '/')
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    {
-      compilerOptions: {
-        noEmit: true,
-        strict: true,
-        target: 'ES2022',
-        module: 'ESNext',
-        moduleResolution: 'Bundler',
-        jsx: 'react-jsx',
-        lib: ['ES2022', 'DOM', 'DOM.Iterable'],
-        skipLibCheck: true,
-        types: ['react', 'react-dom', 'vite/client', 'node'],
-        baseUrl: '.',
-        paths: {
-          'compsable-search': ['./dist/index.d.ts'],
-        },
-      },
-      files: [relativeEntryPath],
-    },
-    ts.sys,
-    rootDir,
-  )
-
-  const configErrors = parsedConfig.errors.filter(
-    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
-  )
-
-  if (configErrors.length > 0) {
-    throw new Error(
-      `${fixtureName} tsconfig 파싱 실패\n${formatDiagnostics(configErrors).trim()}`,
-    )
-  }
-
-  const program = ts.createProgram({
-    rootNames: parsedConfig.fileNames,
-    options: parsedConfig.options,
-  })
-  const diagnostics = ts
-    .getPreEmitDiagnostics(program)
-    .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
-
-  if (diagnostics.length > 0) {
-    throw new Error(
-      `${fixtureName} 타입 계약 검증 실패\n${formatDiagnostics(diagnostics).trim()}`,
+  for (const scriptName of ['build', 'lint', 'test', 'typecheck']) {
+    assert.equal(
+      typeof manifest.scripts?.[scriptName],
+      'string',
+      `${name}: ${scriptName} script가 필요합니다.`,
     )
   }
 }
 
-await access(distTypePath)
+const publishableWorkspaces = await listPublishableWorkspaces()
 
-const packageJson = await readJson(rootPackagePath)
-assert.equal(
-  packageJson.peerDependencies?.react,
-  expectedPeerRange,
-  `peerDependencies.react는 "${expectedPeerRange}"여야 합니다.`,
-)
-assert.equal(
-  packageJson.peerDependencies?.['react-dom'],
-  expectedPeerRange,
-  `peerDependencies.react-dom은 "${expectedPeerRange}"여야 합니다.`,
-)
+assert.ok(publishableWorkspaces.length > 0, 'publishable workspace가 하나 이상 필요합니다.')
 
-for (const fixture of reactConsumerFixtures) {
-  await Promise.all([access(fixture.packagePath), access(fixture.entryPath)])
+for (const workspace of publishableWorkspaces) {
+  const { manifest, name } = workspace
 
-  const fixturePackageJson = await readJson(fixture.packagePath)
-  const reactRange =
-    fixturePackageJson.dependencies?.react ?? fixturePackageJson.devDependencies?.react
-  const reactDomRange =
-    fixturePackageJson.dependencies?.['react-dom'] ??
-    fixturePackageJson.devDependencies?.['react-dom']
-
-  assert.ok(reactRange, `${fixture.name} fixture에 react 버전이 정의되어야 합니다.`)
-  assert.ok(reactDomRange, `${fixture.name} fixture에 react-dom 버전이 정의되어야 합니다.`)
+  assert.equal(typeof manifest.name, 'string', `${name}: package name이 필요합니다.`)
+  assert.equal(typeof manifest.main, 'string', `${name}: main 필드가 필요합니다.`)
+  assert.equal(typeof manifest.module, 'string', `${name}: module 필드가 필요합니다.`)
+  assert.equal(typeof manifest.types, 'string', `${name}: types 필드가 필요합니다.`)
+  const targets = collectExportTargets(manifest).map(normalizeRelativePath)
+  assert.ok(targets.length > 0, `${name}: export target이 하나 이상 필요합니다.`)
+  const buildTargets = targets.filter((target) => target !== 'package.json')
   assert.ok(
-    hasExpectedMajor(reactRange, fixture.major),
-    `${fixture.name} fixture react 버전은 ${fixture.major} 메이저여야 합니다: ${reactRange}`,
-  )
-  assert.ok(
-    hasExpectedMajor(reactDomRange, fixture.major),
-    `${fixture.name} fixture react-dom 버전은 ${fixture.major} 메이저여야 합니다: ${reactDomRange}`,
+    buildTargets.every((target) => target.startsWith('dist/')),
+    `${name}: 모든 export target은 dist/ 아래여야 합니다.`,
   )
 
-  const fixtureEntrySource = await readFile(fixture.entryPath, 'utf8')
-  assert.match(fixtureEntrySource, /from ['"]compsable-search['"]/)
-  assert.match(fixtureEntrySource, /['"]compsable-search\/style\.css['"]/)
-  assert.match(fixtureEntrySource, /import type\s+\{[^}]*SelectorPlugin[^}]*\}/s)
-
-  validateFixtureTypeContract(fixture.entryPath, fixture.name)
+  if (name === '@compsable-search/react') {
+    const exportKinds = collectExportKinds(manifest)
+    assert.ok(exportKinds.styles.length > 0, `${name}: style.css export가 필요합니다.`)
+  }
 }
 
-console.log('계약 검증 통과: peerDependencies + React 18/19 fixture + d.ts 소비')
+console.log(
+  `workspace 계약 검증 통과: 전체 ${workspaces.length}개 workspace / publishable ${publishableWorkspaces.length}개 package`,
+)

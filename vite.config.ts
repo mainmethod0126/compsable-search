@@ -1,13 +1,4 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: './src/test/setup.ts',
-    css: true,
-  },
-})
+// 루트는 더 이상 앱/라이브러리 번들 타깃이 아니라 workspace orchestration 레벨이다.
+export default defineConfig({})

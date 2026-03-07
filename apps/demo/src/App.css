@@ -1,0 +1,149 @@
+.demo-root {
+  min-height: 100vh;
+  min-width: 320px;
+  box-sizing: border-box;
+  background-color: #eef3f8;
+  color: #1f2d3d;
+  font-family:
+    'Segoe UI',
+    'Noto Sans KR',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+.demo-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: grid;
+  gap: 16px;
+}
+
+.demo-title {
+  margin: 0;
+  font-size: 28px;
+  color: #1f2d3d;
+}
+
+.demo-description {
+  margin: 6px 0 0;
+  color: #4d627a;
+}
+
+.demo-panel {
+  border: 1px solid #d9e2ec;
+  border-radius: 14px;
+  background-color: #ffffff;
+  padding: 14px;
+}
+
+.demo-profile-panel {
+  border: 1px solid #d9e2ec;
+  border-radius: 14px;
+  background-color: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.demo-profile-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.demo-profile-label {
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.demo-profile-select {
+  min-width: 220px;
+  border: 1px solid #bfd0e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background-color: #ffffff;
+  color: #1f2d3d;
+}
+
+.demo-profile-summary {
+  margin: 0;
+  color: #4d627a;
+  word-break: break-word;
+}
+
+.demo-metrics-panel {
+  border: 1px solid #d9e2ec;
+  border-radius: 14px;
+  background-color: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.demo-metrics-title {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2d3d;
+}
+
+.demo-metrics-item {
+  margin: 0;
+  color: #2d4b6b;
+  word-break: break-word;
+}
+
+.demo-event-log {
+  border: 1px solid #d9e2ec;
+  border-radius: 14px;
+  background-color: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.demo-event-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.demo-event-log-title {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2d3d;
+}
+
+.demo-event-log-clear-button {
+  border: 1px solid #bfd0e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background-color: #ffffff;
+  color: #2a4668;
+  cursor: pointer;
+}
+
+.demo-event-log-clear-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.demo-event-log-empty {
+  margin: 0;
+  color: #5a728f;
+}
+
+.demo-event-log-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.demo-event-log-item {
+  color: #2d4b6b;
+  word-break: break-word;
+}

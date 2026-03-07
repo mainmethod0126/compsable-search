@@ -983,7 +983,7 @@ async function run() {
     try {
       const srcStats = await fs.stat(path.resolve(process.cwd(), 'src'))
       return srcStats.isDirectory() ? 'src' : '.'
-    } catch (_error) {
+    } catch {
       return '.'
     }
   })()

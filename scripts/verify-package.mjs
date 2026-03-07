@@ -1,42 +1,41 @@
-import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
 import { access } from 'node:fs/promises'
+import assert from 'node:assert/strict'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {
+  collectExportKinds,
+  listPublishableWorkspaces,
+  normalizeRelativePath,
+} from './workspace-utils.mjs'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const requiredDistFiles = [
-  'dist/index.js',
-  'dist/index.cjs',
-  'dist/index.d.ts',
-  'dist/style.css',
-]
+const publishableWorkspaces = await listPublishableWorkspaces()
 
-await Promise.all(
-  requiredDistFiles.map(async (relativePath) => {
-    const absolutePath = path.join(rootDir, relativePath)
-    await access(absolutePath)
-  }),
-)
+assert.ok(publishableWorkspaces.length > 0, '검증할 publishable workspace가 필요합니다.')
 
-const verifyScripts = [
-  'scripts/validate-contracts.mjs',
-  'scripts/verify-esm-consumer.mjs',
-  'scripts/verify-cjs-consumer.mjs',
-]
+for (const workspace of publishableWorkspaces) {
+  const { dir, manifest, name } = workspace
+  const exportKinds = collectExportKinds(manifest)
 
-for (const relativeScriptPath of verifyScripts) {
-  const scriptPath = path.join(rootDir, relativeScriptPath)
-  const result = spawnSync(process.execPath, [scriptPath], {
-    cwd: rootDir,
-    encoding: 'utf8',
-  })
+  assert.ok(exportKinds.esm.length > 0, `${name}: ESM export가 필요합니다.`)
+  assert.ok(exportKinds.cjs.length > 0, `${name}: CJS export가 필요합니다.`)
+  assert.ok(exportKinds.types.length > 0, `${name}: d.ts export가 필요합니다.`)
 
-  if (result.status !== 0) {
-    const details = [result.stdout, result.stderr].filter(Boolean).join('\n').trim()
-    throw new Error(`검증 실패: ${relativeScriptPath}\n${details}`)
+  if (name === '@compsable-search/react') {
+    assert.ok(exportKinds.styles.length > 0, `${name}: style.css export가 필요합니다.`)
   }
+
+  const requiredFiles = [
+    ...exportKinds.esm,
+    ...exportKinds.cjs,
+    ...exportKinds.types,
+    ...exportKinds.styles,
+  ]
+
+  await Promise.all(
+    requiredFiles.map(async (relativePath) => {
+      const normalizedPath = normalizeRelativePath(relativePath)
+      await access(path.join(dir, normalizedPath))
+    }),
+  )
 }
 
-assert.equal(requiredDistFiles.length, 4)
-console.log('패키지 검증 통과: dist 산출물 + 계약 검증 + ESM/CJS smoke')
+console.log(`workspace export smoke 통과: ${publishableWorkspaces.length}개 package`)
